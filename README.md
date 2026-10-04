@@ -35,6 +35,23 @@ You can deploy Streamverse 2 directly to Vercel with zero additional configurati
 
 ---
 
+## 🔑 Environment Variables (Optional)
+
+Streamverse 2 works **100% out of the box with zero environment variables required** because it includes built-in fallbacks.
+
+If you wish to use your own personal TMDB API key:
+
+| Variable | Description | Required | Default |
+|---|---|---|---|
+| `VITE_TMDB_API_KEY` | TMDB API v3 Key for movies & TV shows metadata | No (Optional) | Built-in fallback key |
+
+To customize on Vercel:
+1. Go to your Vercel Project -> **Settings** -> **Environment Variables**.
+2. Add `VITE_TMDB_API_KEY` with your key from [themoviedb.org](https://www.themoviedb.org/settings/api).
+3. Redeploy your project.
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Framework**: React 19 + TypeScript

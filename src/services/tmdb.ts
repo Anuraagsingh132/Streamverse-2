@@ -1,6 +1,6 @@
 import { MediaItem, MediaType, CastMember, CrewMember, StudioOrNetwork, VideoItem, EpisodeItem, SeasonItem } from '../types/media';
 
-export const TMDB_API_KEY = '1cf50e6248dc270629e802686245c2c8';
+export const TMDB_API_KEY = (import.meta.env.VITE_TMDB_API_KEY as string) || '1cf50e6248dc270629e802686245c2c8';
 export const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
