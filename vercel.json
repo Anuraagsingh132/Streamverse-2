@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/anime/logo",
+      "destination": "https://cinemaos.tech/api/anime/logo"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
