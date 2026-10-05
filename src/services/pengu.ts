@@ -1,6 +1,6 @@
 import { getImdbId } from './tmdb';
 import { MediaType } from '../types/media';
-import { HDHubStream } from './hdhub';
+import { HDHubStream, parseStreamBitrate, parseAudioCodec } from './hdhub';
 
 const PENGU_BASE_RESOLVER = 'https://pengu.uk/%7B%22auth_token%22%3A%22QAgjPjVLyWOqIlIqXBXTjGamncIkhZZzliQBgU3x2zg%22%7D/stream';
 
@@ -149,9 +149,14 @@ export async function fetchPenguStreams(
       return result;
     }
 
-    // Filter valid streaming URLs
+    // Filter valid streaming URLs (exclude unsupported DASH formats like .mpd or /dash/ which cannot play in Hls.js/HTML5 video)
     const validStreams = rawStreams.filter(
-      (s) => s && typeof s.url === 'string' && s.url.trim().startsWith('http')
+      (s) =>
+        s &&
+        typeof s.url === 'string' &&
+        s.url.trim().startsWith('http') &&
+        !s.url.includes('/dash/') &&
+        !s.url.includes('.mpd')
     );
 
     if (validStreams.length === 0) {
@@ -179,18 +184,38 @@ export async function fetchPenguStreams(
       }
 
       const audio = parsePenguAudio(fullText);
+      const audioCodecInfo = parseAudioCodec(fullText, isHLS);
+      const bitrateInfo = parseStreamBitrate(fullText, s.behaviorHints?.videoSize, isTV);
+
+      // Route PixelDrain URLs through our local /api/pixeldrain proxy to bypass hotlink blocking and attachment download
+      let streamUrl = s.url;
+      const pdMatch = streamUrl.match(/pixeldrain\.(?:dev|com)\/(?:api\/file\/|u\/)([a-zA-Z0-9_-]+)/i);
+      if (pdMatch && pdMatch[1]) {
+        streamUrl = `/api/pixeldrain/${pdMatch[1]}`;
+      } else if (fullText.toLowerCase().includes('pixeldrain')) {
+        const pdExtMatch = streamUrl.match(/\/([a-zA-Z0-9_-]{6,16})(?:\?|$)/);
+        if (pdExtMatch && pdExtMatch[1]) {
+          streamUrl = `/api/pixeldrain/${pdExtMatch[1]}`;
+        }
+      }
 
       return {
         id: `pengu-${idx}-${s.url?.slice(-12) || idx}`,
         name: s.name || `Pengu Stream ${idx + 1}`,
         title: s.name ? s.name.replace(/^🐧\s*/, '') : `Pengu Stream ${idx + 1}`,
         description: s.description,
-        url: s.url,
+        url: streamUrl,
         quality,
         codec,
         provider: provider as any,
+        bitrate: bitrateInfo.bitrate,
+        bitrateMbps: bitrateInfo.bitrateMbps,
+        requiredSpeed: bitrateInfo.requiredSpeed,
+        isHls: isHLS,
         audioLanguages: audio.languages,
         audioLabel: audio.label,
+        audioCodec: audioCodecInfo.audioCodec,
+        isWebAudio: audioCodecInfo.isWebAudio,
         sizeFormatted,
         isDownloadOnly: false,
         notWebReady: !isHLS && Boolean(s.behaviorHints?.notWebReady)
@@ -198,24 +223,58 @@ export async function fetchPenguStreams(
     });
 
     // Sort order:
-    // 1. HLS (.m3u8) streams first (because they are fully web-ready and play natively with HLS.js)
-    // 2. 1080p / 4K qualities next
-    // 3. Size / provider
+    // 1. Deprioritize known blocked/failing upstream domains (e.g. Lisbon / cheaptruckrepairs)
+    // 2. Streams with browser-compatible audio (AAC, HLS, Stereo) first
+    // 3. Prioritize PixelDrain (working proxy) and HLS
+    // 4. Resolution (1080p > 720p > 4K)
     mapped.sort((a, b) => {
-      const aIsHls = a.url.includes('.m3u8') ? 1 : 0;
-      const bIsHls = b.url.includes('.m3u8') ? 1 : 0;
-      if (aIsHls !== bIsHls) return bIsHls - aIsHls;
+      // 1. Deprioritize known blocked/failing upstream domains (e.g. Lisbon / cheaptruckrepairs)
+      const aIsBlocked = a.provider?.toLowerCase().includes('lisbon') || a.url.includes('cheaptruckrepairs');
+      const bIsBlocked = b.provider?.toLowerCase().includes('lisbon') || b.url.includes('cheaptruckrepairs');
+      if (aIsBlocked !== bIsBlocked) return aIsBlocked ? 1 : -1;
 
+      // 2. Streams with browser-compatible audio (AAC, HLS, Stereo) first
+      if (a.isWebAudio !== b.isWebAudio) {
+        return (b.isWebAudio ? 1 : 0) - (a.isWebAudio ? 1 : 0);
+      }
+
+      // 3. Provider reliability:
+      // - Cinejoy (HLS .m3u8) is #1 most reliable web source in Pengu (score 5)
+      // - PixelDrain is #2 (proxied with full seek support, score 4)
+      // - 2Peckle (MP4) is #3 (score 3)
+      // - Arctic / HubCloud / GDFlix is #4 (score 2)
+      // - Cloudflare R2 / VegaMovies / CineFreak (score 1, prone to 3h expiration)
+      const providerScore = (p: string, isHls?: boolean, url?: string) => {
+        const lowerP = (p || '').toLowerCase();
+        const lowerUrl = (url || '').toLowerCase();
+        if (isHls || lowerP.includes('cinejoy') || lowerUrl.includes('.m3u8')) return 5;
+        if (lowerP.includes('pixeldrain') || lowerUrl.includes('pixeldrain')) return 4;
+        if (lowerP.includes('2peckle') || lowerUrl.includes('.mp4')) return 3;
+        if (lowerP.includes('arctic') || lowerUrl.includes('hubcloud') || lowerUrl.includes('gdflix')) return 2;
+        if (lowerP.includes('r2') || lowerP.includes('vegamovies') || lowerP.includes('cinefreak')) return 1;
+        return 2;
+      };
+      const pDiff = providerScore(b.provider, b.isHls, b.url) - providerScore(a.provider, a.isHls, a.url);
+      if (pDiff !== 0) return pDiff;
+
+      // 4. Resolution: 1080p > 720p > 2160p > 480p > Unknown
       const qualityScore = (q: string) => {
-        if (q === '2160p') return 4;
-        if (q === '1080p') return 3;
-        if (q === '720p') return 2;
-        return 1;
+        if (q === '1080p') return 4;
+        if (q === '720p') return 3;
+        if (q === '2160p') return 2;
+        if (q === '480p') return 1;
+        return 0;
       };
       const qDiff = qualityScore(b.quality) - qualityScore(a.quality);
       if (qDiff !== 0) return qDiff;
 
-      return 0;
+      // 5. Codec: H.264 > H.265
+      const codecScore = (c: string) => {
+        if (c === 'H.264') return 2;
+        if (c === 'H.265') return 1;
+        return 0;
+      };
+      return codecScore(b.codec) - codecScore(a.codec);
     });
 
     const result: PenguResolutionResult = {

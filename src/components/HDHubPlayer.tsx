@@ -30,7 +30,9 @@ import {
   Languages,
   AudioLines,
   Upload,
-  FileText
+  FileText,
+  Zap,
+  Wifi
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { fetchHDHubStreams, HDHubStream } from '../services/hdhub';
@@ -255,6 +257,8 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     setIsPlaying(false);
     setCurrentTime(0);
     setBufferedPercent(0);
+    setNativeAudioTracks([]);
+    setSelectedAudioLang('default');
   }, [selectedStreamIndex]);
 
   // HLS ref & stream attachment effect
@@ -266,6 +270,10 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
 
     setPlaybackError(false);
     setBufferedPercent(0);
+
+    // Immediately synchronize volume and muted state on the video element
+    video.volume = volume;
+    video.muted = isMuted;
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -310,6 +318,18 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
+        // Recover from non-fatal audio track load errors
+        if (
+          data.details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_ERROR || 
+          data.details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_TIMEOUT
+        ) {
+          console.warn('HLS audio track error, recovering...', data.details);
+          if (hls.audioTracks && hls.audioTracks.length > 1) {
+            hls.audioTrack = (hls.audioTrack + 1) % hls.audioTracks.length;
+          }
+          return;
+        }
+
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
@@ -342,7 +362,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
         hlsRef.current = null;
       }
     };
-  }, [selectedStream?.url]);
+  }, [selectedStream?.url, volume, isMuted]);
 
   // Persist volume settings
   useEffect(() => {
@@ -962,6 +982,7 @@ interface AudioOptionItem {
           ref={videoRef}
           key={selectedStream.url}
           playsInline
+          muted={isMuted}
           style={{ objectFit }}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
@@ -970,13 +991,7 @@ interface AudioOptionItem {
           onError={() => {
             const err = videoRef.current?.error;
             console.warn('Stream playback error on stream index', selectedStreamIndex, err);
-            if (streams.length > 1 && selectedStreamIndex < streams.length - 1) {
-              const nextIdx = selectedStreamIndex + 1;
-              setSelectedStreamIndex(nextIdx);
-              showToast(`Switching to alternate stream (${streams[nextIdx].provider})...`);
-            } else {
-              setPlaybackError(true);
-            }
+            setPlaybackError(true);
           }}
           onClick={handleTogglePlay}
           className="w-full h-full cursor-pointer bg-black"
@@ -1134,6 +1149,11 @@ interface AudioOptionItem {
                 <span className="text-[10px] font-normal text-white/50 hidden sm:inline">
                   {selectedStream?.provider === 'Cloudflare R2' ? 'R2' : selectedStream?.provider || ''}
                 </span>
+                {selectedStream?.bitrate && (
+                  <span className="text-[10px] font-medium text-amber-400/90 hidden lg:inline">
+                    · {selectedStream.bitrate}
+                  </span>
+                )}
                 <ChevronDown className={`h-3 w-3 text-white/60 transition-transform ${isQualityDropdownOpen ? 'rotate-180 text-white' : ''}`} />
               </button>
 
@@ -1141,7 +1161,7 @@ interface AudioOptionItem {
               {isQualityDropdownOpen && (
                 <div 
                   data-lenis-prevent
-                  className="absolute left-0 top-full mt-2 w-64 sm:w-72 max-h-80 overflow-y-auto rounded-2xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 z-50 drawer-scroll"
+                  className="absolute left-0 top-full mt-2 w-72 sm:w-80 max-h-80 overflow-y-auto rounded-2xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 z-50 drawer-scroll"
                 >
                   <div className="px-3 py-1.5 border-b border-white/10 flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Stream Sources</span>
@@ -1157,7 +1177,7 @@ interface AudioOptionItem {
                           onClick={() => {
                             setSelectedStreamIndex(idx);
                             setIsQualityDropdownOpen(false);
-                            showToast(`${s.quality} · ${s.provider}`);
+                            showToast(`${s.quality} · ${s.provider}${s.bitrate ? ` (${s.bitrate})` : ''}`);
                           }}
                           className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition ${
                             isSelected
@@ -1166,18 +1186,52 @@ interface AudioOptionItem {
                           }`}
                         >
                           <div className="flex flex-col min-w-0 pr-2">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-white text-xs">{s.quality}</span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60 font-mono">
                                 {s.codec}
                               </span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-medium truncate max-w-[120px]">
                                 {s.provider}
                               </span>
+                              {s.isHls && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">
+                                  HLS
+                                </span>
+                              )}
+                              {s.isWebAudio ? (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">
+                                  🎧 Web Audio
+                                </span>
+                              ) : (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
+                                  ⚠️ {s.audioCodec || 'DDP'} (VLC)
+                                </span>
+                              )}
                             </div>
-                            {s.sizeFormatted && (
-                              <span className="text-[10px] text-white/40 mt-0.5">Size: {s.sizeFormatted}</span>
-                            )}
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-white/50 flex-wrap">
+                              {s.sizeFormatted && (
+                                <span>{s.sizeFormatted}</span>
+                              )}
+                              {s.bitrate && (
+                                <>
+                                  {s.sizeFormatted && <span className="text-white/20">•</span>}
+                                  <span className="flex items-center gap-0.5 text-amber-400 font-medium">
+                                    <Zap className="h-2.5 w-2.5 inline shrink-0" />
+                                    {s.bitrate}
+                                  </span>
+                                </>
+                              )}
+                              {s.requiredSpeed && (
+                                <>
+                                  <span className="text-white/20">•</span>
+                                  <span className="flex items-center gap-0.5 text-emerald-400 font-medium">
+                                    <Wifi className="h-2.5 w-2.5 inline shrink-0" />
+                                    Req {s.requiredSpeed}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
                           {isSelected && <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />}
                         </button>
@@ -1676,8 +1730,11 @@ interface AudioOptionItem {
                           <HardDrive className="h-3.5 w-3.5 text-white/60" />
                           <span>Source Quality</span>
                         </div>
-                        <div className="flex items-center gap-1 text-white/50">
+                        <div className="flex items-center gap-1.5 text-white/50">
                           <span>{selectedStream?.quality || '1080p'}</span>
+                          {selectedStream?.bitrate && (
+                            <span className="text-amber-400/90 font-medium text-[11px]">· {selectedStream.bitrate}</span>
+                          )}
                           <ChevronRight className="h-3.5 w-3.5" />
                         </div>
                       </button>
@@ -1730,15 +1787,25 @@ interface AudioOptionItem {
                           );
                         })}
 
-                        {/* Informational card for embedded MKV multi-audio */}
+                        {/* Informational card for audio compatibility */}
                         {selectedStream?.url && (
-                          <div className="mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-white/80 space-y-2">
+                          <div className={`mt-2.5 p-2.5 rounded-xl border space-y-2 ${
+                            selectedStream.isWebAudio === false 
+                              ? 'bg-amber-950/40 border-amber-500/30 text-amber-200' 
+                              : 'bg-white/5 border-white/10 text-white/80'
+                          }`}>
                             <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-[11px]">
                               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                              <span>MKV Multi-Audio Tracks</span>
+                              <span>
+                                {selectedStream.isWebAudio === false 
+                                  ? `${selectedStream.audioCodec || 'DDP 5.1'} Audio (No Web Sound)` 
+                                  : 'Multi-Audio Tracks & VLC'}
+                              </span>
                             </div>
-                            <p className="text-[11px] text-white/60 leading-relaxed">
-                              Chrome & web browsers can only play Track 1 from MKV files. To switch to secondary tracks (English, Tamil, Atmos, etc.), open directly in VLC:
+                            <p className="text-[11px] text-white/70 leading-relaxed">
+                              {selectedStream.isWebAudio === false
+                                ? 'Web browsers lack Dolby Digital Plus / TrueHD decoders. Open directly in VLC media player for loud, full multi-channel surround sound, or pick an AAC/HLS stream in Stream Sources.'
+                                : 'Web browsers can only play Track 1 from direct video files. To switch secondary audio languages or Atmos dubs, open directly in VLC:'}
                             </p>
                             <div className="flex flex-col gap-1.5 pt-0.5">
                               <a
@@ -1746,7 +1813,7 @@ interface AudioOptionItem {
                                 className="flex items-center justify-center gap-1.5 w-full py-1.5 px-2.5 rounded-lg bg-primary text-black font-semibold text-[11px] hover:brightness-110 active:scale-95 transition text-center shadow-sm"
                               >
                                 <Play className="h-3 w-3 fill-current" />
-                                <span>Open in VLC (All Audio Tracks)</span>
+                                <span>Open in VLC (Full Audio & Surround)</span>
                               </a>
                               <button
                                 type="button"
@@ -1937,16 +2004,58 @@ interface AudioOptionItem {
                             setSelectedStreamIndex(idx);
                             setIsSettingsMenuOpen(false);
                             setSettingsTab('main');
-                            showToast(`${s.quality} · ${s.provider}`);
+                            showToast(`${s.quality} · ${s.provider}${s.bitrate ? ` (${s.bitrate})` : ''}`);
                           }}
-                          className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition ${
+                          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs transition ${
                             idx === selectedStreamIndex
                               ? 'bg-white/15 text-white font-semibold'
                               : 'text-white/70 hover:text-white hover:bg-white/10'
                           }`}
                         >
-                          <span>{s.quality} ({s.provider})</span>
-                          {idx === selectedStreamIndex && <Check className="h-3.5 w-3.5 text-primary" />}
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-white text-xs">{s.quality}</span>
+                              <span className="text-[10px] text-white/60">({s.provider})</span>
+                              {s.isHls && (
+                                <span className="text-[8px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
+                                  HLS
+                                </span>
+                              )}
+                              {s.isWebAudio ? (
+                                <span className="text-[8px] px-1 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">
+                                  🎧 Web Audio
+                                </span>
+                              ) : (
+                                <span className="text-[8px] px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
+                                  ⚠️ {s.audioCodec || 'DDP'} (VLC)
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-white/50 flex-wrap">
+                              {s.bitrate && (
+                                <span className="flex items-center gap-0.5 text-amber-400 font-medium">
+                                  <Zap className="h-2.5 w-2.5 inline shrink-0" />
+                                  {s.bitrate}
+                                </span>
+                              )}
+                              {s.requiredSpeed && (
+                                <>
+                                  <span className="text-white/20">•</span>
+                                  <span className="flex items-center gap-0.5 text-emerald-400 font-medium">
+                                    <Wifi className="h-2.5 w-2.5 inline shrink-0" />
+                                    Req {s.requiredSpeed}
+                                  </span>
+                                </>
+                              )}
+                              {s.sizeFormatted && (
+                                <>
+                                  <span className="text-white/20">•</span>
+                                  <span>{s.sizeFormatted}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {idx === selectedStreamIndex && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
                         </button>
                       ))}
                     </div>

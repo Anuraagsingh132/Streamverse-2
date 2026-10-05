@@ -22,19 +22,14 @@ interface ServerOption {
 }
 
 // Configurable video streaming servers list.
-// CinemaOS is the primary default server. Additional servers can be updated or added here in future.
+// HDHub is the primary default server, followed by Pengu and CinemaOS.
 const SERVERS: ServerOption[] = [
   {
-    id: 'cinemaos',
-    name: 'CinemaOS',
-    badge: 'Server 1 · HD',
-    description: 'CinemaOS official embed player (Default)',
-    getUrl: (tmdbId, isTV, season, episode) => {
-      if (!isTV) {
-        return `https://cinemaos.tech/player/${tmdbId}?theme=ffffff`;
-      }
-      return `https://cinemaos.tech/player/${tmdbId}/${season}/${episode}?theme=ffffff`;
-    }
+    id: 'hdhub',
+    name: 'HDHub',
+    badge: 'Direct Stream · HD',
+    description: 'High-speed PixelDrain & Cloudflare direct streams (Default)',
+    getUrl: () => ''
   },
   {
     id: 'pengu',
@@ -44,11 +39,16 @@ const SERVERS: ServerOption[] = [
     getUrl: () => ''
   },
   {
-    id: 'hdhub',
-    name: 'HDHub',
-    badge: 'Direct Stream · HD',
-    description: 'Cloudflare R2 & PixelDrain direct streams (MKV / MP4)',
-    getUrl: () => ''
+    id: 'cinemaos',
+    name: 'CinemaOS',
+    badge: 'Server 1 · HD',
+    description: 'CinemaOS official embed player',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      if (!isTV) {
+        return `https://cinemaos.tech/player/${tmdbId}?theme=ffffff`;
+      }
+      return `https://cinemaos.tech/player/${tmdbId}/${season}/${episode}?theme=ffffff`;
+    }
   },
   {
     id: 'vidsrc',
@@ -138,7 +138,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
 }) => {
   const [season, setSeason] = useState<number>(initialSeason || 1);
   const [episode, setEpisode] = useState<number>(initialEpisode || 1);
-  const [selectedServerId, setSelectedServerId] = useState<string>('cinemaos');
+  const [selectedServerId, setSelectedServerId] = useState<string>('hdhub');
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState<boolean>(false);
   const [isEpisodeDrawerOpen, setIsEpisodeDrawerOpen] = useState<boolean>(false);
   const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState<boolean>(false);

@@ -12,8 +12,14 @@ export interface HDHubStream {
   quality: '2160p' | '1080p' | '720p' | '480p' | 'Unknown';
   codec: 'H.264' | 'H.265' | 'Unknown';
   provider: string;
+  bitrate?: string;
+  bitrateMbps?: number;
+  requiredSpeed?: string;
+  isHls?: boolean;
   audioLanguages?: string[];
   audioLabel?: string;
+  audioCodec?: 'AAC' | 'DDP 5.1' | 'TrueHD' | 'DTS' | 'AC3' | 'Stereo' | 'Unknown';
+  isWebAudio?: boolean;
   sizeFormatted?: string;
   isDownloadOnly?: boolean;
   notWebReady?: boolean;
@@ -28,6 +34,55 @@ export interface HDHubResolutionResult {
 // In-memory cache for resolved streams
 const streamCache = new Map<string, { timestamp: number; result: HDHubResolutionResult }>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+export function parseAudioCodec(
+  text: string,
+  isHls: boolean
+): { audioCodec: 'AAC' | 'DDP 5.1' | 'TrueHD' | 'DTS' | 'AC3' | 'Stereo' | 'Unknown'; isWebAudio: boolean } {
+  const lower = text.toLowerCase();
+
+  // TrueHD / Atmos (Not supported by HTML5 video in Chrome/Firefox)
+  if (lower.includes('truehd') || lower.includes('atmos')) {
+    return { audioCodec: 'TrueHD', isWebAudio: false };
+  }
+
+  // DTS / DTS-HD / DTS-HD MA (Not supported by HTML5 video in browsers)
+  if (lower.includes('dts-hd') || lower.includes('dts') || lower.includes('dts5.1')) {
+    return { audioCodec: 'DTS', isWebAudio: false };
+  }
+
+  // Dolby Digital Plus / DDP / E-AC-3 (Not supported by Chrome on Windows in MKV container)
+  if (
+    lower.includes('ddp') ||
+    lower.includes('dd+') ||
+    lower.includes('eac3') ||
+    lower.includes('e-ac-3') ||
+    lower.includes('dolby digital plus')
+  ) {
+    return { audioCodec: 'DDP 5.1', isWebAudio: false };
+  }
+
+  // Dolby Digital / AC3 (Frequently silent or unsupported without AC3 hardware/extension)
+  if (lower.includes('dd5.1') || lower.includes('ac3') || lower.includes('ac-3') || lower.includes('dolby digital')) {
+    return { audioCodec: 'AC3', isWebAudio: false };
+  }
+
+  // AAC or HLS web streams (100% native browser support)
+  if (isHls || lower.includes('aac') || lower.includes('mp4a') || lower.includes('2peckle') || lower.includes('web-ready')) {
+    return { audioCodec: 'AAC', isWebAudio: true };
+  }
+
+  if (lower.includes('.mp4')) {
+    return { audioCodec: 'AAC', isWebAudio: true };
+  }
+
+  if (lower.includes('.mkv')) {
+    // Unspecified MKVs frequently have multi-channel AC3/DDP audio
+    return { audioCodec: 'Unknown', isWebAudio: false };
+  }
+
+  return { audioCodec: 'Stereo', isWebAudio: true };
+}
 
 export function parseAudioLanguages(text: string): { languages: string[]; label: string } {
   const languages: string[] = [];
@@ -80,6 +135,101 @@ function formatBytes(bytes?: number): string | undefined {
   if (gb >= 1) return `${gb.toFixed(2)} GB`;
   const mb = bytes / (1024 * 1024);
   return `${mb.toFixed(0)} MB`;
+}
+
+export function parseStreamBitrate(
+  fullText: string,
+  videoSizeBytes?: number,
+  isTV: boolean = false
+): { bitrate?: string; bitrateMbps?: number; requiredSpeed?: string } {
+  let mbps: number | undefined;
+
+  // 1. Check explicit bitrate in metadata or description
+  // Matches e.g. "~1.0 Mbps", "6.2 Mbps", "~10.7Mbps", "6Mbps", "4.8 Mbit/s", "3.2 Mb/s"
+  const explicitMatch = fullText.match(/(?:~|≈)?\s*(\d+(?:\.\d+)?)\s*(?:mbps|mbit\/s|mb\/s)/i);
+  if (explicitMatch && explicitMatch[1]) {
+    const parsed = parseFloat(explicitMatch[1]);
+    if (!isNaN(parsed) && parsed > 0 && parsed < 200) {
+      mbps = parsed;
+    }
+  }
+
+  // 2. Check if kbps is specified (e.g. "4500 kbps", "~800 kbps")
+  if (!mbps) {
+    const kbpsMatch = fullText.match(/(?:~|≈)?\s*(\d+)\s*(?:kbps|kbit\/s|kb\/s)/i);
+    if (kbpsMatch && kbpsMatch[1]) {
+      const parsedKbps = parseFloat(kbpsMatch[1]);
+      if (!isNaN(parsedKbps) && parsedKbps > 0) {
+        mbps = parseFloat((parsedKbps / 1000).toFixed(1));
+      }
+    }
+  }
+
+  // 3. Fallback: calculate from videoSizeBytes if available
+  // Average standard durations: Movie ~ 110 min (6600s), TV Episode ~ 45 min (2700s)
+  if (!mbps && videoSizeBytes && videoSizeBytes > 0) {
+    const durationSeconds = isTV ? 45 * 60 : 110 * 60;
+    const bits = videoSizeBytes * 8;
+    const calc = bits / (durationSeconds * 1_000_000);
+    if (!isNaN(calc) && calc > 0.1) {
+      mbps = parseFloat(calc.toFixed(1));
+    }
+  }
+
+  // 4. Fallback: parse file size string if videoSizeBytes was undefined (e.g., "2.15 GB", "850 MB")
+  if (!mbps) {
+    const sizeMatch = fullText.match(/(\d+(?:\.\d+)?)\s*(gb|mb)/i);
+    if (sizeMatch && sizeMatch[1] && sizeMatch[2]) {
+      const val = parseFloat(sizeMatch[1]);
+      const unit = sizeMatch[2].toUpperCase();
+      const bytes = unit === 'GB' ? val * 1024 * 1024 * 1024 : val * 1024 * 1024;
+      const durationSeconds = isTV ? 45 * 60 : 110 * 60;
+      const bits = bytes * 8;
+      const calc = bits / (durationSeconds * 1_000_000);
+      if (!isNaN(calc) && calc > 0.1) {
+        mbps = parseFloat(calc.toFixed(1));
+      }
+    }
+  }
+
+  // 5. Default baseline based on resolution if no size or bitrate could be extracted
+  if (!mbps) {
+    if (/2160p|4k/i.test(fullText)) {
+      mbps = 15.0;
+    } else if (/1080p|fhd/i.test(fullText)) {
+      mbps = 5.0;
+    } else if (/720p|hd/i.test(fullText)) {
+      mbps = 2.5;
+    } else if (/480p|sd/i.test(fullText)) {
+      mbps = 1.2;
+    }
+  }
+
+  if (mbps !== undefined && mbps > 0) {
+    const formattedBitrate = `~${mbps >= 10 ? mbps.toFixed(0) : mbps.toFixed(1)} Mbps`;
+
+    // Required network speed: 1.5x - 1.8x headroom to prevent stuttering/buffering
+    const rawReq = mbps * 1.6;
+    let reqSpeed = 5;
+    if (rawReq <= 3) reqSpeed = 3;
+    else if (rawReq <= 5) reqSpeed = 5;
+    else if (rawReq <= 10) reqSpeed = 10;
+    else if (rawReq <= 15) reqSpeed = 15;
+    else if (rawReq <= 20) reqSpeed = 20;
+    else if (rawReq <= 25) reqSpeed = 25;
+    else if (rawReq <= 35) reqSpeed = 35;
+    else if (rawReq <= 50) reqSpeed = 50;
+    else if (rawReq <= 75) reqSpeed = 75;
+    else reqSpeed = Math.ceil(rawReq / 25) * 25;
+
+    return {
+      bitrate: formattedBitrate,
+      bitrateMbps: mbps,
+      requiredSpeed: `≥ ${reqSpeed} Mbps`
+    };
+  }
+
+  return {};
 }
 
 export async function fetchHDHubStreams(
@@ -152,12 +302,13 @@ export async function fetchHDHubStreams(
     }
 
     const mapped: HDHubStream[] = validStreams.map((s, idx) => {
-      const fullText = `${s.name || ''} ${s.description || ''} ${s.title || ''} ${s.url || ''}`;
+      const fullText = `${s.name || ''} ${s.description || ''} ${s.title || ''} ${s.url || ''} ${s.behaviorHints?.filename || ''}`;
       const quality = parseQuality(fullText);
       const codec = parseCodec(fullText);
       const provider = parseProvider(s.url || '', fullText);
       const isDownloadOnly = /download only/i.test(fullText);
       const notWebReady = Boolean(s.behaviorHints?.notWebReady);
+      const isHls = Boolean(s.url?.includes('.m3u8') || fullText.toLowerCase().includes('hls'));
 
       // Extract size
       let sizeFormatted = formatBytes(s.behaviorHints?.videoSize);
@@ -167,35 +318,56 @@ export async function fetchHDHubStreams(
       }
 
       const audio = parseAudioLanguages(fullText);
+      const audioCodecInfo = parseAudioCodec(fullText, isHls);
+      const bitrateInfo = parseStreamBitrate(fullText, s.behaviorHints?.videoSize, isTV);
+
+      // Route PixelDrain URLs through our local /api/pixeldrain proxy to bypass hotlink blocking and attachment download
+      let streamUrl = s.url;
+      const pdMatch = streamUrl.match(/pixeldrain\.(?:dev|com)\/(?:api\/file\/|u\/)([a-zA-Z0-9_-]+)/i);
+      if (pdMatch && pdMatch[1]) {
+        streamUrl = `/api/pixeldrain/${pdMatch[1]}`;
+      }
 
       return {
         id: `hdhub-${idx}-${s.url?.slice(-12) || idx}`,
         name: s.name || `Stream ${idx + 1}`,
         title: s.title || s.name || `HDHub Stream ${idx + 1}`,
         description: s.description,
-        url: s.url,
+        url: streamUrl,
         quality,
         codec,
         provider,
+        bitrate: bitrateInfo.bitrate,
+        bitrateMbps: bitrateInfo.bitrateMbps,
+        requiredSpeed: bitrateInfo.requiredSpeed,
+        isHls,
         audioLanguages: audio.languages,
         audioLabel: audio.label,
+        audioCodec: audioCodecInfo.audioCodec,
+        isWebAudio: audioCodecInfo.isWebAudio,
         sizeFormatted,
         isDownloadOnly,
         notWebReady
       };
     });
 
-    // 4. Sort: Cloudflare R2 first, then PixelDrain, then HubCloud. Within each, 1080p > 720p > 2160p
+    // 4. Sort: Web-compatible audio first, then PixelDrain (working proxy), then Cloudflare R2, HubCloud. Within each, 1080p > 720p > 2160p
     const sorted = mapped.sort((a, b) => {
-      // Prioritize R2 (supports HTTP Byte Range streaming directly)
+      // Prioritize PixelDrain (works through our proxy with zero CORS/expiration issues) over R2
       const providerScore = (p: HDHubStream['provider']) => {
-        if (p === 'Cloudflare R2') return 3;
-        if (p === 'PixelDrain') return 2;
+        if (p === 'PixelDrain') return 4;
+        if (p === 'Cloudflare R2') return 2;
+        if (p === 'HubCloud') return 1;
         return 1;
       };
 
       const pDiff = providerScore(b.provider) - providerScore(a.provider);
       if (pDiff !== 0) return pDiff;
+
+      // Prioritize streams with native web browser audio (AAC / Stereo) over DDP 5.1/TrueHD
+      if (a.isWebAudio !== b.isWebAudio) {
+        return (b.isWebAudio ? 1 : 0) - (a.isWebAudio ? 1 : 0);
+      }
 
       // Prioritize 1080p > 720p > 2160p > Unknown
       const qualityScore = (q: HDHubStream['quality']) => {
