@@ -112,7 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="fixed left-1/2 top-3 sm:top-4 z-[100] -translate-x-1/2 rounded-full border border-white/10 bg-[#0a0c14]/65 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-200">
+    <header className="fixed left-1/2 top-3 sm:top-4 z-[100] -translate-x-1/2 rounded-full border border-white/10 bg-[#060812]/92 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-2xl backdrop-saturate-150 transition-all duration-200">
       <div className="flex h-14 items-center px-2.5 sm:px-3 gap-1">
         {/* Brand Logo Link */}
         <motion.button
@@ -144,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`relative inline-flex h-10 items-center gap-2 px-3.5 rounded-full text-sm whitespace-nowrap transition duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
                   isActive
                     ? 'bg-white/[0.08] ring-1 ring-inset ring-white/10 text-white font-medium shadow-sm'
-                    : 'text-white/65 hover:text-white hover:bg-white/5 font-normal'
+                    : 'text-white/65 hover:text-white hover:bg-white/5 font-normal bg-transparent ring-0 border-0 shadow-none'
                 }`}
               >
                 <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-white' : 'text-white/65'}`} strokeWidth={1.5} />
@@ -164,8 +164,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className={`relative inline-flex h-10 items-center gap-1.5 px-3.5 rounded-full text-sm whitespace-nowrap transition duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
                 isBrowseOpen 
-                  ? 'bg-white/[0.08] ring-1 ring-inset ring-white/10 text-white font-medium' 
-                  : 'text-white/65 hover:text-white hover:bg-white/5 font-normal'
+                  ? 'bg-white/[0.08] ring-1 ring-inset ring-white/10 text-white font-medium shadow-sm' 
+                  : 'text-white/65 hover:text-white hover:bg-white/5 font-normal bg-transparent ring-0 border-0 shadow-none'
               }`}
             >
               <span>Browse</span>

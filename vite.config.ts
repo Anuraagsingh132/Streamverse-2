@@ -21,6 +21,9 @@ export default defineConfig({
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
             }
+            if (id.includes('hls.js') || id.includes('artplayer')) {
+              return 'vendor-player';
+            }
           }
         }
       }

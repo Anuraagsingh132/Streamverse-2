@@ -551,3 +551,15 @@ export async function searchTmdb(
       return formatTmdbItem(item, explicitType);
     });
 }
+
+export async function getImdbId(id: string | number, mediaType: 'movie' | 'tv' | 'anime' = 'movie'): Promise<string | null> {
+  try {
+    const apiType = mediaType === 'anime' ? 'tv' : mediaType;
+    const data = await fetchFromTmdb(`/${apiType}/${id}/external_ids`);
+    return data.imdb_id || null;
+  } catch (err) {
+    console.warn('Could not fetch IMDb ID for TMDB ID', id, err);
+    return null;
+  }
+}
+

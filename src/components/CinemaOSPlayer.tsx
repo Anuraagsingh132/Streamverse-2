@@ -7,9 +7,117 @@ import {
   Clapperboard, 
   ListVideo,
   Play,
-  Check
+  Check,
+  Server
 } from 'lucide-react';
 import { MediaItem, EpisodeItem } from '../types/media';
+import { HDHubPlayer } from './HDHubPlayer';
+
+interface ServerOption {
+  id: string;
+  name: string;
+  badge?: string;
+  description?: string;
+  getUrl: (tmdbId: string | number, isTV: boolean, season: number, episode: number) => string;
+}
+
+// Configurable video streaming servers list.
+// CinemaOS is the primary default server. Additional servers can be updated or added here in future.
+const SERVERS: ServerOption[] = [
+  {
+    id: 'cinemaos',
+    name: 'CinemaOS',
+    badge: 'Server 1 · HD',
+    description: 'CinemaOS official embed player (Default)',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      if (!isTV) {
+        return `https://cinemaos.tech/player/${tmdbId}?theme=ffffff`;
+      }
+      return `https://cinemaos.tech/player/${tmdbId}/${season}/${episode}?theme=ffffff`;
+    }
+  },
+  {
+    id: 'pengu',
+    name: 'Pengu',
+    badge: 'Direct & HLS · Fast',
+    description: 'Pengu cloud streams with native HLS and multi-source mirrors',
+    getUrl: () => ''
+  },
+  {
+    id: 'hdhub',
+    name: 'HDHub',
+    badge: 'Direct Stream · HD',
+    description: 'Cloudflare R2 & PixelDrain direct streams (MKV / MP4)',
+    getUrl: () => ''
+  },
+  {
+    id: 'vidsrc',
+    name: 'VidSrc',
+    badge: 'Mirror 1',
+    description: 'Alternative fast streaming mirror',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      if (!isTV) {
+        return `https://vidsrc.to/embed/movie/${tmdbId}`;
+      }
+      return `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
+    }
+  },
+  {
+    id: 'autoembed',
+    name: 'AutoEmbed',
+    badge: 'Mirror 2',
+    description: 'Multi-source reliable backup server',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      if (!isTV) {
+        return `https://player.autoembed.cc/embed/movie/${tmdbId}`;
+      }
+      return `https://player.autoembed.cc/embed/tv/${tmdbId}/${season}/${episode}`;
+    }
+  }
+];
+
+class HDHubErrorBoundary extends React.Component<
+  { children: React.ReactNode; onFallback: () => void },
+  { hasError: boolean; error: string | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error: error?.message || 'Player rendering error' };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('HDHub Player Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center bg-zinc-950 text-white">
+          <div className="h-12 w-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mb-3">
+            <X className="h-6 w-6" />
+          </div>
+          <h3 className="text-base font-bold text-white">Playback Component Error</h3>
+          <p className="text-xs text-white/60 max-w-sm mt-1">{this.state.error}</p>
+          <button
+            type="button"
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              this.props.onFallback();
+            }}
+            className="mt-4 px-4 py-2 rounded-full bg-primary text-black font-semibold text-xs hover:brightness-110 active:scale-95 transition"
+          >
+            Switch to CinemaOS Server
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export interface CinemaOSPlayerProps {
   item: MediaItem | null;
@@ -30,12 +138,15 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
 }) => {
   const [season, setSeason] = useState<number>(initialSeason || 1);
   const [episode, setEpisode] = useState<number>(initialEpisode || 1);
+  const [selectedServerId, setSelectedServerId] = useState<string>('cinemaos');
+  const [isServerDropdownOpen, setIsServerDropdownOpen] = useState<boolean>(false);
   const [isEpisodeDrawerOpen, setIsEpisodeDrawerOpen] = useState<boolean>(false);
   const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedEpRef = useRef<HTMLButtonElement | null>(null);
   const seasonDropdownRef = useRef<HTMLDivElement | null>(null);
+  const serverDropdownRef = useRef<HTMLDivElement | null>(null);
   const episodeListRef = useRef<HTMLDivElement | null>(null);
 
   // Auto-hide floating controls after 4 seconds of inactivity
@@ -44,14 +155,14 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
     }
-    if (!isEpisodeDrawerOpen) {
+    if (!isEpisodeDrawerOpen && !isServerDropdownOpen) {
       hideTimerRef.current = setTimeout(() => {
         setShowControls(false);
       }, 4000); // 4 seconds
     }
-  }, [isEpisodeDrawerOpen]);
+  }, [isEpisodeDrawerOpen, isServerDropdownOpen]);
 
-  // Start hide timer on mount & when episode drawer state changes
+  // Start hide timer on mount & when menus state change
   useEffect(() => {
     resetHideTimer();
     return () => {
@@ -84,15 +195,29 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isSeasonDropdownOpen]);
 
-  // Auto-hide drawer if user clicks directly into the cross-origin video iframe (triggers window blur)
+  // Click outside to close server dropdown
   useEffect(() => {
-    if (!isEpisodeDrawerOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (serverDropdownRef.current && !serverDropdownRef.current.contains(e.target as Node)) {
+        setIsServerDropdownOpen(false);
+      }
+    };
+    if (isServerDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isServerDropdownOpen]);
+
+  // Auto-hide menus if user clicks directly into the cross-origin video iframe (triggers window blur)
+  useEffect(() => {
+    if (!isEpisodeDrawerOpen && !isServerDropdownOpen) return;
     const handleBlur = () => {
       setIsEpisodeDrawerOpen(false);
+      setIsServerDropdownOpen(false);
     };
     window.addEventListener('blur', handleBlur);
     return () => window.removeEventListener('blur', handleBlur);
-  }, [isEpisodeDrawerOpen]);
+  }, [isEpisodeDrawerOpen, isServerDropdownOpen]);
 
   // Sync initial props
   useEffect(() => {
@@ -110,6 +235,14 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     };
   }, [item]);
 
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
   // Keyboard navigation & controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -118,7 +251,9 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
       }
 
       if (e.key === 'Escape') {
-        if (isEpisodeDrawerOpen) {
+        if (isServerDropdownOpen) {
+          setIsServerDropdownOpen(false);
+        } else if (isEpisodeDrawerOpen) {
           setIsEpisodeDrawerOpen(false);
         } else {
           onClose();
@@ -129,19 +264,16 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEpisodeDrawerOpen, onClose]);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  };
+  }, [isEpisodeDrawerOpen, isServerDropdownOpen, onClose, toggleFullscreen]);
 
   const isAnime = item?.media_type === 'anime';
   const isTV = item?.media_type === 'tv' || isAnime;
   const tmdbId = item?.tmdbId || item?.id || '';
+
+  // Current active server configuration
+  const currentServer = useMemo(() => {
+    return SERVERS.find((s) => s.id === selectedServerId) || SERVERS[0];
+  }, [selectedServerId]);
 
   // Max seasons and episodes
   const totalSeasons = useMemo(() => {
@@ -179,17 +311,12 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     }
   };
 
-  // Construct iframe embed URL based on CinemaOS Player documentation
+  // Construct iframe embed URL based on selected server configuration
+  const isDirectPlayer = selectedServerId === 'hdhub' || selectedServerId === 'pengu';
   const embedUrl = useMemo(() => {
-    if (!item || !tmdbId) return '';
-
-    if (!isTV) {
-      // Movie: https://cinemaos.tech/player/{tmdb_id}?theme=ffffff
-      return `https://cinemaos.tech/player/${tmdbId}?theme=ffffff`;
-    }
-    // TV Show / Anime: https://cinemaos.tech/player/{tmdb_id}/{season}/{episode}?theme=ffffff
-    return `https://cinemaos.tech/player/${tmdbId}/${season}/${episode}?theme=ffffff`;
-  }, [item, tmdbId, isTV, season, episode]);
+    if (!item || !tmdbId || isDirectPlayer) return '';
+    return currentServer.getUrl(tmdbId, isTV, season, episode);
+  }, [item, tmdbId, isTV, season, episode, currentServer, isDirectPlayer]);
 
   if (!item) return null;
 
@@ -200,9 +327,27 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
       onTouchStart={resetHideTimer}
       className="fixed inset-0 z-[9999] bg-black text-white w-screen h-screen overflow-hidden select-none animate-in fade-in duration-200"
     >
-      {/* 100% Full-bleed Embed Player without anything pushing or cutting it */}
+      {/* 100% Full-bleed Embed / Direct Player without anything pushing or cutting it */}
       <div className="absolute inset-0 w-full h-full bg-black">
-        {embedUrl ? (
+        {isDirectPlayer ? (
+          <HDHubErrorBoundary onFallback={() => setSelectedServerId('cinemaos')}>
+            <HDHubPlayer
+              item={item}
+              season={season}
+              episode={episode}
+              totalEpisodes={totalEpisodesForSeason}
+              totalSeasons={totalSeasons}
+              onClose={onClose}
+              onPrevEpisode={handlePrevEpisode}
+              onNextEpisode={handleNextEpisode}
+              onOpenEpisodeDrawer={() => setIsEpisodeDrawerOpen(true)}
+              isEpisodeDrawerOpen={isEpisodeDrawerOpen}
+              onSwitchServer={(serverId) => setSelectedServerId(serverId)}
+              currentServerId={selectedServerId}
+              serversList={SERVERS}
+            />
+          </HDHubErrorBoundary>
+        ) : embedUrl ? (
           <iframe
             key={embedUrl}
             src={embedUrl}
@@ -215,25 +360,117 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center text-center p-6 text-white/60">
             <Clapperboard className="h-12 w-12 text-primary/40 mb-3 animate-pulse" />
-            <p className="text-sm font-medium">Preparing CinemaOS Player stream...</p>
+            <p className="text-sm font-medium">Preparing {currentServer.name} stream...</p>
           </div>
         )}
       </div>
 
-      {/* Floating Series / Episode Navigation Pill on Top of Player (Auto-hides after 4s) */}
-      {isTV && (
+      {/* Floating Top Controls (Server Switcher + Episode Nav if Series) (Auto-hides after 4s) - Only for iframe servers */}
+      {!isDirectPlayer && (
         <div
           onMouseEnter={() => {
             setShowControls(true);
             if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
           }}
           onMouseLeave={resetHideTimer}
-          className={`absolute top-4 right-4 sm:top-5 sm:right-6 z-50 transition-all duration-300 ease-out ${
-            showControls || isEpisodeDrawerOpen
+          className={`absolute top-4 right-4 sm:top-5 sm:right-6 z-50 flex items-center gap-2 sm:gap-2.5 transition-all duration-300 ease-out ${
+            showControls || isEpisodeDrawerOpen || isServerDropdownOpen
               ? 'opacity-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 -translate-y-2 pointer-events-none'
           }`}
         >
+        {/* Server Switcher Pill & Dropdown */}
+        <div className="relative" ref={serverDropdownRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsServerDropdownOpen((prev) => !prev);
+              if (isEpisodeDrawerOpen) setIsEpisodeDrawerOpen(false);
+            }}
+            className={`flex h-10 sm:h-11 items-center gap-1.5 sm:gap-2 rounded-full border px-3 sm:px-3.5 text-xs font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black/50 ${
+              isServerDropdownOpen
+                ? 'bg-[#0a0c14]/90 border-white/25 text-white ring-1 ring-white/20'
+                : 'bg-[#0a0c14]/65 border-white/10 text-white/90 hover:bg-[#0a0c14]/85 hover:text-white hover:border-white/20'
+            }`}
+            title="Switch Video Server"
+            aria-label="Switch Video Server"
+          >
+            <Server className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" strokeWidth={1.8} />
+            <span className="leading-none whitespace-nowrap">{currentServer.name}</span>
+            <ChevronDown
+              className={`h-3 w-3 sm:h-3.5 sm:w-3.5 text-white/60 transition-transform duration-200 ${
+                isServerDropdownOpen ? 'rotate-180 text-white' : ''
+              }`}
+            />
+          </button>
+
+          {/* Server Dropdown Popover */}
+          {isServerDropdownOpen && (
+            <div
+              data-lenis-prevent
+              className="absolute right-0 top-full mt-2 z-50 w-60 sm:w-64 rounded-2xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
+            >
+              <div className="flex items-center justify-between px-3 py-1.5 mb-1 border-b border-white/10">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                  Select Server
+                </span>
+                <span className="text-[10px] text-primary font-semibold">
+                  {SERVERS.length} Available
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                {SERVERS.map((srv) => {
+                  const isSelected = srv.id === selectedServerId;
+                  return (
+                    <button
+                      key={srv.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedServerId(srv.id);
+                        setIsServerDropdownOpen(false);
+                        resetHideTimer();
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 text-left ${
+                        isSelected
+                          ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
+                          : 'text-white/70 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-white">{srv.name}</span>
+                          {srv.badge && (
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
+                                isSelected
+                                  ? 'bg-primary/25 text-primary border border-primary/35'
+                                  : 'bg-white/10 text-white/60 border border-white/10'
+                              }`}
+                            >
+                              {srv.badge}
+                            </span>
+                          )}
+                        </div>
+                        {srv.description && (
+                          <span className="text-[10px] text-white/40 truncate mt-0.5">
+                            {srv.description}
+                          </span>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Floating Series / Episode Navigation Pill on Top of Player (Auto-hides after 4s) */}
+        {isTV && (
           <div className="flex h-10 sm:h-11 items-center gap-1 rounded-full border border-white/10 bg-[#0a0c14]/65 px-1.5 sm:px-2 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150">
             {/* Previous Episode Arrow Button */}
             <button
@@ -250,7 +487,10 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             {/* Center "S1 E1" in lighter inner pill */}
             <button
               type="button"
-              onClick={() => setIsEpisodeDrawerOpen(!isEpisodeDrawerOpen)}
+              onClick={() => {
+                setIsEpisodeDrawerOpen(!isEpisodeDrawerOpen);
+                if (isServerDropdownOpen) setIsServerDropdownOpen(false);
+              }}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black/50 ${
                 isEpisodeDrawerOpen 
                   ? 'bg-white/20 text-white border border-white/20 ring-1 ring-white/20 shadow-sm' 
@@ -275,18 +515,20 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
               <ChevronRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
             </button>
           </div>
-        </div>
+        )}
+      </div>
       )}
 
-      {/* Dimmed backdrop covering the player to hide episode drawer when clicking inside player */}
-      {isTV && isEpisodeDrawerOpen && (
+      {/* Dimmed backdrop covering the player to hide episode drawer and server dropdown when clicking inside player */}
+      {(isEpisodeDrawerOpen || isServerDropdownOpen) && (
         <div 
           onClick={() => {
             setIsEpisodeDrawerOpen(false);
+            setIsServerDropdownOpen(false);
             resetHideTimer();
           }}
           className="absolute inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-all duration-300 animate-in fade-in cursor-pointer"
-          aria-label="Close episode selector and return to player"
+          aria-label="Close menus and return to player"
           title="Click to resume playback"
         />
       )}
