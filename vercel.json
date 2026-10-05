@@ -5,7 +5,7 @@
       "destination": "https://cinemaos.tech/api/anime/logo"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
