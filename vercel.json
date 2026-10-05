@@ -5,10 +5,6 @@
       "destination": "https://cinemaos.tech/api/anime/logo"
     },
     {
-      "source": "/api/pixeldrain/:id",
-      "destination": "https://pixeldrain.dev/api/file/:id"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
