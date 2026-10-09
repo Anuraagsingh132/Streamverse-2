@@ -554,107 +554,102 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           </div>
 
           {/* Metadata Bar (1:1 with cinemaos.tech) */}
-          <div className="mt-8 rounded-2xl border border-white/10 bg-black/30 px-5 py-4 shadow-2xl backdrop-blur-xl sm:px-6 lg:py-5">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:flex lg:flex-wrap lg:gap-0 lg:divide-x lg:divide-white/10">
-                <div className="min-w-0 lg:px-6 lg:first:pl-0">
-                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Status</dt>
-                  <dd className="mt-1 truncate text-sm font-semibold text-white">
+          <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 px-5 py-4 shadow-2xl backdrop-blur-xl sm:px-6">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              {/* Metadata Stats Grid */}
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:flex lg:flex-nowrap lg:items-center lg:gap-0 lg:divide-x lg:divide-white/10">
+                <div className="min-w-0 lg:pr-6">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Status</span>
+                  <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
                     {item.status || (item.media_type === 'tv' ? 'Returning Series' : 'Released')}
-                  </dd>
+                  </span>
                 </div>
 
                 {item.media_type === 'movie' ? (
                   <div className="min-w-0 lg:px-6">
-                    <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Runtime</dt>
-                    <dd className="mt-1 truncate text-sm font-semibold text-white">
-                      {item.duration || '2h 9m'}
-                    </dd>
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Runtime</span>
+                    <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
+                      {item.duration || '1h 45m'}
+                    </span>
                   </div>
                 ) : (
                   <>
                     <div className="min-w-0 lg:px-6">
-                      <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Seasons</dt>
-                      <dd className="mt-1 truncate text-sm font-semibold text-white">
+                      <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Seasons</span>
+                      <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
                         {item.seasons || 1}
-                      </dd>
+                      </span>
                     </div>
                     <div className="min-w-0 lg:px-6">
-                      <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Episodes</dt>
-                      <dd className="mt-1 truncate text-sm font-semibold text-white">
+                      <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Episodes</span>
+                      <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
                         {item.episodes || episodes.length || 8}
-                      </dd>
+                      </span>
                     </div>
                   </>
                 )}
 
                 <div className="min-w-0 lg:px-6">
-                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Language</dt>
-                  <dd className="mt-1 truncate text-sm font-semibold text-white">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Language</span>
+                  <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white uppercase">
                     {item.original_language || 'EN'}
-                  </dd>
+                  </span>
                 </div>
 
                 <div className="min-w-0 lg:px-6">
-                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                     {item.media_type === 'tv' ? 'First aired' : 'Released'}
-                  </dt>
-                  <dd className="mt-1 truncate text-sm font-semibold text-white">
+                  </span>
+                  <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
                     {formatDisplayDate(item.release_date || item.first_air_date)}
-                  </dd>
+                  </span>
                 </div>
 
                 {item.media_type === 'movie' && item.budget && item.budget > 0 ? (
                   <div className="min-w-0 lg:px-6">
-                    <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Budget</dt>
-                    <dd className="mt-1 truncate text-sm font-semibold text-white">
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Budget</span>
+                    <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
                       ${item.budget.toLocaleString('en-US')}
-                    </dd>
+                    </span>
                   </div>
                 ) : null}
 
                 {item.media_type === 'movie' && item.revenue && item.revenue > 0 ? (
                   <div className="min-w-0 lg:px-6">
-                    <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Revenue</dt>
-                    <dd className="mt-1 truncate text-sm font-semibold text-white">
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Revenue</span>
+                    <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
                       ${item.revenue.toLocaleString('en-US')}
-                    </dd>
+                    </span>
                   </div>
                 ) : null}
-              </dl>
+              </div>
 
               {/* Studios / Network Branding */}
-              <div className="flex items-center gap-4 border-t border-white/10 pt-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 [writing-mode:horizontal-tb] lg:rotate-180 lg:[writing-mode:vertical-rl]">
-                  {item.media_type === 'tv' ? 'Network' : 'Studios'}
-                </span>
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                  {(item.media_type === 'tv' ? item.networks : item.studios)?.map((partner) => (
-                    partner.logo_path && (
-                      <img
-                        key={partner.id}
-                        src={partner.logo_path}
-                        alt={partner.name}
-                        title={partner.name}
-                        loading="lazy"
-                        className="h-7 w-auto max-w-[120px] object-contain opacity-75 transition-opacity duration-300 hover:opacity-100 lg:h-8"
-                        style={{
-                          filter: 'grayscale(1) invert(1) brightness(1.15) contrast(1.1)'
-                        }}
-                      />
-                    )
-                  ))}
-                  {/* Fallback default studio logos if none provided */}
-                  {(!item.studios && !item.networks) && (
-                    <img
-                      src="https://image.tmdb.org/t/p/w300/zhD3hhtKB5qyv7ZeL4uLpNxgMVU.png"
-                      alt="Studio"
-                      className="h-7 w-auto max-w-[120px] object-contain opacity-75 lg:h-8"
-                      style={{ filter: 'grayscale(1) invert(1) brightness(1.15) contrast(1.1)' }}
-                    />
-                  )}
+              {(((item.media_type === 'tv' ? item.networks : item.studios)?.filter((p) => Boolean(p.logo_path)).length || 0) > 0) && (
+                <div className="flex items-center gap-3 border-t border-white/10 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/35 shrink-0 [writing-mode:horizontal-tb] lg:rotate-180 lg:[writing-mode:vertical-rl]">
+                    {item.media_type === 'tv' ? 'Network' : 'Studios'}
+                  </span>
+                  <div className="flex items-center gap-4 sm:gap-6 flex-wrap sm:flex-nowrap overflow-hidden">
+                    {(item.media_type === 'tv' ? item.networks : item.studios)
+                      ?.filter((partner) => Boolean(partner.logo_path))
+                      .slice(0, 4)
+                      .map((partner) => (
+                        <img
+                          key={partner.id}
+                          src={partner.logo_path}
+                          alt={partner.name}
+                          title={partner.name}
+                          loading="lazy"
+                          className="h-6 w-auto max-w-[90px] sm:max-w-[110px] object-contain opacity-70 transition-opacity duration-300 hover:opacity-100"
+                          style={{
+                            filter: 'grayscale(1) invert(1) brightness(1.15) contrast(1.1)'
+                          }}
+                        />
+                      ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

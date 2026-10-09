@@ -447,57 +447,57 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
           </div>
 
           {/* Metadata Strip Bar below Hero */}
-          <div className="mt-8 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-xl sm:p-5">
-            <dl className="grid grid-cols-2 gap-4 divide-y divide-white/10 sm:grid-cols-3 lg:flex lg:items-center lg:divide-x lg:divide-y-0">
-              <div className="min-w-0 lg:px-6 lg:first:pl-0">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+          <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 px-5 py-4 shadow-2xl backdrop-blur-xl sm:px-6">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:flex lg:flex-nowrap lg:items-center lg:gap-0 lg:divide-x lg:divide-white/10">
+              <div className="min-w-0 lg:pr-6">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   Format
-                </dt>
-                <dd className="mt-1 truncate text-sm font-semibold text-white">
-                  {d.format}
-                </dd>
+                </span>
+                <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
+                  {d.format || 'TV'}
+                </span>
               </div>
-              <div className="min-w-0 pt-3 sm:pt-0 lg:px-6">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+              <div className="min-w-0 lg:px-6">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   Episodes
-                </dt>
-                <dd className="mt-1 truncate text-sm font-semibold text-white">
-                  {d.episodes}
-                </dd>
+                </span>
+                <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
+                  {d.episodes || 'TBD'}
+                </span>
               </div>
-              <div className="min-w-0 pt-3 sm:pt-0 lg:px-6">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+              <div className="min-w-0 lg:px-6">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   Status
-                </dt>
-                <dd className="mt-1 truncate text-sm font-semibold text-white">
-                  {d.status}
-                </dd>
+                </span>
+                <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
+                  {d.status || 'Finished'}
+                </span>
               </div>
-              <div className="min-w-0 pt-3 lg:pt-0 lg:px-6">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+              <div className="min-w-0 lg:px-6">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   Season
-                </dt>
-                <dd className="mt-1 truncate text-sm font-semibold text-white">
-                  {d.season}
-                </dd>
+                </span>
+                <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
+                  {d.season || '2026'}
+                </span>
               </div>
-              <div className="min-w-0 pt-3 lg:pt-0 lg:px-6">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+              <div className="min-w-0 lg:px-6">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   Duration
-                </dt>
-                <dd className="mt-1 truncate text-sm font-semibold text-white">
-                  {d.duration}
-                </dd>
+                </span>
+                <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
+                  {d.duration ? `${d.duration}m` : '24m'}
+                </span>
               </div>
-              <div className="min-w-0 pt-3 lg:pt-0 lg:px-6">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+              <div className="min-w-0 lg:px-6">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   Source
-                </dt>
-                <dd className="mt-1 truncate text-sm font-semibold text-white">
-                  {d.source}
-                </dd>
+                </span>
+                <span className="mt-1 block truncate text-xs sm:text-sm font-semibold text-white">
+                  {d.source || 'Manga'}
+                </span>
               </div>
-            </dl>
+            </div>
           </div>
         </div>
       </section>
