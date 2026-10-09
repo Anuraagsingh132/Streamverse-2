@@ -34,7 +34,11 @@
   "rewrites": [
     {
       "source": "/api/pixeldrain-cdn/:id",
-      "destination": "/api/pixeldrain/:id?mode=cdn"
+      "destination": "https://lively-bar-b4aa.anuraagsingh10a.workers.dev/api/pixeldrain-cdn/:id?mode=cdn"
+    },
+    {
+      "source": "/api/pixeldrain/:id",
+      "destination": "https://lively-bar-b4aa.anuraagsingh10a.workers.dev/api/pixeldrain/:id"
     },
     {
       "source": "/api/anime/logo",

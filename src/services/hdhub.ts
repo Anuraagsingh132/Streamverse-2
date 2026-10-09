@@ -356,12 +356,12 @@ export async function fetchHDHubStreams(
       };
     });
 
-    // 4. Sort: Web-compatible audio first, then PixelDrain (working proxy), then Cloudflare R2, HubCloud. Within each, 1080p > 720p > 2160p
+    // 4. Sort: Web-compatible audio first, then Cloudflare R2 (zero compute), then PixelDrain. Within each, 1080p > 720p > 2160p
     const sorted = mapped.sort((a, b) => {
-      // Prioritize PixelDrain (works through our proxy with zero CORS/expiration issues) over R2
+      // Prioritize Cloudflare R2 (direct zero-compute CDN streaming) over PixelDrain
       const providerScore = (p: HDHubStream['provider']) => {
-        if (p === 'PixelDrain') return 4;
-        if (p === 'Cloudflare R2') return 2;
+        if (p === 'Cloudflare R2') return 4;
+        if (p === 'PixelDrain') return 2;
         if (p === 'HubCloud') return 1;
         return 1;
       };

@@ -248,11 +248,11 @@ export async function fetchPenguStreams(
         const lowerP = (p || '').toLowerCase();
         const lowerUrl = (url || '').toLowerCase();
         if (isHls || lowerP.includes('cinejoy') || lowerUrl.includes('.m3u8')) return 5;
-        if (lowerP.includes('pixeldrain') || lowerUrl.includes('pixeldrain')) return 4;
-        if (lowerP.includes('2peckle') || lowerUrl.includes('.mp4')) return 3;
-        if (lowerP.includes('arctic') || lowerUrl.includes('hubcloud') || lowerUrl.includes('gdflix')) return 2;
-        if (lowerP.includes('r2') || lowerP.includes('vegamovies') || lowerP.includes('cinefreak')) return 1;
-        return 2;
+        if (lowerP.includes('r2') || lowerUrl.includes('r2.cloudflarestorage') || lowerP.includes('vegamovies') || lowerP.includes('cinefreak')) return 4;
+        if (lowerP.includes('pixeldrain') || lowerUrl.includes('pixeldrain')) return 3;
+        if (lowerP.includes('2peckle') || lowerUrl.includes('.mp4')) return 2;
+        if (lowerP.includes('arctic') || lowerUrl.includes('hubcloud') || lowerUrl.includes('gdflix')) return 1;
+        return 1;
       };
       const pDiff = providerScore(b.provider, b.isHls, b.url) - providerScore(a.provider, a.isHls, a.url);
       if (pDiff !== 0) return pDiff;
