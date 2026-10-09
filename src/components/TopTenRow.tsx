@@ -158,7 +158,16 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                 {/* Card Container */}
                 <div className="relative z-10 w-[78vw] sm:w-[300px] lg:w-[330px] 2xl:w-[360px]">
                   <div 
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View details for #${idx + 1} ${item.title}`}
                     onClick={() => onOpenDetails(item)} 
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onOpenDetails(item);
+                      }
+                    }}
                     onMouseEnter={() => {
                       if (item.media_type === 'anime') {
                         import('../pages/AnimeDetailsPage');
@@ -166,7 +175,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                         import('../pages/DetailsPage');
                       }
                     }}
-                    className="group block cursor-pointer"
+                    className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                   >
                     <div className="card-3d relative rounded-xl">
                       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
@@ -190,6 +199,8 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
 
                         {/* Add to watchlist button */}
                         <button 
+                          type="button"
+                          aria-label={isSaved ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onToggleWatchlist(item);
@@ -207,6 +218,9 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                         {/* Play button overlay on hover */}
                         <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                           <button 
+                            type="button"
+                            aria-label={`Play ${item.title}`}
+                            title={`Play ${item.title}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               onPlay(item);

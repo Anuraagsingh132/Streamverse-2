@@ -22,9 +22,20 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
 }) => {
   const imageSrc = optimizeTmdbImage(item.backdrop_path || item.poster_path, 'backdrop');
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpenDetails(item);
+    }
+  };
+
   return (
     <motion.div 
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${item.title}`}
       onClick={() => onOpenDetails(item)}
+      onKeyDown={handleKeyDown}
       onMouseEnter={() => {
         if (item.media_type === 'anime') {
           import('../pages/AnimeDetailsPage');
@@ -35,7 +46,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="group block cursor-pointer will-change-transform"
+      className="group block cursor-pointer will-change-transform rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
     >
       <div className="card-3d relative rounded-xl">
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
@@ -59,6 +70,8 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
           {/* Watchlist button */}
           {onToggleWatchlist && (
             <button
+              type="button"
+              aria-label={isWatchlist ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
               title={isWatchlist ? "In Watchlist" : "Add to watchlist"}
               onClick={(e) => {
                 e.stopPropagation();
@@ -77,6 +90,9 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
           {/* Hover Play Button Overlay */}
           <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             <button
+              type="button"
+              aria-label={`Play ${item.title}`}
+              title={`Play ${item.title}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onPlay(item);

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { searchTmdb } from '../services/tmdb';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface SearchResultItem {
   key: string;
@@ -107,6 +108,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalContainerRef = useFocusTrap<HTMLDivElement>(isOpen);
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -360,6 +362,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       className="fixed inset-0 z-[200] flex items-start justify-center bg-black/60 backdrop-blur-sm p-3 pt-4 sm:pt-[12vh]"
     >
       <motion.div 
+        ref={modalContainerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search movies, TV shows, and anime"
         onClick={(e) => e.stopPropagation()} 
         initial={{ opacity: 0, scale: 0.96, y: -8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

@@ -53,6 +53,7 @@ import {
   formatPixelDrainUrl,
   PIXELDRAIN_CHANGE_EVENT
 } from '../utils/pixeldrain';
+import { useUserSettings } from '../hooks/useUserSettings';
 
 export interface HDHubPlayerProps {
   item: MediaItem;
@@ -155,15 +156,56 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   const lastTapTimeRef = useRef<{ time: number; x: number }>({ time: 0, x: 0 });
   const createdBlobUrlsRef = useRef<Set<string>>(new Set());
 
-  // Cleanup all allocated Object URLs on unmount
+  // Unified user settings & subtitle timing offset
+  const { settings, updateSettings } = useUserSettings();
+  const subtitleOffset = settings.subtitleOffset;
+  const prevSubtitleOffsetRef = useRef<number>(subtitleOffset);
+  const lastTimeUpdateRef = useRef<number>(0);
+  const lastSaveTimeRef = useRef<number>(0);
+  const hasResumedRef = useRef<boolean>(false);
+
+  // Storage key for persistent playback progress
+  const progressKey = useMemo(() => {
+    const isTVSeries = item.media_type === 'tv' || item.media_type === 'anime';
+    const baseId = item.tmdbId || item.id;
+    return isTVSeries
+      ? `streamverse_playback_progress_${baseId}_s${season}_e${episode}`
+      : `streamverse_playback_progress_${baseId}`;
+  }, [item.id, item.tmdbId, item.media_type, season, episode]);
+
+  const saveProgress = useCallback((time: number, dur: number) => {
+    if (!Number.isFinite(time) || time < 5) return;
+    try {
+      if (dur > 0 && time > dur - 10) {
+        localStorage.removeItem(progressKey);
+        return;
+      }
+      localStorage.setItem(progressKey, JSON.stringify({
+        time: Math.floor(time),
+        duration: Math.floor(dur || 0),
+        updatedAt: Date.now()
+      }));
+    } catch {
+      // ignore
+    }
+  }, [progressKey]);
+
+  useEffect(() => {
+    hasResumedRef.current = false;
+  }, [item.id, season, episode, selectedStreamIndex]);
+
+  // Cleanup all allocated Object URLs and save progress on unmount
   useEffect(() => {
     return () => {
+      if (videoRef.current && videoRef.current.currentTime > 5) {
+        saveProgress(videoRef.current.currentTime, videoRef.current.duration);
+      }
       createdBlobUrlsRef.current.forEach((url) => {
         revokeSubtitleBlob(url);
       });
       createdBlobUrlsRef.current.clear();
     };
-  }, []);
+  }, [saveProgress]);
 
   const isTV = item.media_type === 'tv' || item.media_type === 'anime';
   const selectedStream = streams[selectedStreamIndex] || null;
@@ -434,6 +476,17 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const formatTime = useCallback((seconds: number) => {
+    if (isNaN(seconds) || seconds <= 0) return '00:00';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    if (hrs > 0) {
+      return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }, []);
+
   // Video playback controls
   const handleTogglePlay = useCallback(() => {
     if (!videoRef.current) return;
@@ -450,9 +503,10 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
+      saveProgress(videoRef.current.currentTime, videoRef.current.duration);
     }
     resetControlsTimer();
-  }, [resetControlsTimer]);
+  }, [resetControlsTimer, saveProgress]);
 
   const handleSkip = useCallback((seconds: number) => {
     if (!videoRef.current) return;
@@ -463,8 +517,23 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     showToast(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
   }, [showToast]);
 
+  // Throttled timeupdate handler (4-5Hz) with 5s periodic progress persistence (T3-04 & T3-05)
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
+    const now = performance.now();
+
+    // Auto-save progress every 5 seconds
+    if (now - lastSaveTimeRef.current >= 5000) {
+      lastSaveTimeRef.current = now;
+      saveProgress(videoRef.current.currentTime, videoRef.current.duration);
+    }
+
+    // Throttle React state updates to 4-5Hz (~250ms) to avoid frame drops
+    if (now - lastTimeUpdateRef.current < 250) {
+      return;
+    }
+    lastTimeUpdateRef.current = now;
+
     if (!isDragging) {
       setCurrentTime(videoRef.current.currentTime);
     }
@@ -496,6 +565,24 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       videoRef.current.playbackRate = playbackSpeed;
       setPlaybackError(false);
 
+      // Playback auto-resume (T3-05)
+      if (!hasResumedRef.current) {
+        hasResumedRef.current = true;
+        try {
+          const raw = localStorage.getItem(progressKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const savedTime = typeof parsed.time === 'number' ? parsed.time : 0;
+            const effectiveDuration = d || duration;
+            if (savedTime > 10 && (!effectiveDuration || savedTime < effectiveDuration - 30)) {
+              videoRef.current.currentTime = savedTime;
+              setCurrentTime(savedTime);
+              showToast(`Resumed from ${formatTime(savedTime)}`);
+            }
+          }
+        } catch {}
+      }
+
       // Detect native audio tracks if exposed by browser
       const v = videoRef.current as any;
       if (v && v.audioTracks && v.audioTracks.length > 0) {
@@ -513,6 +600,51 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       }
     }
   };
+
+  // Dynamically shift subtitle cues when timing offset changes (T3-08)
+  useEffect(() => {
+    if (!videoRef.current) return;
+    const delta = subtitleOffset - prevSubtitleOffsetRef.current;
+    prevSubtitleOffsetRef.current = subtitleOffset;
+    if (delta === 0) return;
+
+    try {
+      const tracks = videoRef.current.textTracks;
+      if (!tracks) return;
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        if (track.cues) {
+          for (let j = 0; j < track.cues.length; j++) {
+            const cue = track.cues[j];
+            cue.startTime = Math.max(0, cue.startTime + delta);
+            cue.endTime = Math.max(0, cue.endTime + delta);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error adjusting subtitle cues:', e);
+    }
+  }, [subtitleOffset]);
+
+  const handleTrackLoad = useCallback(() => {
+    if (subtitleOffset !== 0 && videoRef.current) {
+      try {
+        const tracks = videoRef.current.textTracks;
+        if (!tracks) return;
+        for (let i = 0; i < tracks.length; i++) {
+          const track = tracks[i];
+          if (track.cues) {
+            for (let j = 0; j < track.cues.length; j++) {
+              const cue = track.cues[j];
+              cue.startTime = Math.max(0, cue.startTime + subtitleOffset);
+              cue.endTime = Math.max(0, cue.endTime + subtitleOffset);
+            }
+          }
+        }
+        prevSubtitleOffsetRef.current = subtitleOffset;
+      } catch {}
+    }
+  }, [subtitleOffset]);
 
 interface AudioOptionItem {
   id: string;
@@ -1032,17 +1164,6 @@ interface AudioOptionItem {
     resetControlsTimer();
   };
 
-  const formatTime = (seconds: number) => {
-    if (isNaN(seconds) || seconds <= 0) return '00:00';
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    if (hrs > 0) {
-      return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    }
-    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
   const validDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
   const playedPercent = validDuration > 0 ? Math.min(100, Math.max(0, (currentTime / validDuration) * 100)) : 0;
   const isNearEnd = isTV && validDuration > 60 && validDuration - currentTime <= 30 && Boolean(onNextEpisode);
@@ -1050,6 +1171,8 @@ interface AudioOptionItem {
   return (
     <div 
       ref={playerContainerRef}
+      role="region"
+      aria-label={`Video Player - ${item.title}`}
       onMouseMove={resetControlsTimer}
       onTouchStart={resetControlsTimer}
       onTouchEnd={handleTouchEnd}
@@ -1076,7 +1199,12 @@ interface AudioOptionItem {
           muted={isMuted}
           style={{ objectFit }}
           onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
+          onPause={() => {
+            setIsPlaying(false);
+            if (videoRef.current) {
+              saveProgress(videoRef.current.currentTime, videoRef.current.duration);
+            }
+          }}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onError={() => {
@@ -1095,6 +1223,7 @@ interface AudioOptionItem {
               label={subtitlesList.find((s) => s.id === selectedSubtitleId)?.label || 'Subtitles'}
               srcLang={subtitlesList.find((s) => s.id === selectedSubtitleId)?.lang || 'en'}
               default
+              onLoad={handleTrackLoad}
             />
           )}
         </video>
@@ -1410,6 +1539,7 @@ interface AudioOptionItem {
             onClick={() => handleSkip(-10)}
             className="group flex flex-col items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full border border-white/15 bg-[#0a0c14]/70 text-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition hover:scale-105 hover:bg-white/20 hover:text-white active:scale-90"
             title="Rewind 10 Seconds (Left Arrow)"
+            aria-label="Rewind 10 seconds"
           >
             <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6 group-hover:-rotate-12 transition-transform" strokeWidth={1.8} />
             <span className="text-[9px] font-bold mt-0.5 leading-none">10</span>
@@ -1421,6 +1551,7 @@ interface AudioOptionItem {
             onClick={handleTogglePlay}
             className="group flex items-center justify-center h-20 w-20 sm:h-22 sm:w-22 rounded-full border border-white/25 bg-[#0a0c14]/75 text-white shadow-[0_0_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl ring-1 ring-white/15 transition-all duration-200 hover:scale-105 hover:bg-[#0a0c14]/90 hover:border-white/35 active:scale-95"
             title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
               <Pause className="h-8 w-8 sm:h-9 sm:w-9 fill-current transition-transform group-hover:scale-105" />
@@ -1435,6 +1566,7 @@ interface AudioOptionItem {
             onClick={() => handleSkip(10)}
             className="group flex flex-col items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full border border-white/15 bg-[#0a0c14]/70 text-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition hover:scale-105 hover:bg-white/20 hover:text-white active:scale-90"
             title="Fast Forward 10 Seconds (Right Arrow)"
+            aria-label="Fast forward 10 seconds"
           >
             <RotateCw className="h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-12 transition-transform" strokeWidth={1.8} />
             <span className="text-[9px] font-bold mt-0.5 leading-none">10</span>
@@ -2019,6 +2151,42 @@ interface AudioOptionItem {
                             No cloud subtitles found. You can upload your own .srt / .vtt file above.
                           </div>
                         )}
+                      </div>
+
+                      {/* Subtitle Timing Offset Control (T3-08) */}
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5 mt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-white/80">Timing Offset</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-mono font-bold text-primary">
+                              {subtitleOffset > 0 ? `+${subtitleOffset.toFixed(1)}s` : `${subtitleOffset.toFixed(1)}s`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateSettings({ subtitleOffset: 0 })}
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white/80 transition"
+                              title="Reset subtitle offset to 0 seconds"
+                              aria-label="Reset subtitle offset to 0 seconds"
+                            >
+                              Reset
+                            </button>
+                          </div>
+                        </div>
+                        <input
+                          type="range"
+                          min={-5.0}
+                          max={5.0}
+                          step={0.5}
+                          value={subtitleOffset}
+                          onChange={(e) => updateSettings({ subtitleOffset: parseFloat(e.target.value) })}
+                          className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                          aria-label="Subtitle timing offset slider"
+                        />
+                        <div className="flex justify-between text-[9px] text-white/40">
+                          <span>Earlier (-5s)</span>
+                          <span>Sync (0s)</span>
+                          <span>Later (+5s)</span>
+                        </div>
                       </div>
                     </div>
                   ) : settingsTab === 'speed' ? (

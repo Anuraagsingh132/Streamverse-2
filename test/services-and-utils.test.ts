@@ -8,6 +8,7 @@ import { getTmdbImageUrl, formatTmdbItem } from '../src/services/tmdb';
 import { mergeValidMediaWithFallback } from '../src/utils/mediaFilters';
 import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../src/utils/imageUtils';
 import { extractPixelDrainId, formatPixelDrainUrl, resolvePixelDrainStreamUrl } from '../src/utils/pixeldrain';
+import { LRUCache, deduplicateInFlight } from '../src/utils/lruCache';
 import { MediaItem } from '../src/types/media';
 
 test('HDHub: parseAudioCodec correctly categorizes web compatibility', () => {
@@ -228,5 +229,45 @@ test('PixelDrain: resolvePixelDrainStreamUrl translates stream URLs based on cho
   // Non-PixelDrain stream URLs remain untouched
   const r2Url = 'https://pub-r2.cloudflarestorage.com/series/video.m3u8';
   assert.strictEqual(resolvePixelDrainStreamUrl(r2Url, undefined, 'cdn'), r2Url);
+});
+
+test('LRUCache: enforces capacity and evicts least-recently-used item', () => {
+  const cache = new LRUCache<string, number>(3);
+
+  cache.set('a', 1);
+  cache.set('b', 2);
+  cache.set('c', 3);
+  assert.strictEqual(cache.size, 3);
+  assert.strictEqual(cache.get('a'), 1); // Access 'a' making it MRU: order is now b, c, a
+
+  cache.set('d', 4); // Evicts oldest ('b')
+  assert.strictEqual(cache.size, 3);
+  assert.strictEqual(cache.get('b'), undefined);
+  assert.strictEqual(cache.get('c'), 3);
+  assert.strictEqual(cache.get('a'), 1);
+  assert.strictEqual(cache.get('d'), 4);
+});
+
+test('deduplicateInFlight: collapses multiple simultaneous calls into a single invocation', async () => {
+  const inFlight = new Map<string, Promise<string>>();
+  let executionCount = 0;
+
+  const asyncFetcher = async () => {
+    executionCount++;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    return 'data-result';
+  };
+
+  const [p1, p2, p3] = await Promise.all([
+    deduplicateInFlight('key1', asyncFetcher, inFlight),
+    deduplicateInFlight('key1', asyncFetcher, inFlight),
+    deduplicateInFlight('key1', asyncFetcher, inFlight)
+  ]);
+
+  assert.strictEqual(p1, 'data-result');
+  assert.strictEqual(p2, 'data-result');
+  assert.strictEqual(p3, 'data-result');
+  assert.strictEqual(executionCount, 1);
+  assert.strictEqual(inFlight.size, 0); // Cleanup after resolve
 });
 

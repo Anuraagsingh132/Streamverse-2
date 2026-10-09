@@ -291,8 +291,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
 
                 {/* Watch Later / Bookmark */}
                 <button 
+                  type="button"
                   onClick={() => onToggleWatchlist(current)}
                   title={isSaved ? "Remove from Watchlist" : "Watch Later"}
+                  aria-label={isSaved ? "Remove from Watchlist" : "Watch Later"}
                   className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border hover:text-accent-foreground h-11 w-11 rounded-full border-white/20 backdrop-blur-md hover:bg-white/25 ${
                     isSaved ? 'bg-primary/25 text-primary border-primary/40' : 'bg-white/15 text-gray-900 dark:text-white'
                   }`}
@@ -310,6 +312,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                   return (
                     <button 
                       key={idx}
+                      type="button"
                       onClick={() => goToSlide(idx)}
                       aria-label={`Go to slide ${idx + 1}`} 
                       className="group h-4 flex-1 py-1.5"
@@ -334,16 +337,20 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
               {/* Chevrons */}
               <div className="hidden items-center gap-1.5 sm:flex">
                 <button 
+                  type="button"
                   onClick={handlePrev}
                   aria-label="Previous slide" 
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/30 text-gray-900 backdrop-blur-md transition hover:bg-white/50 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                  title="Previous slide"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/30 text-gray-900 backdrop-blur-md transition hover:bg-white/50 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <ChevronLeft className="lucide lucide-chevron-left h-4 w-4" />
                 </button>
                 <button 
+                  type="button"
                   onClick={handleNext}
                   aria-label="Next slide" 
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/30 text-gray-900 backdrop-blur-md transition hover:bg-white/50 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                  title="Next slide"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/30 text-gray-900 backdrop-blur-md transition hover:bg-white/50 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <ChevronRight className="lucide lucide-chevron-right h-4 w-4" />
                 </button>

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { MediaItem, EpisodeItem } from '../types/media';
 import { HDHubPlayer } from './HDHubPlayer';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useUserSettings } from '../hooks/useUserSettings';
 
 interface ServerOption {
   id: string;
@@ -136,13 +138,15 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   onClose,
   onEpisodeChange
 }) => {
+  const { settings } = useUserSettings();
   const [season, setSeason] = useState<number>(initialSeason || 1);
   const [episode, setEpisode] = useState<number>(initialEpisode || 1);
-  const [selectedServerId, setSelectedServerId] = useState<string>('hdhub');
+  const [selectedServerId, setSelectedServerId] = useState<string>(() => settings.defaultServer || 'hdhub');
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState<boolean>(false);
   const [isEpisodeDrawerOpen, setIsEpisodeDrawerOpen] = useState<boolean>(false);
   const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
+  const modalRef = useFocusTrap<HTMLDivElement>(Boolean(item));
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedEpRef = useRef<HTMLButtonElement | null>(null);
   const seasonDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -344,10 +348,15 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
 
   return (
     <div 
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Video Player - ${item.title}`}
+      tabIndex={-1}
       onMouseMove={resetHideTimer}
       onPointerMove={resetHideTimer}
       onTouchStart={resetHideTimer}
-      className="fixed inset-0 z-[9999] bg-black text-white w-screen h-screen overflow-hidden select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] bg-black text-white w-screen h-screen overflow-hidden select-none animate-in fade-in duration-200 focus:outline-none"
     >
       {/* 100% Full-bleed Embed / Direct Player without anything pushing or cutting it */}
       <div className="absolute inset-0 w-full h-full bg-black">
@@ -387,7 +396,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
         )}
       </div>
 
-      {/* Floating Top Controls (Server Switcher + Episode Nav if Series) (Auto-hides after 4s) - Only for iframe servers */}
+      {/* Floating Top Controls (Exit button + Server Switcher + Episode Nav if Series) (Auto-hides after 4s) - Only for iframe servers */}
       {!isDirectPlayer && (
         <div
           onMouseEnter={() => {
@@ -395,14 +404,27 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
           }}
           onMouseLeave={resetHideTimer}
-          className={`absolute top-4 right-4 sm:top-5 sm:right-6 z-50 flex items-center gap-2 sm:gap-2.5 transition-all duration-300 ease-out ${
+          className={`absolute top-4 inset-x-4 sm:top-5 sm:inset-x-6 z-50 flex items-center justify-between transition-all duration-300 ease-out ${
             showControls || isEpisodeDrawerOpen || isServerDropdownOpen
               ? 'opacity-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 -translate-y-2 pointer-events-none'
           }`}
         >
-        {/* Server Switcher Pill & Dropdown */}
-        <div className="relative" ref={serverDropdownRef}>
+          {/* Top-Left Exit Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-white/10 bg-[#0a0c14]/75 text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition hover:bg-white/15 hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            title="Exit Player (Esc)"
+            aria-label="Exit Player"
+          >
+            <ChevronLeft className="h-5 w-5" strokeWidth={2} />
+          </button>
+
+          {/* Top-Right: Server Switcher & Series Navigation */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Server Switcher Pill & Dropdown */}
+            <div className="relative" ref={serverDropdownRef}>
           <button
             type="button"
             onClick={() => {
@@ -536,8 +558,9 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             >
               <ChevronRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
             </button>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
       )}
 

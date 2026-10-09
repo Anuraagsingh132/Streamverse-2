@@ -252,7 +252,16 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                   className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
                 >
                   <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View details for ${item.title}`}
                     onClick={() => onOpenDetails(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onOpenDetails(item);
+                      }
+                    }}
                     onMouseEnter={() => {
                       if (item.media_type === 'anime') {
                         import('../pages/AnimeDetailsPage');
@@ -260,7 +269,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                         import('../pages/DetailsPage');
                       }
                     }}
-                    className="group block cursor-pointer"
+                    className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <div className="card-3d relative rounded-xl">
                       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
@@ -278,11 +287,14 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
 
                         <button
+                          type="button"
+                          aria-label={isSaved ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
+                          title={isSaved ? "Remove from watchlist" : "Add to watchlist"}
                           onClick={(e) => {
                             e.stopPropagation();
                             onToggleWatchlist(item);
                           }}
-                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 opacity-0 group-hover:opacity-100 ${
+                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
                             isSaved
                               ? 'bg-rose-600 text-white'
                               : 'bg-black/50 text-white hover:bg-black/70'
@@ -291,13 +303,16 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                           {isSaved ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                         </button>
 
-                        <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 focus-within:opacity-100">
                           <button
+                            type="button"
+                            aria-label={`Play ${item.title}`}
+                            title={`Play ${item.title}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               onPlay(item);
                             }}
-                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110"
+                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                           >
                             <Play className="h-5 w-5 fill-white text-white" />
                           </button>

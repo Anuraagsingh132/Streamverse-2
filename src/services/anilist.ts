@@ -1,4 +1,5 @@
 import apothecaryEpisodes from '../data/apothecaryEpisodes.json';
+import { LRUCache, deduplicateInFlight } from '../utils/lruCache';
 
 export interface AniListCharacter {
   id: number;
@@ -208,7 +209,9 @@ query ($id: Int) {
 }
 `;
 
-const detailsCache = new Map<number, FullAniListAnimeDetails>();
+// Bounded LRU caches (capped at 100 entries) & in-flight deduplication (T3-06)
+const detailsCache = new LRUCache<number, FullAniListAnimeDetails>(100);
+const inFlightDetails = new Map<string, Promise<FullAniListAnimeDetails | null>>();
 
 export async function fetchAniListAnimeDetails(id: number | string): Promise<FullAniListAnimeDetails | null> {
   const numericId = parseInt(id.toString(), 10);
@@ -227,18 +230,21 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
     }
   } catch {}
 
-  try {
-    const res = await fetch('https://graphql.anilist.co', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      },
-      body: JSON.stringify({
-        query: GRAPHQL_QUERY,
-        variables: { id: numericId }
-      })
-    });
+  return deduplicateInFlight(
+    String(numericId),
+    async () => {
+      try {
+        const res = await fetch('https://graphql.anilist.co', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify({
+            query: GRAPHQL_QUERY,
+            variables: { id: numericId }
+          })
+        });
 
     if (!res.ok) {
       console.warn(`AniList API returned ${res.status} for ID ${id}`);
@@ -392,11 +398,14 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
       } catch {}
     }
 
-    return result;
-  } catch (error) {
-    console.error('Failed to fetch from AniList GraphQL API:', error);
-    return null;
-  }
+      return result;
+    } catch (error) {
+      console.error('Failed to fetch from AniList GraphQL API:', error);
+      return null;
+    }
+  },
+  inFlightDetails
+);
 }
 
 const RAIL_GRAPHQL_QUERY = `
@@ -433,7 +442,7 @@ query ($page: Int = 1, $perPage: Int = 20, $sort: [MediaSort], $status: MediaSta
 }
 `;
 
-const railCache = new Map<string, any[]>();
+const railCache = new LRUCache<string, any[]>(100);
 const inFlightRail = new Map<string, Promise<any[]>>();
 
 export async function fetchAniListRail(variables: {
@@ -458,50 +467,45 @@ export async function fetchAniListRail(variables: {
     }
   } catch {}
 
-  if (inFlightRail.has(cacheKey)) {
-    return inFlightRail.get(cacheKey)!;
-  }
+  return deduplicateInFlight(
+    cacheKey,
+    async () => {
+      try {
+        const res = await fetch('https://graphql.anilist.co', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify({
+            query: RAIL_GRAPHQL_QUERY,
+            variables: {
+              ...variables,
+              perPage: variables.perPage || 20
+            }
+          })
+        });
 
-  const promise = (async () => {
-    try {
-      const res = await fetch('https://graphql.anilist.co', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        },
-        body: JSON.stringify({
-          query: RAIL_GRAPHQL_QUERY,
-          variables: {
-            ...variables,
-            perPage: variables.perPage || 20
-          }
-        })
-      });
-
-      if (!res.ok) return [];
-      const json = await res.json();
-      const media = json?.data?.Page?.media || [];
-      if (media.length > 0) {
-        railCache.set(cacheKey, media);
-        try {
-          localStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
-        } catch {
+        if (!res.ok) return [];
+        const json = await res.json();
+        const media = json?.data?.Page?.media || [];
+        if (media.length > 0) {
+          railCache.set(cacheKey, media);
           try {
-            sessionStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
-          } catch {}
+            localStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
+          } catch {
+            try {
+              sessionStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
+            } catch {}
+          }
         }
+        return media;
+      } catch (e) {
+        console.warn('Failed to fetch AniList rail:', e);
+        return [];
       }
-      return media;
-    } catch (e) {
-      console.warn('Failed to fetch AniList rail:', e);
-      return [];
-    } finally {
-      inFlightRail.delete(cacheKey);
-    }
-  })();
-
-  inFlightRail.set(cacheKey, promise);
-  return promise;
+    },
+    inFlightRail
+  );
 }
 

@@ -1,11 +1,12 @@
 import { MediaItem, MediaType, CastMember, CrewMember, StudioOrNetwork, VideoItem, EpisodeItem, SeasonItem } from '../types/media';
+import { LRUCache, deduplicateInFlight } from '../utils/lruCache';
 
 export const TMDB_API_KEY = (import.meta.env?.VITE_TMDB_API_KEY as string) || '1cf50e6248dc270629e802686245c2c8';
 export const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
-// In-memory cache & in-flight deduplication to prevent duplicate requests & improve performance
-const cache = new Map<string, { timestamp: number; data: any }>();
+// Bounded in-memory LRU cache (capped at 100 entries) & in-flight deduplication (T3-06)
+const cache = new LRUCache<string, { timestamp: number; data: any }>(100);
 const inFlightPromises = new Map<string, Promise<any>>();
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes fresh TTL
 
@@ -74,38 +75,33 @@ async function fetchFromTmdb<T = any>(endpoint: string, params: Record<string, s
     }
   } catch {}
 
-  // 3. Deduplicate in-flight identical requests
-  if (inFlightPromises.has(url)) {
-    return inFlightPromises.get(url) as Promise<T>;
-  }
-
-  const promise = (async () => {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`TMDB HTTP error ${res.status}: ${res.statusText}`);
-      }
-      const data = await res.json();
-      const entry = { timestamp: Date.now(), data };
-      cache.set(url, entry);
+  // 3. Deduplicate in-flight identical requests using deduplicateInFlight
+  return deduplicateInFlight(
+    url,
+    async () => {
       try {
-        localStorage.setItem(cacheKey, JSON.stringify(entry));
-      } catch {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`TMDB HTTP error ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        const entry = { timestamp: Date.now(), data };
+        cache.set(url, entry);
         try {
-          sessionStorage.setItem(cacheKey, JSON.stringify(entry));
-        } catch {}
+          localStorage.setItem(cacheKey, JSON.stringify(entry));
+        } catch {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(entry));
+          } catch {}
+        }
+        return data as T;
+      } catch (error) {
+        console.error(`TMDB fetch failed for ${endpoint}:`, error);
+        throw error;
       }
-      return data as T;
-    } catch (error) {
-      console.error(`TMDB fetch failed for ${endpoint}:`, error);
-      throw error;
-    } finally {
-      inFlightPromises.delete(url);
-    }
-  })();
-
-  inFlightPromises.set(url, promise);
-  return promise;
+    },
+    inFlightPromises
+  );
 }
 
 export function getTmdbImageUrl(

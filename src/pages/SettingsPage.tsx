@@ -1,54 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Server, Play, Check, Zap } from 'lucide-react';
-import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../utils/pixeldrain';
+import React, { useState } from 'react';
+import { Settings, Server, Play, Check, Zap, Subtitles, RotateCcw } from 'lucide-react';
+import { useUserSettings, VideoServerId, VideoQuality } from '../hooks/useUserSettings';
+import { PixelDrainRoute } from '../utils/pixeldrain';
 
 export const SettingsPage: React.FC = () => {
-  const [defaultServer, setDefaultServer] = useState<'vidsrc' | 'autoembed' | 'vidsrcxyz'>('vidsrc');
-  const [autoplayNext, setAutoplayNext] = useState<boolean>(true);
-  const [defaultQuality, setDefaultQuality] = useState<'1080p' | '720p' | '4k'>('1080p');
-  const [pixelDrainRoute, setPixelDrainRouteState] = useState<PixelDrainRoute>('normal');
+  const { settings, updateSettings, resetSettings } = useUserSettings();
   const [savedNotification, setSavedNotification] = useState<boolean>(false);
 
-  useEffect(() => {
-    setPixelDrainRouteState(getPixelDrainRoute());
-
-    try {
-      const savedServer = localStorage.getItem('streamverse_default_server');
-      if (savedServer && ['vidsrc', 'autoembed', 'vidsrcxyz'].includes(savedServer)) {
-        setDefaultServer(savedServer as any);
-      }
-      const savedAutoplay = localStorage.getItem('streamverse_autoplay');
-      if (savedAutoplay !== null) {
-        setAutoplayNext(savedAutoplay === 'true');
-      }
-      const savedQuality = localStorage.getItem('streamverse_quality');
-      if (savedQuality && ['1080p', '720p', '4k'].includes(savedQuality)) {
-        setDefaultQuality(savedQuality as any);
-      }
-    } catch {
-      // Ignore localStorage access failures
-    }
-  }, []);
-
-  const handlePixelDrainRouteChange = (newRoute: PixelDrainRoute) => {
-    setPixelDrainRouteState(newRoute);
-    setPixelDrainRoute(newRoute);
+  const handleServerChange = (server: VideoServerId) => {
+    updateSettings({ defaultServer: server });
+    triggerSaved();
   };
 
-  const saveSettings = () => {
-    setPixelDrainRoute(pixelDrainRoute);
+  const handleRouteChange = (route: PixelDrainRoute) => {
+    updateSettings({ pixelDrainRoute: route });
+    triggerSaved();
+  };
 
-    try {
-      localStorage.setItem('streamverse_default_server', defaultServer);
-      localStorage.setItem('streamverse_autoplay', String(autoplayNext));
-      localStorage.setItem('streamverse_quality', defaultQuality);
-    } catch {
-      // Ignore localStorage access failures
-    }
+  const handleAutoplayToggle = () => {
+    updateSettings({ autoplayNext: !settings.autoplayNext });
+    triggerSaved();
+  };
 
+  const handleQualityChange = (quality: VideoQuality) => {
+    updateSettings({ defaultQuality: quality });
+    triggerSaved();
+  };
+
+  const handleSubtitleOffsetChange = (offset: number) => {
+    updateSettings({ subtitleOffset: Math.round(offset * 10) / 10 });
+    triggerSaved();
+  };
+
+  const triggerSaved = () => {
     setSavedNotification(true);
-    setTimeout(() => setSavedNotification(false), 2500);
+    setTimeout(() => setSavedNotification(false), 2000);
   };
+
+  const serverOptions: { id: VideoServerId; name: string; badge: string; desc: string }[] = [
+    {
+      id: 'hdhub',
+      name: 'HDHub Direct Stream',
+      badge: 'Default · Fastest',
+      desc: 'High-speed PixelDrain & Cloudflare direct streams with custom audio and subtitle engines.'
+    },
+    {
+      id: 'pengu',
+      name: 'Pengu Cloud',
+      badge: 'Direct & HLS',
+      desc: 'Pengu cloud streams with native HLS and multi-source mirror fallbacks.'
+    },
+    {
+      id: 'cinemaos',
+      name: 'CinemaOS Official',
+      badge: 'Embed Player',
+      desc: 'CinemaOS official embed player with built-in UI and ad-shielding.'
+    },
+    {
+      id: 'vidsrc',
+      name: 'VidSrc Pro',
+      badge: 'Mirror 1',
+      desc: 'Alternative multi-CDN streaming mirror with high availability.'
+    },
+    {
+      id: 'autoembed',
+      name: 'AutoEmbed Cloud',
+      badge: 'Mirror 2',
+      desc: 'Reliable fallback embed player with automatic resolution scaling.'
+    }
+  ];
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-8">
@@ -62,28 +82,29 @@ export const SettingsPage: React.FC = () => {
           Player & App Settings
         </h1>
         <p className="text-sm text-zinc-400 mt-1">
-          Customize playback servers, subtitle preferences, and display behaviors.
+          Customize default streaming servers, subtitle timing offsets, and playback preferences.
         </p>
       </div>
 
       <div className="space-y-6">
         {/* Playback Section */}
         <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 space-y-6">
-          <div className="flex items-center gap-2 border-b border-white/5 pb-4">
-            <Server className="h-5 w-5 text-rose-500" />
-            <h2 className="text-base font-bold text-white">Streaming Server Priority</h2>
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <div className="flex items-center gap-2">
+              <Server className="h-5 w-5 text-rose-500" />
+              <h2 className="text-base font-bold text-white">Default Video Server</h2>
+            </div>
+            <span className="text-xs text-zinc-400">
+              Active: <span className="font-semibold text-rose-400 capitalize">{settings.defaultServer}</span>
+            </span>
           </div>
 
           <div className="space-y-3">
-            {[
-              { id: 'vidsrc', name: 'VidSrc Pro', desc: 'Fastest multi-CDN streaming with multi-language subtitle tracks' },
-              { id: 'autoembed', name: 'AutoEmbed Cloud', desc: 'Reliable fallback player with automatic resolution scaling' },
-              { id: 'vidsrcxyz', name: 'VidStream Mirrors', desc: 'High-definition 1080p streams with low buffering' },
-            ].map((srv) => (
+            {serverOptions.map((srv) => (
               <label
                 key={srv.id}
                 className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition ${
-                  defaultServer === srv.id
+                  settings.defaultServer === srv.id
                     ? 'border-rose-500/60 bg-rose-500/10'
                     : 'border-white/5 bg-zinc-950/60 hover:border-white/20'
                 }`}
@@ -91,13 +112,18 @@ export const SettingsPage: React.FC = () => {
                 <input
                   type="radio"
                   name="server"
-                  checked={defaultServer === srv.id}
-                  onChange={() => setDefaultServer(srv.id as any)}
+                  checked={settings.defaultServer === srv.id}
+                  onChange={() => handleServerChange(srv.id)}
                   className="mt-1 accent-rose-600"
                 />
-                <div>
-                  <div className="text-sm font-semibold text-white">{srv.name}</div>
-                  <div className="text-xs text-zinc-400">{srv.desc}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">{srv.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-white/10 text-white/70 border border-white/10">
+                      {srv.badge}
+                    </span>
+                  </div>
+                  <div className="text-xs text-zinc-400 mt-1">{srv.desc}</div>
                 </div>
               </label>
             ))}
@@ -140,7 +166,7 @@ export const SettingsPage: React.FC = () => {
               <label
                 key={routeOpt.id}
                 className={`flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition ${
-                  pixelDrainRoute === routeOpt.id
+                  settings.pixelDrainRoute === routeOpt.id
                     ? 'border-rose-500/60 bg-rose-500/10'
                     : 'border-white/5 bg-zinc-950/60 hover:border-white/20'
                 }`}
@@ -149,8 +175,8 @@ export const SettingsPage: React.FC = () => {
                   <input
                     type="radio"
                     name="pixeldrain_route"
-                    checked={pixelDrainRoute === routeOpt.id}
-                    onChange={() => handlePixelDrainRouteChange(routeOpt.id as PixelDrainRoute)}
+                    checked={settings.pixelDrainRoute === routeOpt.id}
+                    onChange={() => handleRouteChange(routeOpt.id as PixelDrainRoute)}
                     className="mt-1 accent-rose-600"
                   />
                   <div className="space-y-1.5">
@@ -173,6 +199,52 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Subtitle Preferences */}
+        <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <div className="flex items-center gap-2">
+              <Subtitles className="h-5 w-5 text-rose-500" />
+              <h2 className="text-base font-bold text-white">Subtitle Timing Offset</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-semibold text-rose-400">
+                {settings.subtitleOffset > 0 ? `+${settings.subtitleOffset.toFixed(1)}s` : `${settings.subtitleOffset.toFixed(1)}s`}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleSubtitleOffsetChange(0)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] bg-white/10 hover:bg-white/15 text-white/80 transition"
+                title="Reset to 0.0s"
+              >
+                <RotateCcw className="h-3 w-3" />
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-zinc-400">
+            Shift subtitle timing forward or backward to fix subtitle desync with dialogue audio.
+          </p>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-zinc-400">
+              <span>Earlier (-5.0s)</span>
+              <span>In-sync (0.0s)</span>
+              <span>Later (+5.0s)</span>
+            </div>
+            <input
+              type="range"
+              min={-5.0}
+              max={5.0}
+              step={0.5}
+              value={settings.subtitleOffset}
+              onChange={(e) => handleSubtitleOffsetChange(parseFloat(e.target.value))}
+              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
+              aria-label="Subtitle Timing Offset Slider"
+            />
+          </div>
+        </div>
+
         {/* Video Behavior */}
         <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 space-y-6">
           <div className="flex items-center gap-2 border-b border-white/5 pb-4">
@@ -183,17 +255,20 @@ export const SettingsPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold text-white">Auto-Play Next Episode</div>
-              <div className="text-xs text-zinc-400">Automatically load the next TV episode when the current one ends</div>
+              <div className="text-xs text-zinc-400">Automatically advance to the next TV episode when the current one ends</div>
             </div>
             <button
-              onClick={() => setAutoplayNext(!autoplayNext)}
+              type="button"
+              onClick={handleAutoplayToggle}
+              aria-pressed={settings.autoplayNext}
+              aria-label="Toggle Auto-Play Next Episode"
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-                autoplayNext ? 'bg-rose-600' : 'bg-zinc-800'
+                settings.autoplayNext ? 'bg-rose-600' : 'bg-zinc-800'
               }`}
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition duration-200 ${
-                  autoplayNext ? 'translate-x-5' : 'translate-x-0'
+                  settings.autoplayNext ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -202,36 +277,38 @@ export const SettingsPage: React.FC = () => {
           <div className="flex items-center justify-between border-t border-white/5 pt-4">
             <div>
               <div className="text-sm font-semibold text-white">Default Video Quality</div>
-              <div className="text-xs text-zinc-400">Target streaming resolution when available</div>
+              <div className="text-xs text-zinc-400">Target streaming resolution when multiple streams are available</div>
             </div>
             <select
-              value={defaultQuality}
-              onChange={(e) => setDefaultQuality(e.target.value as any)}
-              className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-1.5 text-xs text-white focus:outline-none"
+              value={settings.defaultQuality}
+              onChange={(e) => handleQualityChange(e.target.value as VideoQuality)}
+              className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-rose-500"
             >
               <option value="1080p">1080p Full HD</option>
               <option value="720p">720p HD</option>
               <option value="4k">4K Ultra HD (Beta)</option>
+              <option value="auto">Auto / Adaptive</option>
             </select>
           </div>
         </div>
 
-        {/* Save Button */}
+        {/* Reset & Status Footer */}
         <div className="flex items-center justify-between pt-2">
           {savedNotification ? (
             <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 animate-in fade-in">
               <Check className="h-4 w-4" />
-              <span>Settings saved successfully!</span>
+              <span>Preferences automatically synced across all players!</span>
             </div>
           ) : (
-            <span />
+            <span className="text-xs text-zinc-500">Settings save automatically as you adjust them.</span>
           )}
 
           <button
-            onClick={saveSettings}
-            className="rounded-xl bg-rose-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-500 transition"
+            type="button"
+            onClick={resetSettings}
+            className="rounded-xl border border-white/10 bg-zinc-800/80 px-4 py-2 text-xs font-semibold text-white/80 hover:bg-zinc-700 hover:text-white transition"
           >
-            Save Preferences
+            Reset Defaults
           </button>
         </div>
       </div>
