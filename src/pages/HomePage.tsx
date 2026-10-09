@@ -4,6 +4,7 @@ import { TopTenRow } from '../components/TopTenRow';
 import { ProviderRail } from '../components/ProviderRail';
 import { GenreRail } from '../components/GenreRail';
 import { PlatformsMarquee } from '../components/PlatformsMarquee';
+import { SEOHead } from '../components/SEOHead';
 import { MediaItem } from '../types/media';
 import { 
   liveHeroItems, 
@@ -82,6 +83,10 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   return (
     <div className="relative min-h-screen">
+      <SEOHead
+        title="Streamverse - Watch Movies, Anime, TV Shows & Live Sports"
+        description="Discover and stream popular movies, trending anime, binge-worthy TV series and live sports with high-definition playback on Streamverse."
+      />
       {/* Hero Showcase with Ambient Glow & Up Next Rail (10 slides) */}
       <HeroBanner
         items={heroItemsList}

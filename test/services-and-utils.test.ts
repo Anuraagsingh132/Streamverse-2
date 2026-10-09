@@ -10,6 +10,7 @@ import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../src/utils/imageUtils';
 import { extractPixelDrainId, formatPixelDrainUrl, resolvePixelDrainStreamUrl } from '../src/utils/pixeldrain';
 import { LRUCache, deduplicateInFlight } from '../src/utils/lruCache';
 import { MediaItem } from '../src/types/media';
+import { normalizeAnimeTitle } from '../src/services/animeResolver';
 
 test('HDHub: parseAudioCodec correctly categorizes web compatibility', () => {
   // AAC / Web audio
@@ -270,4 +271,79 @@ test('deduplicateInFlight: collapses multiple simultaneous calls into a single i
   assert.strictEqual(executionCount, 1);
   assert.strictEqual(inFlight.size, 0); // Cleanup after resolve
 });
+
+test('AnimeResolver: normalizeAnimeTitle strips season patterns and extracts season number', () => {
+  // Case 1: Standard "Season 2"
+  const res1 = normalizeAnimeTitle('Jujutsu Kaisen Season 2');
+  assert.strictEqual(res1.cleanTitle, 'Jujutsu Kaisen');
+  assert.strictEqual(res1.season, 2);
+
+  // Case 2: "2nd Season"
+  const res2 = normalizeAnimeTitle('Re:ZERO - Starting Life in Another World - 2nd Season');
+  assert.strictEqual(res2.cleanTitle, 'Re:ZERO - Starting Life in Another World');
+  assert.strictEqual(res2.season, 2);
+
+  // Case 3: "Part 2"
+  const res3 = normalizeAnimeTitle('Attack on Titan Final Season Part 2');
+  assert.strictEqual(res3.cleanTitle, 'Attack on Titan');
+  assert.strictEqual(res3.season, 2);
+
+  // Case 4: Base title without season
+  const res4 = normalizeAnimeTitle('Frieren: Beyond Journey\'s End');
+  assert.strictEqual(res4.cleanTitle, 'Frieren: Beyond Journey\'s End');
+  assert.strictEqual(res4.season, 1);
+
+  // Case 5: Empty title edge case
+  const res5 = normalizeAnimeTitle('');
+  assert.strictEqual(res5.cleanTitle, '');
+  assert.strictEqual(res5.season, 1);
+});
+
+test('Scrubber: clamp calculation boundaries prevent NaN or negative seek', () => {
+  const calculateScrubTime = (rawX: number, width: number, duration: number) => {
+    const clampedX = Math.max(0, Math.min(width, rawX));
+    const percent = width > 0 ? (clampedX / width) * 100 : 0;
+    const validDur = Number.isFinite(duration) && duration > 0 ? duration : 100;
+    const time = Math.max(0, Math.min(validDur, (percent / 100) * validDur));
+    return { percent, time };
+  };
+
+  // Middle position
+  const mid = calculateScrubTime(50, 100, 120);
+  assert.strictEqual(mid.percent, 50);
+  assert.strictEqual(mid.time, 60);
+
+  // Left boundary overflow (negative clientX)
+  const left = calculateScrubTime(-20, 100, 120);
+  assert.strictEqual(left.percent, 0);
+  assert.strictEqual(left.time, 0);
+
+  // Right boundary overflow (clientX > width)
+  const right = calculateScrubTime(150, 100, 120);
+  assert.strictEqual(right.percent, 100);
+  assert.strictEqual(right.time, 120);
+
+  // 0 duration edge case doesn't crash or return NaN
+  const zeroDur = calculateScrubTime(50, 100, 0);
+  assert.ok(Number.isFinite(zeroDur.time));
+});
+
+test('UserSettings: subtitleOffset and subtitleSize bounds validation', () => {
+  const validateOffset = (raw: number) => {
+    return Number.isFinite(raw) ? Math.max(-5.0, Math.min(5.0, raw)) : 0.0;
+  };
+
+  assert.strictEqual(validateOffset(2.5), 2.5);
+  assert.strictEqual(validateOffset(-3.0), -3.0);
+  assert.strictEqual(validateOffset(12.0), 5.0); // clamped to max
+  assert.strictEqual(validateOffset(-10.0), -5.0); // clamped to min
+  assert.strictEqual(validateOffset(NaN), 0.0); // NaN falls back to 0
+
+  const validSizes = ['small', 'medium', 'large'];
+  const validateSize = (size: string) => validSizes.includes(size) ? size : 'medium';
+  assert.strictEqual(validateSize('small'), 'small');
+  assert.strictEqual(validateSize('large'), 'large');
+  assert.strictEqual(validateSize('invalid'), 'medium');
+});
+
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Settings, Server, Play, Check, Zap, Subtitles, RotateCcw } from 'lucide-react';
 import { useUserSettings, VideoServerId, VideoQuality } from '../hooks/useUserSettings';
 import { PixelDrainRoute } from '../utils/pixeldrain';
+import { SEOHead } from '../components/SEOHead';
 
 export const SettingsPage: React.FC = () => {
   const { settings, updateSettings, resetSettings } = useUserSettings();
@@ -72,6 +73,10 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-8">
+      <SEOHead
+        title="Settings & Playback Preferences"
+        description="Configure your default video server, PixelDrain CDN stream routes, subtitle typography, and playback behavior on Streamverse."
+      />
       {/* Header */}
       <div className="border-b border-white/10 pb-6">
         <div className="flex items-center gap-2 text-rose-500 font-bold">

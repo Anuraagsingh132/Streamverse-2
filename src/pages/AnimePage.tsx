@@ -6,6 +6,7 @@ import animeInitialData from '../data/animeInitialData.json';
 import animeHeroSlides from '../data/animeHeroSlides.json';
 import { fetchAniListRail } from '../services/anilist';
 import { getCachedAnimeLogo } from '../services/animeLogo';
+import { SEOHead } from '../components/SEOHead';
 
 interface AnimePageProps {
   onPlay: (item: MediaItem) => void;
@@ -201,6 +202,10 @@ export const AnimePage: React.FC<AnimePageProps> = ({
 
   return (
     <div className="relative min-h-screen">
+      <SEOHead
+        title="Watch Anime Online"
+        description="Stream trending anime series, top rated classics, and latest seasonal episodes in Japanese with English subtitles on Streamverse."
+      />
       {/* 1:1 Anime Hero Banner with Clearlogo PNG */}
       <HeroBanner
         items={heroItems}

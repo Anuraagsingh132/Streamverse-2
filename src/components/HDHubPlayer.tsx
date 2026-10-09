@@ -54,6 +54,8 @@ import {
   PIXELDRAIN_CHANGE_EVENT
 } from '../utils/pixeldrain';
 import { useUserSettings } from '../hooks/useUserSettings';
+import { usePlayerShortcuts } from './player/usePlayerShortcuts';
+import { useScrubberDrag } from './player/useScrubberDrag';
 
 export interface HDHubPlayerProps {
   item: MediaItem;
@@ -136,10 +138,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   const [showControls, setShowControls] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Scrubber hover & dragging state
-  const [hoverProgress, setHoverProgress] = useState<{ xPercent: number; time: number } | null>(null);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const wasPlayingBeforeDragRef = useRef<boolean>(false);
+  // Scrubber element ref
   const scrubberRef = useRef<HTMLDivElement | null>(null);
 
   // Quick feedback toast
@@ -237,6 +236,40 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setToastMessage(null), 1200);
   }, []);
+
+  const handleSeek = useCallback((time: number) => {
+    if (videoRef.current) {
+      const valid = Math.max(0, Math.min(duration || 0, time));
+      videoRef.current.currentTime = valid;
+      setCurrentTime(valid);
+    }
+  }, [duration]);
+
+  const handleSkip = useCallback((seconds: number) => {
+    if (!videoRef.current) return;
+    const dur = videoRef.current.duration || 100;
+    const target = Math.max(0, Math.min(dur, videoRef.current.currentTime + seconds));
+    videoRef.current.currentTime = target;
+    setCurrentTime(target);
+    showToast(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
+  }, [showToast]);
+
+  // Encapsulated scrubber drag, touch tracking, percent clamp math, and preview tooltips
+  const {
+    isDragging,
+    hoverProgress,
+    handleMouseDown: handleScrubberMouseDown,
+    handleTouchStart: handleScrubberTouchStart,
+    handleMouseMove: handleScrubberMouseMove,
+    handleMouseLeave: handleScrubberMouseLeave,
+    handleKeyDown: handleScrubberKeyDown,
+  } = useScrubberDrag({
+    scrubberRef,
+    videoRef,
+    duration,
+    onSeek: handleSeek,
+    onSkip: handleSkip,
+  });
 
   // Controls auto-hide timer (3 seconds while playing, stays visible when paused or scrubbing)
   const resetControlsTimer = useCallback(() => {
@@ -519,15 +552,6 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     }
     resetControlsTimer();
   }, [resetControlsTimer, saveProgress]);
-
-  const handleSkip = useCallback((seconds: number) => {
-    if (!videoRef.current) return;
-    const dur = videoRef.current.duration || 100;
-    const target = Math.max(0, Math.min(dur, videoRef.current.currentTime + seconds));
-    videoRef.current.currentTime = target;
-    setCurrentTime(target);
-    showToast(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
-  }, [showToast]);
 
   // Throttled timeupdate handler (4-5Hz) with 5s periodic progress persistence (T3-04 & T3-05)
   const handleTimeUpdate = () => {
@@ -812,156 +836,6 @@ interface AudioOptionItem {
     reader.readAsText(file);
   };
 
-  const handleSeek = (time: number) => {
-    if (videoRef.current) {
-      const valid = Math.max(0, Math.min(duration || 0, time));
-      videoRef.current.currentTime = valid;
-      setCurrentTime(valid);
-    }
-  };
-
-  // Scrubber calculation based on clientX coordinate
-  const calculateScrubTime = useCallback((clientX: number) => {
-    if (!scrubberRef.current || !duration || duration <= 0) {
-      return { percent: 0, time: 0 };
-    }
-    const rect = scrubberRef.current.getBoundingClientRect();
-    if (rect.width <= 0) return { percent: 0, time: 0 };
-    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    const percent = (x / rect.width) * 100;
-    const time = (x / rect.width) * duration;
-    return { percent, time };
-  }, [duration]);
-
-  // Scrubber drag start (Mouse)
-  const handleScrubberMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    setIsDragging(true);
-    wasPlayingBeforeDragRef.current = Boolean(videoRef.current && !videoRef.current.paused);
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-    const { percent, time } = calculateScrubTime(e.clientX);
-    setHoverProgress({ xPercent: percent, time });
-    setCurrentTime(time);
-    if (videoRef.current) {
-      videoRef.current.currentTime = time;
-    }
-  };
-
-  // Scrubber drag start (Touch)
-  const handleScrubberTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length === 0) return;
-    setIsDragging(true);
-    wasPlayingBeforeDragRef.current = Boolean(videoRef.current && !videoRef.current.paused);
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-    const { percent, time } = calculateScrubTime(e.touches[0].clientX);
-    setHoverProgress({ xPercent: percent, time });
-    setCurrentTime(time);
-    if (videoRef.current) {
-      videoRef.current.currentTime = time;
-    }
-  };
-
-  // Scrubber hover move (Mouse)
-  const handleScrubberMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging) return;
-    const { percent, time } = calculateScrubTime(e.clientX);
-    setHoverProgress({ xPercent: percent, time });
-  };
-
-  // Scrubber mouse leave
-  const handleScrubberMouseLeave = () => {
-    if (!isDragging) {
-      setHoverProgress(null);
-    }
-  };
-
-  // Scrubber keyboard navigation
-  const handleScrubberKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      handleSkip(-5);
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      handleSkip(5);
-    } else if (e.key === 'Home') {
-      e.preventDefault();
-      handleSeek(0);
-    } else if (e.key === 'End') {
-      e.preventDefault();
-      if (duration > 0) handleSeek(duration);
-    }
-  };
-
-  // Window drag listeners when scrubbing
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleWindowMouseMove = (e: MouseEvent) => {
-      const { percent, time } = calculateScrubTime(e.clientX);
-      setHoverProgress({ xPercent: percent, time });
-      setCurrentTime(time);
-      if (videoRef.current) {
-        videoRef.current.currentTime = time;
-      }
-    };
-
-    const handleWindowTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 0) return;
-      const { percent, time } = calculateScrubTime(e.touches[0].clientX);
-      setHoverProgress({ xPercent: percent, time });
-      setCurrentTime(time);
-      if (videoRef.current) {
-        videoRef.current.currentTime = time;
-      }
-    };
-
-    const handleWindowMouseUp = (e: MouseEvent) => {
-      setIsDragging(false);
-      setHoverProgress(null);
-      const { time } = calculateScrubTime(e.clientX);
-      if (videoRef.current) {
-        videoRef.current.currentTime = time;
-        if (wasPlayingBeforeDragRef.current) {
-          videoRef.current.play().catch(() => {});
-        }
-      }
-    };
-
-    const handleWindowTouchEnd = (e: TouchEvent) => {
-      setIsDragging(false);
-      setHoverProgress(null);
-      const touch = e.changedTouches[0];
-      if (touch) {
-        const { time } = calculateScrubTime(touch.clientX);
-        if (videoRef.current) {
-          videoRef.current.currentTime = time;
-          if (wasPlayingBeforeDragRef.current) {
-            videoRef.current.play().catch(() => {});
-          }
-        }
-      } else if (videoRef.current && wasPlayingBeforeDragRef.current) {
-        videoRef.current.play().catch(() => {});
-      }
-    };
-
-    window.addEventListener('mousemove', handleWindowMouseMove);
-    window.addEventListener('mouseup', handleWindowMouseUp);
-    window.addEventListener('touchmove', handleWindowTouchMove, { passive: true });
-    window.addEventListener('touchend', handleWindowTouchEnd);
-
-    return () => {
-      window.removeEventListener('mousemove', handleWindowMouseMove);
-      window.removeEventListener('mouseup', handleWindowMouseUp);
-      window.removeEventListener('touchmove', handleWindowTouchMove);
-      window.removeEventListener('touchend', handleWindowTouchEnd);
-    };
-  }, [isDragging, calculateScrubTime]);
-
   const handleToggleMute = useCallback(() => {
     if (videoRef.current) {
       const nextMuted = !isMuted;
@@ -1093,68 +967,20 @@ interface AudioOptionItem {
     };
   }, []);
 
-  // Keyboard navigation & shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
-        return;
-      }
-
-      resetControlsTimer();
-
-      switch (e.key.toLowerCase()) {
-        case ' ':
-        case 'k':
-          e.preventDefault();
-          handleTogglePlay();
-          break;
-        case 'arrowleft':
-        case 'j':
-          e.preventDefault();
-          handleSkip(-10);
-          break;
-        case 'arrowright':
-        case 'l':
-          e.preventDefault();
-          handleSkip(10);
-          break;
-        case 'arrowup':
-          e.preventDefault();
-          handleVolumeAdjust(0.1);
-          break;
-        case 'arrowdown':
-          e.preventDefault();
-          handleVolumeAdjust(-0.1);
-          break;
-        case 'm':
-          e.preventDefault();
-          handleToggleMute();
-          break;
-        case 'f':
-          e.preventDefault();
-          handleToggleFullscreen();
-          break;
-        case 'escape':
-          if (isQualityDropdownOpen) setIsQualityDropdownOpen(false);
-          else if (isServerDropdownOpen) setIsServerDropdownOpen(false);
-          else if (isSettingsMenuOpen) setIsSettingsMenuOpen(false);
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isQualityDropdownOpen, 
-    isServerDropdownOpen, 
-    isSettingsMenuOpen, 
-    resetControlsTimer,
-    handleTogglePlay,
-    handleSkip,
-    handleVolumeAdjust,
-    handleToggleMute,
-    handleToggleFullscreen
-  ]);
+  // Modular keyboard navigation & shortcuts hook (T4-03)
+  usePlayerShortcuts({
+    onTogglePlay: handleTogglePlay,
+    onSkip: handleSkip,
+    onVolumeAdjust: handleVolumeAdjust,
+    onToggleMute: handleToggleMute,
+    onToggleFullscreen: handleToggleFullscreen,
+    onCloseMenus: () => {
+      if (isQualityDropdownOpen) setIsQualityDropdownOpen(false);
+      else if (isServerDropdownOpen) setIsServerDropdownOpen(false);
+      else if (isSettingsMenuOpen) setIsSettingsMenuOpen(false);
+    },
+    enabled: true,
+  });
 
   // Double tap to seek on mobile
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {

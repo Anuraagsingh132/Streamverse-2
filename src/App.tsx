@@ -23,6 +23,8 @@ import { MediaItem } from './types/media';
 import { allMedia } from './data/mediaData';
 import { diggerCuratedDetails, lanternsCuratedDetails } from './data/cinemaosLiveMatch';
 import { getMediaDetails } from './services/tmdb';
+import { useWatchlistStore } from './store/useWatchlistStore';
+import { resolveAnimeToTmdb } from './services/animeResolver';
 
 export const App: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState<string>('home');
@@ -60,32 +62,13 @@ export const App: React.FC = () => {
     }
   }, [currentRoute, isSearchOpen]);
 
-  // Full MediaItems stored for Watchlist to support dynamic TMDB & AniList items
-  const [savedMediaItems, setSavedMediaItems] = useState<MediaItem[]>(() => {
-    try {
-      const savedItemsJson = localStorage.getItem('streamverse_watchlist_items');
-      if (savedItemsJson) {
-        const parsed = JSON.parse(savedItemsJson);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      const savedIdsJson = localStorage.getItem('streamverse_watchlist');
-      const savedIds: string[] = savedIdsJson ? JSON.parse(savedIdsJson) : ['258165', '977942', '94605'];
-      return allMedia.filter((m) => savedIds.includes(m.id));
-    } catch {
-      return allMedia.slice(0, 3);
-    }
-  });
-
-  const watchlist = useMemo(() => savedMediaItems.map((item) => item.id), [savedMediaItems]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('streamverse_watchlist_items', JSON.stringify(savedMediaItems));
-      localStorage.setItem('streamverse_watchlist', JSON.stringify(watchlist));
-    } catch (e) {
-      console.error('Failed to save watchlist to localStorage', e);
-    }
-  }, [savedMediaItems, watchlist]);
+  // Unified reactive Watchlist store with automatic cross-component sync & persistence
+  const {
+    items: savedMediaItems,
+    watchlistIds: watchlist,
+    toggleWatchlist: handleToggleWatchlist,
+    clearWatchlist: handleClearWatchlist,
+  } = useWatchlistStore();
 
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
@@ -365,21 +348,6 @@ export const App: React.FC = () => {
       }
     }
   }, [selectedItem, previousRoute]);
-
-  const handleToggleWatchlist = useCallback((item: MediaItem) => {
-    setSavedMediaItems((prev) => {
-      const exists = prev.some((i) => i.id === item.id);
-      if (exists) {
-        return prev.filter((i) => i.id !== item.id);
-      } else {
-        return [item, ...prev];
-      }
-    });
-  }, []);
-
-  const handleClearWatchlist = useCallback(() => {
-    setSavedMediaItems([]);
-  }, []);
 
   return (
     <div className="relative flex min-h-screen flex-col font-sans bg-transparent text-foreground">

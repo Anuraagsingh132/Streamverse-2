@@ -17,6 +17,7 @@ import {
 import { MediaItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
 import { searchTmdb } from '../services/tmdb';
+import { SEOHead } from '../components/SEOHead';
 
 interface AISearchPageProps {
   onPlay: (item: MediaItem) => void;
@@ -165,6 +166,10 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
 
   return (
     <div className="relative min-h-screen bg-[#060812] text-white pt-28 sm:pt-32 pb-24 overflow-hidden select-none">
+      <SEOHead
+        title="AI Smart Discovery & Search"
+        description="Discover movies, TV shows, and anime tailored to your mood, themes, and natural language prompts."
+      />
       {/* Clean Background: Very Soft Ambient Glow Centered Behind Title (Nothing Else) */}
       <div 
         aria-hidden="true"

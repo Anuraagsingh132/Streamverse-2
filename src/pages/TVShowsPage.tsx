@@ -4,6 +4,7 @@ import { HeroBanner } from '../components/HeroBanner';
 import { TopTenRow } from '../components/TopTenRow';
 import { MediaRail } from '../components/MediaRail';
 import { ProviderRail } from '../components/ProviderRail';
+import { SEOHead } from '../components/SEOHead';
 import { 
   tvHeroItems, 
   tvTop10Items, 
@@ -88,6 +89,10 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
 
   return (
     <div className="relative min-h-screen">
+      <SEOHead
+        title="Browse TV Shows"
+        description="Stream trending series, award-winning dramas, and new releases with full season episode support on Streamverse."
+      />
       {/* Hero Showcase (TV Focus - Coven Academy lead) */}
       <HeroBanner
         items={heroShowsList}

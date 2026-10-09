@@ -22,6 +22,8 @@ import { allMedia } from '../data/mediaData';
 import { PosterCard } from '../components/PosterCard';
 import { getMediaDetails, getSeasonEpisodes } from '../services/tmdb';
 import { diggerCuratedDetails, lanternsCuratedDetails } from '../data/cinemaosLiveMatch';
+import { SEOHead } from '../components/SEOHead';
+import { GlassBackButton } from '../components/details/GlassBackButton';
 
 interface DetailsPageProps {
   item: MediaItem;
@@ -208,9 +210,30 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
   const votePercent = Math.round(item.vote_average * 10) || 75;
   const ratingStars = Math.round(item.vote_average / 2) || 4;
+  const releaseYear = item.release_date ? item.release_date.split('-')[0] : (item.year ? String(item.year) : '');
 
   return (
     <div className="relative min-h-screen text-white">
+      <SEOHead
+        title={`${item.title}${releaseYear ? ` (${releaseYear})` : ''}`}
+        description={item.overview || `Watch ${item.title} in HD on Streamverse.`}
+        image={item.backdrop_path || item.poster_path}
+        type={item.media_type === 'tv' ? 'video.tv_show' : 'video.movie'}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': item.media_type === 'tv' ? 'TVSeries' : 'Movie',
+          name: item.title,
+          description: item.overview,
+          image: item.backdrop_path || item.poster_path,
+          datePublished: item.release_date,
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: item.vote_average,
+            bestRating: 10,
+            ratingCount: 1000,
+          },
+        }}
+      />
       {/* 1:1 CinemaOS Ambient Fixed Backdrop Glow */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <img
@@ -273,15 +296,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         {/* Hero Content Overlays */}
         <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
           {onBack && (
-            <button
-              type="button"
+            <GlassBackButton
               onClick={onBack}
-              aria-label="Go back"
-              className="absolute left-5 top-20 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/50 px-3.5 py-2 text-xs font-semibold text-white/90 shadow-xl backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:left-8 lg:left-10 cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
+              className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
+            />
           )}
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column: Metadata, Logo, Overview, CTAs */}

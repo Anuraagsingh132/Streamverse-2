@@ -16,6 +16,9 @@ import {
 import { MediaItem } from '../types/media';
 import { fetchAniListAnimeDetails, FullAniListAnimeDetails } from '../services/anilist';
 import { fetchAnimeLogo, getCachedAnimeLogo } from '../services/animeLogo';
+import { resolveAnimeToTmdb } from '../services/animeResolver';
+import { SEOHead } from '../components/SEOHead';
+import { GlassBackButton } from '../components/details/GlassBackButton';
 
 interface AnimeDetailsPageProps {
   item: MediaItem;
@@ -75,6 +78,15 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
       if (isMounted) {
         if (data) {
           setAnimeData(data);
+          resolveAnimeToTmdb({ ...initialItem, ...data }).then((resolved) => {
+            if (isMounted && resolved) {
+              setAnimeData((prev) => prev ? {
+                ...prev,
+                tmdbId: resolved.tmdbId,
+                imdbId: resolved.imdbId,
+              } : prev);
+            }
+          });
         }
         setLoading(false);
       }
@@ -157,6 +169,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
     onPlay({
       ...initialItem,
       tmdbId: d.tmdbId || initialItem.tmdbId,
+      imdbId: (d as any).imdbId || initialItem.imdbId,
       title: d.title,
       poster_path: d.poster_path,
       backdrop_path: d.backdrop_path,
@@ -177,6 +190,26 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
+      <SEOHead
+        title={`${d.title}${d.year ? ` (${d.year})` : ''} — Anime`}
+        description={d.description || d.overview || `Watch ${d.title} anime online on Streamverse.`}
+        image={d.backdrop_path || d.poster_path}
+        type="video.tv_show"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'TVSeries',
+          name: d.title,
+          description: d.description || d.overview,
+          image: d.backdrop_path || d.poster_path,
+          datePublished: d.year,
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: d.rating_percent ? d.rating_percent / 10 : 8.5,
+            bestRating: 10,
+            ratingCount: d.vote_count ? parseInt(d.vote_count.replace(/,/g, ''), 10) : 500,
+          },
+        }}
+      />
       {/* 1. HERO SECTION */}
       <section className="relative w-full">
         {/* Ambient Blur Layer */}
@@ -239,15 +272,10 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
         {/* Content Container aligned to bottom */}
         <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
           {onBack && (
-            <button
-              type="button"
+            <GlassBackButton
               onClick={onBack}
-              aria-label="Go back"
-              className="absolute left-5 top-20 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/50 px-3.5 py-2 text-xs font-semibold text-white/90 shadow-xl backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:left-8 lg:left-10 cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
+              className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
+            />
           )}
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column (Meta & Synopsis) */}

@@ -3,6 +3,8 @@ import { Bookmark, Trash2, Film, Tv, Cat, Sparkles, AlertTriangle } from 'lucide
 import { MediaItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
 import { MediaCard } from '../components/MediaCard';
+import { useWatchlistStore } from '../store/useWatchlistStore';
+import { SEOHead } from '../components/SEOHead';
 
 interface WatchlistPageProps {
   watchlist: string[];
@@ -27,14 +29,18 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const store = useWatchlistStore();
 
-  // Resolve saved items from props or fallback to matching allMedia
+  // Resolve saved items from reactive store, props, or fallback to matching allMedia
   const allSavedItems = useMemo(() => {
+    if (store.items && store.items.length > 0) {
+      return store.items;
+    }
     if (providedSavedItems && providedSavedItems.length > 0) {
       return providedSavedItems;
     }
     return allMedia.filter((item) => watchlist.includes(item.id));
-  }, [providedSavedItems, watchlist]);
+  }, [store.items, providedSavedItems, watchlist]);
 
   // Counts per category
   const counts = useMemo(() => {
@@ -56,12 +62,17 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
   }, [allSavedItems, activeFilter]);
 
   const handleConfirmClear = () => {
-    onClearWatchlist();
+    store.clearWatchlist();
+    if (onClearWatchlist) onClearWatchlist();
     setShowClearConfirm(false);
   };
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-8">
+      <SEOHead
+        title="My Watchlist"
+        description="Your personal watchlist of movies, TV shows, and anime on Streamverse."
+      />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>

@@ -53,13 +53,12 @@ export class LRUCache<K, V> {
   }
 }
 
-/**
- * Executes an async task while deduplicating in-flight calls sharing the same key.
- */
+const defaultInFlightMap = new Map<string, Promise<any>>();
+
 export async function deduplicateInFlight<T>(
   key: string,
   fetcher: () => Promise<T>,
-  inFlightMap: Map<string, Promise<T>>
+  inFlightMap: Map<string, Promise<T>> = defaultInFlightMap
 ): Promise<T> {
   const existing = inFlightMap.get(key);
   if (existing) {
