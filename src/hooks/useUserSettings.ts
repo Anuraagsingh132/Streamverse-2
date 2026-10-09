@@ -3,6 +3,7 @@ import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../util
 
 export type VideoServerId = 'hdhub' | 'pengu' | 'cinemaos' | 'vidsrc' | 'autoembed' | 'smashystream';
 export type VideoQuality = '1080p' | '720p' | '4k' | 'auto';
+export type SubtitleSize = 'small' | 'medium' | 'large';
 
 export interface UserSettings {
   defaultServer: VideoServerId;
@@ -10,6 +11,7 @@ export interface UserSettings {
   defaultQuality: VideoQuality;
   pixelDrainRoute: PixelDrainRoute;
   subtitleOffset: number; // in seconds, from -5.0 to +5.0
+  subtitleSize: SubtitleSize;
 }
 
 export const SETTINGS_CHANGE_EVENT = 'streamverse_settings_change';
@@ -19,6 +21,7 @@ const STORAGE_KEYS = {
   autoplay: 'streamverse_autoplay',
   quality: 'streamverse_quality',
   subtitleOffset: 'streamverse_subtitle_offset',
+  subtitleSize: 'streamverse_subtitle_size',
 } as const;
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -27,6 +30,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   defaultQuality: '1080p',
   pixelDrainRoute: 'normal',
   subtitleOffset: 0.0,
+  subtitleSize: 'medium',
 };
 
 export function getStoredUserSettings(): UserSettings {
@@ -52,12 +56,19 @@ export function getStoredUserSettings(): UserSettings {
     const parsedOffset = rawOffset !== null ? parseFloat(rawOffset) : 0.0;
     const subtitleOffset = Number.isFinite(parsedOffset) ? Math.max(-5.0, Math.min(5.0, parsedOffset)) : 0.0;
 
+    const rawSubSize = localStorage.getItem(STORAGE_KEYS.subtitleSize);
+    const validSubSizes: SubtitleSize[] = ['small', 'medium', 'large'];
+    const subtitleSize = (rawSubSize && validSubSizes.includes(rawSubSize as SubtitleSize))
+      ? (rawSubSize as SubtitleSize)
+      : DEFAULT_USER_SETTINGS.subtitleSize;
+
     return {
       defaultServer,
       autoplayNext,
       defaultQuality,
       pixelDrainRoute,
       subtitleOffset,
+      subtitleSize,
     };
   } catch {
     return { ...DEFAULT_USER_SETTINGS, pixelDrainRoute: getPixelDrainRoute() };
@@ -83,6 +94,9 @@ export function saveUserSettings(partial: Partial<UserSettings>): UserSettings {
     }
     if (partial.subtitleOffset !== undefined) {
       localStorage.setItem(STORAGE_KEYS.subtitleOffset, String(next.subtitleOffset));
+    }
+    if (partial.subtitleSize !== undefined) {
+      localStorage.setItem(STORAGE_KEYS.subtitleSize, next.subtitleSize);
     }
 
     if (typeof window !== 'undefined') {

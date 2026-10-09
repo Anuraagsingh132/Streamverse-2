@@ -201,47 +201,79 @@ export const SettingsPage: React.FC = () => {
 
         {/* Subtitle Preferences */}
         <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <div className="flex items-center gap-2">
-              <Subtitles className="h-5 w-5 text-rose-500" />
-              <h2 className="text-base font-bold text-white">Subtitle Timing Offset</h2>
+          <div className="flex items-center gap-2 border-b border-white/5 pb-4">
+            <Subtitles className="h-5 w-5 text-rose-500" />
+            <h2 className="text-base font-bold text-white">Subtitle Preferences</h2>
+          </div>
+
+          {/* Subtitle Size Selector */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">Typography & Size</span>
+              <span className="text-xs font-semibold text-rose-400 capitalize">{settings.subtitleSize}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-semibold text-rose-400">
-                {settings.subtitleOffset > 0 ? `+${settings.subtitleOffset.toFixed(1)}s` : `${settings.subtitleOffset.toFixed(1)}s`}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleSubtitleOffsetChange(0)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] bg-white/10 hover:bg-white/15 text-white/80 transition"
-                title="Reset to 0.0s"
-              >
-                <RotateCcw className="h-3 w-3" />
-                <span>Reset</span>
-              </button>
+            <p className="text-xs text-zinc-400">
+              Rendered using high-legibility Inter typeface with multi-layer shadow and contrast outline.
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {(['small', 'medium', 'large'] as const).map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => updateSettings({ subtitleSize: size })}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold capitalize transition ${
+                    settings.subtitleSize === size
+                      ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                      : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {size} {size === 'medium' && '(Cinema)'}
+                </button>
+              ))}
             </div>
           </div>
 
-          <p className="text-xs text-zinc-400">
-            Shift subtitle timing forward or backward to fix subtitle desync with dialogue audio.
-          </p>
-
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-zinc-400">
-              <span>Earlier (-5.0s)</span>
-              <span>In-sync (0.0s)</span>
-              <span>Later (+5.0s)</span>
+          {/* Subtitle Timing Offset */}
+          <div className="pt-2 border-t border-white/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">Timing Offset</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-semibold text-rose-400">
+                  {settings.subtitleOffset > 0 ? `+${settings.subtitleOffset.toFixed(1)}s` : `${settings.subtitleOffset.toFixed(1)}s`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSubtitleOffsetChange(0)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] bg-white/10 hover:bg-white/15 text-white/80 transition"
+                  title="Reset to 0.0s"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  <span>Reset</span>
+                </button>
+              </div>
             </div>
-            <input
-              type="range"
-              min={-5.0}
-              max={5.0}
-              step={0.5}
-              value={settings.subtitleOffset}
-              onChange={(e) => handleSubtitleOffsetChange(parseFloat(e.target.value))}
-              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
-              aria-label="Subtitle Timing Offset Slider"
-            />
+
+            <p className="text-xs text-zinc-400">
+              Shift subtitle timing forward or backward to fix subtitle desync with dialogue audio.
+            </p>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-zinc-400">
+                <span>Earlier (-5.0s)</span>
+                <span>In-sync (0.0s)</span>
+                <span>Later (+5.0s)</span>
+              </div>
+              <input
+                type="range"
+                min={-5.0}
+                max={5.0}
+                step={0.5}
+                value={settings.subtitleOffset}
+                onChange={(e) => handleSubtitleOffsetChange(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                aria-label="Subtitle Timing Offset Slider"
+              />
+            </div>
           </div>
         </div>
 

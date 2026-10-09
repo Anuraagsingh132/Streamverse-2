@@ -156,9 +156,21 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   const lastTapTimeRef = useRef<{ time: number; x: number }>({ time: 0, x: 0 });
   const createdBlobUrlsRef = useRef<Set<string>>(new Set());
 
-  // Unified user settings & subtitle timing offset
+  // Unified user settings & subtitle preferences
   const { settings, updateSettings } = useUserSettings();
   const subtitleOffset = settings.subtitleOffset;
+  const subtitleSize = settings.subtitleSize || 'medium';
+  const subtitleFontSize = useMemo(() => {
+    switch (subtitleSize) {
+      case 'small':
+        return 'clamp(1.1rem, 2.0vw, 1.6rem)';
+      case 'large':
+        return 'clamp(1.65rem, 3.2vw, 2.75rem)';
+      case 'medium':
+      default:
+        return 'clamp(1.35rem, 2.5vw, 2.15rem)';
+    }
+  }, [subtitleSize]);
   const prevSubtitleOffsetRef = useRef<number>(subtitleOffset);
   const lastTimeUpdateRef = useRef<number>(0);
   const lastSaveTimeRef = useRef<number>(0);
@@ -1229,18 +1241,24 @@ interface AudioOptionItem {
         </video>
       )}
 
-      {/* Modern Subtitle Cue Styling */}
+      {/* Modern Cinema-Grade Subtitle Cue Styling */}
       <style>{`
-        video::cue {
-          background-color: rgba(10, 12, 20, 0.82) !important;
+        video::cue, ::cue {
+          background-color: rgba(0, 0, 0, 0.75) !important;
           color: #ffffff !important;
-          font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-          font-size: 1.15rem !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+          font-size: ${subtitleFontSize} !important;
           font-weight: 600 !important;
-          line-height: 1.35 !important;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95) !important;
-          padding: 3px 8px !important;
+          line-height: 1.4 !important;
+          letter-spacing: 0.025em !important;
+          text-shadow: 
+            0 0 2px #000000, 
+            0 1px 3px rgba(0, 0, 0, 0.95), 
+            0 2px 6px rgba(0, 0, 0, 0.9), 
+            0 0 10px rgba(0, 0, 0, 0.75) !important;
+          padding: 0.2em 0.55em !important;
           border-radius: 6px !important;
+          white-space: pre-line !important;
         }
       `}</style>
 
@@ -2153,6 +2171,30 @@ interface AudioOptionItem {
                         )}
                       </div>
 
+                      {/* Subtitle Size Selector */}
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5 mt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-white/80">Subtitle Size</span>
+                          <span className="text-[10px] font-bold text-primary capitalize">{subtitleSize}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {(['small', 'medium', 'large'] as const).map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => updateSettings({ subtitleSize: size })}
+                              className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition ${
+                                subtitleSize === size
+                                  ? 'bg-primary text-black font-bold shadow'
+                                  : 'bg-white/10 hover:bg-white/15 text-white/70 hover:text-white'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Subtitle Timing Offset Control (T3-08) */}
                       <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5 mt-2">
                         <div className="flex items-center justify-between">
@@ -2409,18 +2451,6 @@ interface AudioOptionItem {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* 10b. Ambient 2px Progress Line at the very bottom when controls are auto-hidden during playback */}
-      <div 
-        className={`absolute bottom-0 inset-x-0 h-[2px] bg-white/10 pointer-events-none transition-opacity duration-300 z-30 ${
-          !showControls && isPlaying ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <div 
-          style={{ width: `${Math.max(0, Math.min(100, playedPercent))}%` }} 
-          className="h-full bg-primary transition-all duration-100"
-        />
       </div>
 
       {/* 11. Codec / MKV Notice Modal (When browser native decoder fails on multi-channel MKV/DDP) */}
