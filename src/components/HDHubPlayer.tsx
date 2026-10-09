@@ -601,7 +601,8 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       videoRef.current.playbackRate = playbackSpeed;
       setPlaybackError(false);
 
-      // Playback auto-resume (T3-05)
+      // Playback auto-resume disabled to prevent cold-start buffering stalls on large containers (starts fresh from 0:00)
+      /*
       if (!hasResumedRef.current) {
         hasResumedRef.current = true;
         try {
@@ -618,6 +619,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
           }
         } catch {}
       }
+      */
 
       // Detect native audio tracks if exposed by browser
       const v = videoRef.current as any;
