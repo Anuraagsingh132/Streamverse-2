@@ -20,12 +20,55 @@ interface ServerOption {
   name: string;
   badge?: string;
   description?: string;
-  getUrl: (tmdbId: string | number, isTV: boolean, season: number, episode: number) => string;
+  getUrl: (id: string | number, isTV: boolean, season: number, episode: number) => string;
 }
 
-// Configurable video streaming servers list.
-// HDHub is the primary default server, followed by Pengu and CinemaOS.
-const SERVERS: ServerOption[] = [
+// Anime-specific streaming servers (MegaPlay Sub & Dub powered by AniList ID + Episode)
+export const ANIME_SERVERS: ServerOption[] = [
+  {
+    id: 'megaplay-sub',
+    name: 'MegaPlay (Sub)',
+    badge: 'Anime · Subbed',
+    description: 'Fast HD Japanese audio with subtitles (Default)',
+    getUrl: (id, _isTV, _season, episode) => `https://megaplay.buzz/stream/ani/${id}/${episode}/sub`
+  },
+  {
+    id: 'megaplay-dub',
+    name: 'MegaPlay (Dub)',
+    badge: 'Anime · English Dub',
+    description: 'English dubbed anime stream',
+    getUrl: (id, _isTV, _season, episode) => `https://megaplay.buzz/stream/ani/${id}/${episode}/dub`
+  },
+  {
+    id: 'cinemaos',
+    name: 'CinemaOS',
+    badge: 'Mirror 1 · HD',
+    description: 'CinemaOS official embed player',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      if (!isTV) {
+        return `https://cinemaos.tech/player/${tmdbId}?theme=ffffff`;
+      }
+      return `https://cinemaos.tech/player/${tmdbId}/${season}/${episode}?theme=ffffff`;
+    }
+  },
+  {
+    id: 'hdhub',
+    name: 'HDHub',
+    badge: 'Direct Stream · HD',
+    description: 'Direct stream extractor fallback',
+    getUrl: () => ''
+  },
+  {
+    id: 'pengu',
+    name: 'Pengu',
+    badge: 'Direct & HLS · Fast',
+    description: 'Pengu cloud streams fallback',
+    getUrl: () => ''
+  }
+];
+
+// Configurable video streaming servers list for Movies and TV Shows
+export const MOVIE_TV_SERVERS: ServerOption[] = [
   {
     id: 'hdhub',
     name: 'HDHub',
@@ -77,6 +120,8 @@ const SERVERS: ServerOption[] = [
     }
   }
 ];
+
+const SERVERS = MOVIE_TV_SERVERS;
 
 class HDHubErrorBoundary extends React.Component<
   { children: React.ReactNode; onFallback: () => void },
@@ -141,7 +186,20 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   const { settings } = useUserSettings();
   const [season, setSeason] = useState<number>(initialSeason || 1);
   const [episode, setEpisode] = useState<number>(initialEpisode || 1);
-  const [selectedServerId, setSelectedServerId] = useState<string>(() => settings.defaultServer || 'hdhub');
+  const [selectedServerId, setSelectedServerId] = useState<string>(() => {
+    if (item?.media_type === 'anime') {
+      return 'megaplay-sub';
+    }
+    return settings.defaultServer || 'hdhub';
+  });
+
+  useEffect(() => {
+    if (item?.media_type === 'anime') {
+      setSelectedServerId((prev) => (prev === 'megaplay-dub' ? 'megaplay-dub' : 'megaplay-sub'));
+    } else {
+      setSelectedServerId(settings.defaultServer || 'hdhub');
+    }
+  }, [item?.id, item?.media_type, settings.defaultServer]);
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState<boolean>(false);
   const [isEpisodeDrawerOpen, setIsEpisodeDrawerOpen] = useState<boolean>(false);
   const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState<boolean>(false);
@@ -274,10 +332,12 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   const isTV = item?.media_type === 'tv' || isAnime;
   const tmdbId = item?.tmdbId || item?.id || '';
 
+  const activeServers = useMemo(() => (isAnime ? ANIME_SERVERS : MOVIE_TV_SERVERS), [isAnime]);
+
   // Current active server configuration
   const currentServer = useMemo(() => {
-    return SERVERS.find((s) => s.id === selectedServerId) || SERVERS[0];
-  }, [selectedServerId]);
+    return activeServers.find((s) => s.id === selectedServerId) || activeServers[0];
+  }, [activeServers, selectedServerId]);
 
   // Available seasons (including Season 0 / Specials if present in seasons_list)
   const availableSeasons = useMemo<{ seasonNumber: number; label: string; episodeCount?: number }[]>(() => {
@@ -340,9 +400,14 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   // Construct iframe embed URL based on selected server configuration
   const isDirectPlayer = selectedServerId === 'hdhub' || selectedServerId === 'pengu';
   const embedUrl = useMemo(() => {
-    if (!item || !tmdbId || isDirectPlayer) return '';
+    if (!item || isDirectPlayer) return '';
+    // MegaPlay for anime takes item.id (AniList ID) directly
+    if (isAnime && (selectedServerId === 'megaplay-sub' || selectedServerId === 'megaplay-dub')) {
+      return currentServer.getUrl(item.id, isTV, season, episode);
+    }
+    if (!tmdbId) return '';
     return currentServer.getUrl(tmdbId, isTV, season, episode);
-  }, [item, tmdbId, isTV, season, episode, currentServer, isDirectPlayer]);
+  }, [item, isAnime, selectedServerId, currentServer, isTV, season, episode, isDirectPlayer, tmdbId]);
 
   if (!item) return null;
 
@@ -375,7 +440,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
               isEpisodeDrawerOpen={isEpisodeDrawerOpen}
               onSwitchServer={(serverId) => setSelectedServerId(serverId)}
               currentServerId={selectedServerId}
-              serversList={SERVERS}
+              serversList={activeServers}
             />
           </HDHubErrorBoundary>
         ) : embedUrl ? (
@@ -385,6 +450,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             title={item.title}
             className="absolute inset-0 w-full h-full border-0 bg-black"
             allowFullScreen
+            scrolling="no"
             referrerPolicy="no-referrer"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
           />
@@ -423,6 +489,36 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
 
           {/* Top-Right: Server Switcher & Series Navigation */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Quick SUB / DUB toggle for Anime */}
+            {isAnime && (
+              <div className="flex items-center rounded-full border border-white/10 bg-[#0a0c14]/75 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={() => setSelectedServerId('megaplay-sub')}
+                  className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-150 ${
+                    selectedServerId === 'megaplay-sub'
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Switch to Subbed Audio"
+                >
+                  SUB
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedServerId('megaplay-dub')}
+                  className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-150 ${
+                    selectedServerId === 'megaplay-dub'
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Switch to English Dubbed Audio"
+                >
+                  DUB
+                </button>
+              </div>
+            )}
+
             {/* Server Switcher Pill & Dropdown */}
             <div className="relative" ref={serverDropdownRef}>
           <button
@@ -459,12 +555,12 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
                   Select Server
                 </span>
                 <span className="text-[10px] text-primary font-semibold">
-                  {SERVERS.length} Available
+                  {activeServers.length} Available
                 </span>
               </div>
 
               <div className="space-y-1">
-                {SERVERS.map((srv) => {
+                {activeServers.map((srv) => {
                   const isSelected = srv.id === selectedServerId;
                   return (
                     <button
