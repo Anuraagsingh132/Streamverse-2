@@ -1,13 +1,51 @@
-import React, { useState } from 'react';
-import { Settings, Server, Play, Shield, Globe, Moon, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, Server, Play, Check, Zap } from 'lucide-react';
+import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../utils/pixeldrain';
 
 export const SettingsPage: React.FC = () => {
   const [defaultServer, setDefaultServer] = useState<'vidsrc' | 'autoembed' | 'vidsrcxyz'>('vidsrc');
   const [autoplayNext, setAutoplayNext] = useState<boolean>(true);
   const [defaultQuality, setDefaultQuality] = useState<'1080p' | '720p' | '4k'>('1080p');
+  const [pixelDrainRoute, setPixelDrainRouteState] = useState<PixelDrainRoute>('normal');
   const [savedNotification, setSavedNotification] = useState<boolean>(false);
 
+  useEffect(() => {
+    setPixelDrainRouteState(getPixelDrainRoute());
+
+    try {
+      const savedServer = localStorage.getItem('streamverse_default_server');
+      if (savedServer && ['vidsrc', 'autoembed', 'vidsrcxyz'].includes(savedServer)) {
+        setDefaultServer(savedServer as any);
+      }
+      const savedAutoplay = localStorage.getItem('streamverse_autoplay');
+      if (savedAutoplay !== null) {
+        setAutoplayNext(savedAutoplay === 'true');
+      }
+      const savedQuality = localStorage.getItem('streamverse_quality');
+      if (savedQuality && ['1080p', '720p', '4k'].includes(savedQuality)) {
+        setDefaultQuality(savedQuality as any);
+      }
+    } catch {
+      // Ignore localStorage access failures
+    }
+  }, []);
+
+  const handlePixelDrainRouteChange = (newRoute: PixelDrainRoute) => {
+    setPixelDrainRouteState(newRoute);
+    setPixelDrainRoute(newRoute);
+  };
+
   const saveSettings = () => {
+    setPixelDrainRoute(pixelDrainRoute);
+
+    try {
+      localStorage.setItem('streamverse_default_server', defaultServer);
+      localStorage.setItem('streamverse_autoplay', String(autoplayNext));
+      localStorage.setItem('streamverse_quality', defaultQuality);
+    } catch {
+      // Ignore localStorage access failures
+    }
+
     setSavedNotification(true);
     setTimeout(() => setSavedNotification(false), 2500);
   };
@@ -60,6 +98,75 @@ export const SettingsPage: React.FC = () => {
                 <div>
                   <div className="text-sm font-semibold text-white">{srv.name}</div>
                   <div className="text-xs text-zinc-400">{srv.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* PixelDrain Route Configuration */}
+        <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-rose-500" />
+              <h2 className="text-base font-bold text-white">PixelDrain Stream Route</h2>
+            </div>
+            <span className="rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-rose-400">
+              Direct Cloud Engine
+            </span>
+          </div>
+
+          <p className="text-xs text-zinc-400">
+            Choose how PixelDrain cloud streams are fetched. Toggle between the local application proxy and the direct high-speed CDN mirror.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              {
+                id: 'normal',
+                name: 'Normal (Proxy)',
+                badge: 'Recommended for ISP Blocks',
+                urlPattern: '/api/pixeldrain/:id',
+                desc: 'Proxies video chunks through the application edge proxy to bypass hotlinking and ISP firewall restrictions.'
+              },
+              {
+                id: 'cdn',
+                name: 'Fast CDN Mirror',
+                badge: 'Direct High-Speed EU CDN',
+                urlPattern: '/api/pixeldrain-cdn/:id',
+                desc: 'Proxies the high-speed European CDN mirror with ORB & CORS bypass for smooth video playback.'
+              }
+            ].map((routeOpt) => (
+              <label
+                key={routeOpt.id}
+                className={`flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition ${
+                  pixelDrainRoute === routeOpt.id
+                    ? 'border-rose-500/60 bg-rose-500/10'
+                    : 'border-white/5 bg-zinc-950/60 hover:border-white/20'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="pixeldrain_route"
+                    checked={pixelDrainRoute === routeOpt.id}
+                    onChange={() => handlePixelDrainRouteChange(routeOpt.id as PixelDrainRoute)}
+                    className="mt-1 accent-rose-600"
+                  />
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-white">{routeOpt.name}</span>
+                      <span className="text-[10px] font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                        {routeOpt.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">{routeOpt.desc}</p>
+                    <div className="pt-1">
+                      <span className="text-[10px] text-zinc-500 font-mono bg-black/40 px-2 py-1 rounded border border-white/5 inline-block">
+                        {routeOpt.urlPattern}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </label>
             ))}

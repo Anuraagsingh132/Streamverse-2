@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /watch/
+
+Sitemap: https://streamverse.app/sitemap.xml

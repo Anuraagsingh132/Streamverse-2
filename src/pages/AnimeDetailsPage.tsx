@@ -27,7 +27,7 @@ interface AnimeDetailsPageProps {
 
 export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
   item: initialItem,
-  onBack,
+  onBack: _onBack,
   onPlay,
   onOpenDetails,
   watchlist,
@@ -58,7 +58,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
     });
 
     return () => { isMounted = false; };
-  }, [initialItem.id]);
+  }, [initialItem.id, initialItem.title_logo, initialItem.logo_path]);
 
   // Rail refs for horizontal scrolling
   const episodesRailRef = useRef<HTMLDivElement>(null);

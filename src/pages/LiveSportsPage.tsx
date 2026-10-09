@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radio, Users, Trophy, Play, CheckCircle } from 'lucide-react';
+import { Radio, Users, Trophy, Play } from 'lucide-react';
 import { liveSportsData } from '../data/mediaData';
 import { LiveSport } from '../types/media';
 

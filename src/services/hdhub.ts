@@ -1,5 +1,6 @@
 import { getImdbId } from './tmdb';
 import { MediaType } from '../types/media';
+import { resolvePixelDrainStreamUrl, registerPixelDrainCacheInvalidator } from '../utils/pixeldrain';
 
 const HDHUB_BASE_RESOLVER = 'https://hdhub.thevolecitor.qzz.io/eyJ0b3Jib3giOiJ1bnNldCIsInF1YWxpdGllcyI6IjIxNjBwLDEwODBwLDcyMHAiLCJzb3J0IjoiZGVzYyJ9/stream';
 
@@ -34,6 +35,14 @@ export interface HDHubResolutionResult {
 // In-memory cache for resolved streams
 const streamCache = new Map<string, { timestamp: number; result: HDHubResolutionResult }>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+export function clearHDHubCache(): void {
+  streamCache.clear();
+}
+
+registerPixelDrainCacheInvalidator(() => {
+  streamCache.clear();
+});
 
 export function parseAudioCodec(
   text: string,
@@ -321,12 +330,8 @@ export async function fetchHDHubStreams(
       const audioCodecInfo = parseAudioCodec(fullText, isHls);
       const bitrateInfo = parseStreamBitrate(fullText, s.behaviorHints?.videoSize, isTV);
 
-      // Route PixelDrain URLs through our local /api/pixeldrain proxy to bypass hotlink blocking and attachment download
-      let streamUrl = s.url;
-      const pdMatch = streamUrl.match(/pixeldrain\.(?:dev|com)\/(?:api\/file\/|u\/)([a-zA-Z0-9_-]+)/i);
-      if (pdMatch && pdMatch[1]) {
-        streamUrl = `/api/pixeldrain/${pdMatch[1]}`;
-      }
+      // Route PixelDrain URLs through our local /api/pixeldrain proxy or direct CDN based on route settings
+      const streamUrl = resolvePixelDrainStreamUrl(s.url, fullText);
 
       return {
         id: `hdhub-${idx}-${s.url?.slice(-12) || idx}`,

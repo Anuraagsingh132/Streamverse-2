@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bookmark, Trash2, Play } from 'lucide-react';
+import { Bookmark, Trash2 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
 import { MediaCard } from '../components/MediaCard';

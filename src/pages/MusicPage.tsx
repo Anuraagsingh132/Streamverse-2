@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Music, Play, Pause, Disc3, Volume2 } from 'lucide-react';
+import { Music, Play, Pause, Volume2 } from 'lucide-react';
 import { musicTracksData } from '../data/mediaData';
 import { MusicTrack } from '../types/media';
 

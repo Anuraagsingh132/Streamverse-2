@@ -35,7 +35,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   watchlistCount
 }) => {
   const [isBrowseOpen, setIsBrowseOpen] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('streamverse_theme') !== 'light';
+    } catch {
+      return true;
+    }
+  });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,11 +55,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
-    if (document.documentElement.classList.contains('dark')) {
-      document.documentElement.classList.remove('dark');
-    } else {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    try {
+      localStorage.setItem('streamverse_theme', nextDark ? 'dark' : 'light');
+    } catch (e) {
+      console.warn('Failed to persist theme preference:', e);
+    }
+    if (nextDark) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   };
 

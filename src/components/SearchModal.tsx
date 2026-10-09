@@ -94,7 +94,7 @@ async function searchAniList(search: string, type: 'MANGA' | 'ANIME'): Promise<a
 export const SearchModal: React.FC<SearchModalProps> = ({
   isOpen,
   onClose,
-  items,
+  items: _items,
   onPlay: _onPlay,
   onOpenDetails,
   onNavigate

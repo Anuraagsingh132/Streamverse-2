@@ -23,6 +23,8 @@ import {
   getUpcomingMovies 
 } from '../services/tmdb';
 
+import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
+
 interface MoviesPageProps {
   onPlay: (item: MediaItem) => void;
   onOpenDetails: (item: MediaItem) => void;
@@ -36,7 +38,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
   watchlist,
   onToggleWatchlist
 }) => {
-  const [heroMoviesList, setHeroMoviesList] = useState<MediaItem[]>(movieHeroItems);
+  const [heroMoviesList] = useState<MediaItem[]>(movieHeroItems);
   const [trendingMoviesList, setTrendingMoviesList] = useState<MediaItem[]>(movieTop10Items);
   const [popularMoviesList, setPopularMoviesList] = useState<MediaItem[]>(moviePopularItems);
   const [actionMoviesList, setActionMoviesList] = useState<MediaItem[]>(movieActionItems);
@@ -49,42 +51,33 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
   useEffect(() => {
     let isMounted = true;
 
-    // Helper to keep only items with valid image backdrops
-    const filterValid = (items: MediaItem[] | undefined, fallback: MediaItem[]) => {
-      if (!items || items.length === 0) return fallback;
-      const valid = items.filter(i => Boolean(i.backdrop_path && i.backdrop_path.trim() !== ''));
-      // Merge with curated items so top positions keep the recognizable CinemaOS look
-      const merged = [...fallback.slice(0, 4), ...valid.filter(v => !fallback.slice(0, 4).some(f => f.id === v.id))];
-      return merged.slice(0, 15);
-    };
-
     // Progressive asynchronous streaming: update each rail immediately upon arrival
     getTrending('movie', 'day')
-      .then(res => { if (isMounted && res?.length) setTrendingMoviesList(filterValid(res, movieTop10Items)); })
+      .then(res => { if (isMounted && res?.length) setTrendingMoviesList(mergeValidMediaWithFallback(res, movieTop10Items)); })
       .catch(() => {});
 
     getPopular('movie')
-      .then(res => { if (isMounted && res?.length) setPopularMoviesList(filterValid(res, moviePopularItems)); })
+      .then(res => { if (isMounted && res?.length) setPopularMoviesList(mergeValidMediaWithFallback(res, moviePopularItems)); })
       .catch(() => {});
 
     getTopRated('movie')
-      .then(res => { if (isMounted && res?.length) setTopRatedList(filterValid(res, movieTopRatedItems)); })
+      .then(res => { if (isMounted && res?.length) setTopRatedList(mergeValidMediaWithFallback(res, movieTopRatedItems)); })
       .catch(() => {});
 
     getByGenre(28, 'movie')
-      .then(res => { if (isMounted && res?.length) setActionMoviesList(filterValid(res, movieActionItems)); })
+      .then(res => { if (isMounted && res?.length) setActionMoviesList(mergeValidMediaWithFallback(res, movieActionItems)); })
       .catch(() => {});
 
     getByGenre(35, 'movie')
-      .then(res => { if (isMounted && res?.length) setComedyMoviesList(filterValid(res, movieComedyItems)); })
+      .then(res => { if (isMounted && res?.length) setComedyMoviesList(mergeValidMediaWithFallback(res, movieComedyItems)); })
       .catch(() => {});
 
     getNowPlayingMovies()
-      .then(res => { if (isMounted && res?.length) setNowPlayingList(filterValid(res, movieNowPlayingItems)); })
+      .then(res => { if (isMounted && res?.length) setNowPlayingList(mergeValidMediaWithFallback(res, movieNowPlayingItems)); })
       .catch(() => {});
 
     getUpcomingMovies()
-      .then(res => { if (isMounted && res?.length) setUpcomingMoviesList(filterValid(res, movieUpcomingItems)); })
+      .then(res => { if (isMounted && res?.length) setUpcomingMoviesList(mergeValidMediaWithFallback(res, movieUpcomingItems)); })
       .catch(() => {});
     return () => {
       isMounted = false;

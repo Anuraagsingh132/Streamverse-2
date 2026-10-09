@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { Play, Star } from 'lucide-react';
 import { MediaItem } from '../types/media';
 
+import { optimizeTmdbImage } from '../utils/imageUtils';
+
 interface PosterCardProps {
   item: MediaItem;
   onOpenDetails: (item: MediaItem) => void;
@@ -20,10 +22,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
   const year = item.year || (item.release_date ? new Date(item.release_date).getFullYear() : 2026);
   const typeLabel = item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Film';
 
-  const posterSrc = item.poster_path || item.backdrop_path || '';
-  const optimizedPosterSrc = posterSrc.includes('image.tmdb.org/t/p/')
-    ? posterSrc.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/')
-    : posterSrc;
+  const optimizedPosterSrc = optimizeTmdbImage(item.poster_path || item.backdrop_path, 'poster');
 
   return (
     <motion.div

@@ -6,7 +6,7 @@ import { tvNetflixItems } from '../data/cinemaosTvMatch';
 import { allMedia } from '../data/mediaData';
 import { getByProvider, PROVIDER_NAME_TO_ID } from '../services/tmdb';
 
-const FALLBACK_BACKDROP = 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1280&auto=format&fit=crop';
+import { FALLBACK_BACKDROP } from '../utils/imageUtils';
 
 interface ProviderRailProps {
   onPlay: (item: MediaItem) => void;

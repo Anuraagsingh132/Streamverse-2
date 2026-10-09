@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HeroBanner } from '../components/HeroBanner';
 import { TopTenRow } from '../components/TopTenRow';
-import { TrendingIndiaRow } from '../components/TrendingIndiaRow';
 import { ProviderRail } from '../components/ProviderRail';
 import { GenreRail } from '../components/GenreRail';
 import { PlatformsMarquee } from '../components/PlatformsMarquee';
@@ -30,16 +29,15 @@ export const HomePage: React.FC<HomePageProps> = ({
   onToggleWatchlist,
   onNavigate
 }) => {
-  const [heroItemsList, setHeroItemsList] = useState<MediaItem[]>(liveHeroItems);
-  const [moviesList, setMoviesList] = useState<MediaItem[]>(liveTop10Movies);
-  const [showsList, setShowsList] = useState<MediaItem[]>(liveTop10Shows);
+  const [heroItemsList] = useState<MediaItem[]>(liveHeroItems);
+  const [moviesList] = useState<MediaItem[]>(liveTop10Movies);
+  const [showsList] = useState<MediaItem[]>(liveTop10Shows);
   const [topRatedFilter, setTopRatedFilter] = useState<'movie' | 'tv'>('movie');
-  const [topRatedMoviesList, setTopRatedMoviesList] = useState<MediaItem[]>(liveTopRatedMovies);
-  const [topRatedShowsList, setTopRatedShowsList] = useState<MediaItem[]>(liveTopRatedShows);
+  const [topRatedMoviesList] = useState<MediaItem[]>(liveTopRatedMovies);
+  const [topRatedShowsList] = useState<MediaItem[]>(liveTopRatedShows);
 
   // Pre-load TMDB data in background cache for instant responsive playback & details
   useEffect(() => {
-    let isMounted = true;
     const prefetchTmdbDetails = async () => {
       try {
         await Promise.all([
@@ -47,15 +45,12 @@ export const HomePage: React.FC<HomePageProps> = ({
           getTrending('tv', 'day'),
           getTopRated('movie')
         ]);
-      } catch (err) {
+      } catch {
         // Cache prefetch is non-blocking
       }
     };
 
     prefetchTmdbDetails();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const activeTopRated = topRatedFilter === 'movie' ? topRatedMoviesList : topRatedShowsList;

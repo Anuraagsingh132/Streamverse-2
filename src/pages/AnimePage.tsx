@@ -5,7 +5,7 @@ import { ArrowUpRight, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import animeInitialData from '../data/animeInitialData.json';
 import animeHeroSlides from '../data/animeHeroSlides.json';
 import { fetchAniListRail } from '../services/anilist';
-import { fetchAnimeLogo, getCachedAnimeLogo } from '../services/animeLogo';
+import { getCachedAnimeLogo } from '../services/animeLogo';
 
 interface AnimePageProps {
   onPlay: (item: MediaItem) => void;
@@ -70,7 +70,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
   const [genreResults, setGenreResults] = useState<any[]>([]);
   const [isLoadingGenre, setIsLoadingGenre] = useState<boolean>(false);
   const [railsData, setRailsData] = useState<Record<string, any[]>>(animeInitialData);
-  const [heroSlides, setHeroSlides] = useState<any[]>(animeHeroSlides);
+  const [heroSlides] = useState<any[]>(animeHeroSlides);
   const hasLoadedRef = useRef(false);
 
   // Progressive background fetch for rails to keep UI snappy without 429 errors or lag
@@ -104,7 +104,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
               [rDef.key]: items
             }));
           }
-        } catch (e) {
+        } catch {
           // Gracefully continue using initial data
         }
         // Small pause between background fetches

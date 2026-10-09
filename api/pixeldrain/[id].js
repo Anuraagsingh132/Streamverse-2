@@ -10,7 +10,18 @@ export default async function handler(req) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Headers': 'Range, Content-Type, Accept, Origin',
+      }
+    });
+  }
+
+  // Restrict to allowed methods
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return new Response('Method Not Allowed', {
+      status: 405,
+      headers: {
+        'Allow': 'GET, HEAD, OPTIONS',
+        'Access-Control-Allow-Origin': '*'
       }
     });
   }
@@ -19,9 +30,15 @@ export default async function handler(req) {
   const parts = url.pathname.split('/');
   const id = parts[parts.length - 1]?.replace(/\?.*$/, '');
 
-  if (!id) {
-    return new Response('Missing file ID', { status: 400 });
+  // Validate ID format (alphanumeric, underscores, dashes only)
+  if (!id || !/^[a-zA-Z0-9_-]{4,32}$/.test(id)) {
+    return new Response('Invalid or missing file ID', {
+      status: 400,
+      headers: { 'Access-Control-Allow-Origin': '*' }
+    });
   }
+
+  const isCdn = url.searchParams.get('mode') === 'cdn' || url.pathname.includes('pixeldrain-cdn');
 
   const range = req.headers.get('range');
   const headers = {
@@ -31,27 +48,35 @@ export default async function handler(req) {
     headers['Range'] = range;
   }
 
-  // Try pixeldrain.dev first, fallback to pixeldrain.com if network fails
-  const domains = ['pixeldrain.dev', 'pixeldrain.com'];
+  // If CDN mode is requested, prioritize direct CDN mirror, followed by pixeldrain.dev and pixeldrain.com
+  const candidateUrls = isCdn
+    ? [
+        `https://cdn.pixeldrain.eu.cc/${id}`,
+        `https://pixeldrain.dev/api/file/${id}`,
+        `https://pixeldrain.com/api/file/${id}`
+      ]
+    : [
+        `https://pixeldrain.dev/api/file/${id}`,
+        `https://pixeldrain.com/api/file/${id}`
+      ];
+
   let upstreamRes = null;
   let lastError = null;
 
-  for (const domain of domains) {
+  for (const targetUrl of candidateUrls) {
     try {
-      const targetUrl = `https://${domain}/api/file/${id}`;
       const res = await fetch(targetUrl, {
         method: req.method === 'HEAD' ? 'HEAD' : 'GET',
-        headers
+        headers,
+        redirect: 'follow'
       });
 
-      if (res.ok || res.status === 206) {
-        upstreamRes = res;
-        break;
-      } else if (res.status === 404) {
+      // Valid streaming responses include 200 (OK), 206 (Partial Content), and 416 (Range Not Satisfiable)
+      if (res.ok || res.status === 206 || res.status === 416 || res.status === 404) {
         upstreamRes = res;
         break;
       } else {
-        lastError = new Error(`Upstream ${domain} returned status ${res.status}`);
+        lastError = new Error(`Upstream ${targetUrl} returned status ${res.status}`);
       }
     } catch (err) {
       lastError = err;
@@ -59,7 +84,10 @@ export default async function handler(req) {
   }
 
   if (!upstreamRes) {
-    return new Response(lastError?.message || 'Upstream fetch failed', { status: 502 });
+    return new Response(lastError?.message || 'Upstream fetch failed', {
+      status: 502,
+      headers: { 'Access-Control-Allow-Origin': '*' }
+    });
   }
 
   const responseHeaders = new Headers();

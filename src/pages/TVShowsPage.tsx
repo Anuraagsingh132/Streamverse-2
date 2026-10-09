@@ -23,6 +23,8 @@ import {
   getOnTheAirTV 
 } from '../services/tmdb';
 
+import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
+
 interface TVShowsPageProps {
   onPlay: (item: MediaItem) => void;
   onOpenDetails: (item: MediaItem) => void;
@@ -36,7 +38,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
   watchlist,
   onToggleWatchlist
 }) => {
-  const [heroShowsList, setHeroShowsList] = useState<MediaItem[]>(tvHeroItems);
+  const [heroShowsList] = useState<MediaItem[]>(tvHeroItems);
   const [trendingShowsList, setTrendingShowsList] = useState<MediaItem[]>(tvTop10Items);
   const [popularShowsList, setPopularShowsList] = useState<MediaItem[]>(tvPopularItems);
   const [dramaShowsList, setDramaShowsList] = useState<MediaItem[]>(tvDramaItems);
@@ -49,42 +51,33 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
   useEffect(() => {
     let isMounted = true;
 
-    // Helper to keep only items with valid image backdrops
-    const filterValid = (items: MediaItem[] | undefined, fallback: MediaItem[]) => {
-      if (!items || items.length === 0) return fallback;
-      const valid = items.filter(i => Boolean(i.backdrop_path && i.backdrop_path.trim() !== ''));
-      // Merge with curated items so top positions keep the recognizable CinemaOS look
-      const merged = [...fallback.slice(0, 4), ...valid.filter(v => !fallback.slice(0, 4).some(f => f.id === v.id))];
-      return merged.slice(0, 15);
-    };
-
     // Progressive asynchronous streaming: update each rail immediately upon arrival
     getTrending('tv', 'day')
-      .then(res => { if (isMounted && res?.length) setTrendingShowsList(filterValid(res, tvTop10Items)); })
+      .then(res => { if (isMounted && res?.length) setTrendingShowsList(mergeValidMediaWithFallback(res, tvTop10Items)); })
       .catch(() => {});
 
     getPopular('tv')
-      .then(res => { if (isMounted && res?.length) setPopularShowsList(filterValid(res, tvPopularItems)); })
+      .then(res => { if (isMounted && res?.length) setPopularShowsList(mergeValidMediaWithFallback(res, tvPopularItems)); })
       .catch(() => {});
 
     getTopRated('tv')
-      .then(res => { if (isMounted && res?.length) setTopRatedShowsList(filterValid(res, tvTopRatedItems)); })
+      .then(res => { if (isMounted && res?.length) setTopRatedShowsList(mergeValidMediaWithFallback(res, tvTopRatedItems)); })
       .catch(() => {});
 
     getByGenre(18, 'tv')
-      .then(res => { if (isMounted && res?.length) setDramaShowsList(filterValid(res, tvDramaItems)); })
+      .then(res => { if (isMounted && res?.length) setDramaShowsList(mergeValidMediaWithFallback(res, tvDramaItems)); })
       .catch(() => {});
 
     getByGenre(35, 'tv')
-      .then(res => { if (isMounted && res?.length) setComedyShowsList(filterValid(res, tvComedyItems)); })
+      .then(res => { if (isMounted && res?.length) setComedyShowsList(mergeValidMediaWithFallback(res, tvComedyItems)); })
       .catch(() => {});
 
     getAiringTodayTV()
-      .then(res => { if (isMounted && res?.length) setAiringTodayList(filterValid(res, tvAiringTodayItems)); })
+      .then(res => { if (isMounted && res?.length) setAiringTodayList(mergeValidMediaWithFallback(res, tvAiringTodayItems)); })
       .catch(() => {});
 
     getOnTheAirTV()
-      .then(res => { if (isMounted && res?.length) setOnTheAirList(filterValid(res, tvOnTheAirItems)); })
+      .then(res => { if (isMounted && res?.length) setOnTheAirList(mergeValidMediaWithFallback(res, tvOnTheAirItems)); })
       .catch(() => {});
     return () => {
       isMounted = false;

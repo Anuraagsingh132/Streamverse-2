@@ -225,7 +225,7 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
       detailsCache.set(numericId, parsed);
       return parsed;
     }
-  } catch (e) {}
+  } catch {}
 
   try {
     const res = await fetch('https://graphql.anilist.co', {
@@ -386,7 +386,7 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
     detailsCache.set(numericId, result);
     try {
       localStorage.setItem(`anilist_details_${numericId}`, JSON.stringify(result));
-    } catch (e) {
+    } catch {
       try {
         sessionStorage.setItem(`anilist_details_${numericId}`, JSON.stringify(result));
       } catch {}
@@ -456,7 +456,7 @@ export async function fetchAniListRail(variables: {
         return parsed;
       }
     }
-  } catch (e) {}
+  } catch {}
 
   if (inFlightRail.has(cacheKey)) {
     return inFlightRail.get(cacheKey)!;
@@ -486,7 +486,7 @@ export async function fetchAniListRail(variables: {
         railCache.set(cacheKey, media);
         try {
           localStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
-        } catch (e) {
+        } catch {
           try {
             sessionStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
           } catch {}

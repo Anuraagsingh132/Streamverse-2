@@ -27,7 +27,6 @@ import {
   ListVideo,
   AlertCircle,
   Subtitles,
-  Languages,
   AudioLines,
   Upload,
   FileText,
@@ -45,6 +44,14 @@ import {
   convertSrtToVtt, 
   SubtitleTrackItem 
 } from '../services/subtitles';
+import {
+  getPixelDrainRoute,
+  setPixelDrainRoute,
+  PixelDrainRoute,
+  extractPixelDrainId,
+  formatPixelDrainUrl,
+  PIXELDRAIN_CHANGE_EVENT
+} from '../utils/pixeldrain';
 
 export interface HDHubPlayerProps {
   item: MediaItem;
@@ -86,7 +93,8 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   const [isQualityDropdownOpen, setIsQualityDropdownOpen] = useState<boolean>(false);
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState<boolean>(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState<boolean>(false);
-  const [settingsTab, setSettingsTab] = useState<'main' | 'speed' | 'quality' | 'aspect' | 'audio' | 'subtitles'>('main');
+  const [settingsTab, setSettingsTab] = useState<'main' | 'speed' | 'quality' | 'aspect' | 'audio' | 'subtitles' | 'pixeldrain'>('main');
+  const [pixelDrainRoute, setPixelDrainRouteState] = useState<PixelDrainRoute>(getPixelDrainRoute);
 
   // Subtitles state
   const [subtitlesList, setSubtitlesList] = useState<SubtitleTrackItem[]>([]);
@@ -102,11 +110,19 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   // Playback state
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(() => {
-    return localStorage.getItem('streamverse_player_muted') === 'true';
+    try {
+      return localStorage.getItem('streamverse_player_muted') === 'true';
+    } catch {
+      return false;
+    }
   });
   const [volume, setVolume] = useState<number>(() => {
-    const saved = localStorage.getItem('streamverse_player_volume');
-    return saved ? Math.max(0, Math.min(1, parseFloat(saved))) : 0.85;
+    try {
+      const saved = localStorage.getItem('streamverse_player_volume');
+      return saved ? Math.max(0, Math.min(1, parseFloat(saved))) : 0.85;
+    } catch {
+      return 0.85;
+    }
   });
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -271,10 +287,6 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     setPlaybackError(false);
     setBufferedPercent(0);
 
-    // Immediately synchronize volume and muted state on the video element
-    video.volume = volume;
-    video.muted = isMuted;
-
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
@@ -362,12 +374,24 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
         hlsRef.current = null;
       }
     };
-  }, [selectedStream?.url, volume, isMuted]);
+  }, [selectedStream?.url]);
 
-  // Persist volume settings
+  // Synchronize volume and muted state directly on video element without rebuilding stream
   useEffect(() => {
-    localStorage.setItem('streamverse_player_volume', String(volume));
-    localStorage.setItem('streamverse_player_muted', String(isMuted));
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+      videoRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
+  // Persist volume settings safely
+  useEffect(() => {
+    try {
+      localStorage.setItem('streamverse_player_volume', String(volume));
+      localStorage.setItem('streamverse_player_muted', String(isMuted));
+    } catch (e) {
+      console.warn('Failed to save player volume preference:', e);
+    }
   }, [volume, isMuted]);
 
   // Track fullscreen state
@@ -399,7 +423,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   }, []);
 
   // Video playback controls
-  const handleTogglePlay = () => {
+  const handleTogglePlay = useCallback(() => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
       videoRef.current.play().then(() => {
@@ -416,15 +440,16 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       setIsPlaying(false);
     }
     resetControlsTimer();
-  };
+  }, [resetControlsTimer]);
 
-  const handleSkip = (seconds: number) => {
+  const handleSkip = useCallback((seconds: number) => {
     if (!videoRef.current) return;
-    const target = Math.max(0, Math.min(duration || 100, videoRef.current.currentTime + seconds));
+    const dur = videoRef.current.duration || 100;
+    const target = Math.max(0, Math.min(dur, videoRef.current.currentTime + seconds));
     videoRef.current.currentTime = target;
     setCurrentTime(target);
     showToast(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
-  };
+  }, [showToast]);
 
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
@@ -778,16 +803,16 @@ interface AudioOptionItem {
     };
   }, [isDragging, calculateScrubTime]);
 
-  const handleToggleMute = () => {
+  const handleToggleMute = useCallback(() => {
     if (videoRef.current) {
       const nextMuted = !isMuted;
       videoRef.current.muted = nextMuted;
       setIsMuted(nextMuted);
       showToast(nextMuted ? 'Muted' : `Volume ${Math.round(volume * 100)}%`);
     }
-  };
+  }, [isMuted, volume, showToast]);
 
-  const handleVolumeAdjust = (delta: number) => {
+  const handleVolumeAdjust = useCallback((delta: number) => {
     if (videoRef.current) {
       const nextVol = Math.max(0, Math.min(1, Math.round((volume + delta) * 10) / 10));
       videoRef.current.volume = nextVol;
@@ -796,7 +821,7 @@ interface AudioOptionItem {
       setIsMuted(nextVol === 0);
       showToast(nextVol === 0 ? 'Muted' : `Volume ${Math.round(nextVol * 100)}%`);
     }
-  };
+  }, [volume, showToast]);
 
   const handleVolumeSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
@@ -808,14 +833,14 @@ interface AudioOptionItem {
     }
   };
 
-  const handleToggleFullscreen = () => {
+  const handleToggleFullscreen = useCallback(() => {
     if (!playerContainerRef.current) return;
     if (!document.fullscreenElement) {
       playerContainerRef.current.requestFullscreen().catch(() => {});
     } else {
       document.exitFullscreen().catch(() => {});
     }
-  };
+  }, []);
 
   const handleTogglePiP = async () => {
     if (!videoRef.current) return;
@@ -858,6 +883,56 @@ interface AudioOptionItem {
     showToast('Stream URL Copied');
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Switch PixelDrain streaming route between normal proxy and fast CDN
+  const handleSelectPixelDrainRoute = useCallback((route: PixelDrainRoute) => {
+    const prevTime = videoRef.current?.currentTime || 0;
+    const wasPlaying = isPlaying;
+    setPlaybackError(false);
+    setPixelDrainRoute(route);
+    setPixelDrainRouteState(route);
+    setStreams((prev) =>
+      prev.map((s) => {
+        const pdId = extractPixelDrainId(s.url);
+        if (pdId) {
+          return { ...s, url: formatPixelDrainUrl(pdId, route) };
+        }
+        return s;
+      })
+    );
+    showToast(`PixelDrain: ${route === 'cdn' ? 'Fast CDN Mirror' : 'Normal Proxy'}`);
+    setIsSettingsMenuOpen(false);
+    setSettingsTab('main');
+    setTimeout(() => {
+      if (videoRef.current && prevTime > 0) {
+        videoRef.current.currentTime = prevTime;
+        if (wasPlaying) videoRef.current.play().catch(() => {});
+      }
+    }, 150);
+  }, [isPlaying, showToast]);
+
+  // Synchronize with external PixelDrain route changes (e.g. from SettingsPage)
+  useEffect(() => {
+    const handleExternalRouteChange = (e: any) => {
+      const nextRoute = (e?.detail?.route as PixelDrainRoute) || getPixelDrainRoute();
+      setPlaybackError(false);
+      setPixelDrainRouteState(nextRoute);
+      setStreams((prev) =>
+        prev.map((s) => {
+          const pdId = extractPixelDrainId(s.url);
+          if (pdId) {
+            return { ...s, url: formatPixelDrainUrl(pdId, nextRoute) };
+          }
+          return s;
+        })
+      );
+    };
+
+    window.addEventListener(PIXELDRAIN_CHANGE_EVENT, handleExternalRouteChange);
+    return () => {
+      window.removeEventListener(PIXELDRAIN_CHANGE_EVENT, handleExternalRouteChange);
+    };
+  }, []);
 
   // Keyboard navigation & shortcuts
   useEffect(() => {
@@ -982,6 +1057,7 @@ interface AudioOptionItem {
           ref={videoRef}
           key={selectedStream.url}
           playsInline
+          {...({ referrerPolicy: 'no-referrer' } as any)}
           muted={isMuted}
           style={{ objectFit }}
           onPlay={() => setIsPlaying(true)}
@@ -1739,6 +1815,22 @@ interface AudioOptionItem {
                         </div>
                       </button>
 
+                      {/* PixelDrain Route Submenu */}
+                      <button
+                        type="button"
+                        onClick={() => setSettingsTab('pixeldrain')}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl text-xs text-white/80 hover:text-white hover:bg-white/10 transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-3.5 w-3.5 text-rose-400" />
+                          <span>PixelDrain Route</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-white/50">
+                          <span>{pixelDrainRoute === 'cdn' ? 'Fast CDN' : 'Normal'}</span>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </div>
+                      </button>
+
                       {/* Copy Stream Link */}
                       <button
                         type="button"
@@ -1983,6 +2075,60 @@ interface AudioOptionItem {
                           {objectFit === asp.id && <Check className="h-3.5 w-3.5 text-primary" />}
                         </button>
                       ))}
+                    </div>
+                  ) : settingsTab === 'pixeldrain' ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 px-2 py-1.5 border-b border-white/10 mb-1">
+                        <button
+                          type="button"
+                          onClick={() => setSettingsTab('main')}
+                          className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <span className="text-xs font-bold text-white">PixelDrain Route</span>
+                      </div>
+                      <div className="space-y-1.5 pt-1">
+                        {[
+                          {
+                            id: 'normal',
+                            name: 'Normal (Proxy)',
+                            desc: '/api/pixeldrain/:id'
+                          },
+                          {
+                            id: 'cdn',
+                            name: 'Fast CDN Mirror',
+                            desc: '/api/pixeldrain-cdn/:id'
+                          }
+                        ].map((r) => {
+                          const isSelected = pixelDrainRoute === r.id;
+                          return (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => handleSelectPixelDrainRoute(r.id as PixelDrainRoute)}
+                              className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs text-left transition ${
+                                isSelected
+                                  ? 'bg-rose-500/20 text-rose-300 font-semibold'
+                                  : 'text-white/70 hover:text-white hover:bg-white/10'
+                              }`}
+                            >
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white font-medium">{r.name}</span>
+                                  {isSelected && (
+                                    <span className="text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1 rounded">
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-white/40 font-mono">{r.desc}</div>
+                              </div>
+                              {isSelected && <Check className="h-4 w-4 text-rose-400 shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-1">

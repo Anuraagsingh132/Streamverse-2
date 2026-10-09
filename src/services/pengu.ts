@@ -1,6 +1,7 @@
 import { getImdbId } from './tmdb';
 import { MediaType } from '../types/media';
 import { HDHubStream, parseStreamBitrate, parseAudioCodec } from './hdhub';
+import { resolvePixelDrainStreamUrl, registerPixelDrainCacheInvalidator } from '../utils/pixeldrain';
 
 const PENGU_BASE_RESOLVER = 'https://pengu.uk/%7B%22auth_token%22%3A%22QAgjPjVLyWOqIlIqXBXTjGamncIkhZZzliQBgU3x2zg%22%7D/stream';
 
@@ -13,6 +14,14 @@ export interface PenguResolutionResult {
 // In-memory cache for resolved streams
 const penguCache = new Map<string, { timestamp: number; result: PenguResolutionResult }>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+export function clearPenguCache(): void {
+  penguCache.clear();
+}
+
+registerPixelDrainCacheInvalidator(() => {
+  penguCache.clear();
+});
 
 export function parsePenguAudio(text: string): { languages: string[]; label: string } {
   const languages: string[] = [];
@@ -187,17 +196,8 @@ export async function fetchPenguStreams(
       const audioCodecInfo = parseAudioCodec(fullText, isHLS);
       const bitrateInfo = parseStreamBitrate(fullText, s.behaviorHints?.videoSize, isTV);
 
-      // Route PixelDrain URLs through our local /api/pixeldrain proxy to bypass hotlink blocking and attachment download
-      let streamUrl = s.url;
-      const pdMatch = streamUrl.match(/pixeldrain\.(?:dev|com)\/(?:api\/file\/|u\/)([a-zA-Z0-9_-]+)/i);
-      if (pdMatch && pdMatch[1]) {
-        streamUrl = `/api/pixeldrain/${pdMatch[1]}`;
-      } else if (fullText.toLowerCase().includes('pixeldrain')) {
-        const pdExtMatch = streamUrl.match(/\/([a-zA-Z0-9_-]{6,16})(?:\?|$)/);
-        if (pdExtMatch && pdExtMatch[1]) {
-          streamUrl = `/api/pixeldrain/${pdExtMatch[1]}`;
-        }
-      }
+      // Route PixelDrain URLs through our local /api/pixeldrain proxy or direct CDN based on route settings
+      const streamUrl = resolvePixelDrainStreamUrl(s.url, fullText);
 
       return {
         id: `pengu-${idx}-${s.url?.slice(-12) || idx}`,

@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { Play, Star, Plus, Check } from 'lucide-react';
 import { MediaItem } from '../types/media';
 
+import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../utils/imageUtils';
+
 interface MediaCardProps {
   item: MediaItem;
   onPlay: (item: MediaItem) => void;
@@ -18,11 +20,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
   isWatchlist = false,
   onToggleWatchlist
 }) => {
-  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1280&auto=format&fit=crop';
-  const rawSrc = item.backdrop_path || item.poster_path || FALLBACK_IMAGE;
-  const imageSrc = rawSrc.includes('image.tmdb.org/t/p/')
-    ? rawSrc.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/')
-    : rawSrc;
+  const imageSrc = optimizeTmdbImage(item.backdrop_path || item.poster_path, 'backdrop');
 
   return (
     <motion.div 
@@ -51,8 +49,8 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
               const target = e.currentTarget;
               if (item.poster_path && target.src !== item.poster_path) {
                 target.src = item.poster_path;
-              } else if (target.src !== FALLBACK_IMAGE) {
-                target.src = FALLBACK_IMAGE;
+              } else if (target.src !== FALLBACK_BACKDROP) {
+                target.src = FALLBACK_BACKDROP;
               }
             }}
           />

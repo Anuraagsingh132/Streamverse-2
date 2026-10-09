@@ -354,7 +354,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             title={item.title}
             className="absolute inset-0 w-full h-full border-0 bg-black"
             allowFullScreen
-            referrerPolicy="origin"
+            referrerPolicy="no-referrer"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
           />
         ) : (

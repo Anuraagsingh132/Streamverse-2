@@ -16,15 +16,7 @@ interface TopTenRowProps {
   onTypeFilterChange?: (type: 'movie' | 'tv') => void;
 }
 
-const FALLBACK_THUMB = 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1280&auto=format&fit=crop';
-
-const optimizeTopTenThumb = (url: string | undefined): string => {
-  if (!url) return FALLBACK_THUMB;
-  if (url.includes('image.tmdb.org/t/p/')) {
-    return url.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/');
-  }
-  return url;
-};
+import { optimizeTmdbImage } from '../utils/imageUtils';
 
 export const TopTenRow: React.FC<TopTenRowProps> = ({
   title,
@@ -183,7 +175,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                           loading={idx < 3 ? "eager" : "lazy"} 
                           decoding="async" 
                           className="object-cover transition-[filter,transform] duration-700 group-hover:scale-105 h-full w-full" 
-                          src={optimizeTopTenThumb(item.backdrop_path || item.poster_path)} 
+                          src={optimizeTmdbImage(item.backdrop_path || item.poster_path, 'backdrop')} 
                           onError={(e) => {
                             const target = e.currentTarget;
                             const fallback = 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1280&auto=format&fit=crop';

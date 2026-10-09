@@ -38,7 +38,7 @@ export async function fetchAnimeLogo(animeId: number | string): Promise<string |
       logoCache[animeId] = parsed;
       return parsed;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -58,7 +58,7 @@ export async function fetchAnimeLogo(animeId: number | string): Promise<string |
       logoCache[animeId] = logo;
       try {
         sessionStorage.setItem(`anime_logo_${animeId}`, JSON.stringify(logo));
-      } catch (e) {}
+      } catch {}
       return logo;
     } catch (err) {
       console.warn(`Could not load logo for anime ${animeId}:`, err);

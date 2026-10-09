@@ -298,7 +298,8 @@ export const App: React.FC = () => {
       watchUrl = `/watch/tv/${item.id}?season=${season || 1}&episode=${episode || 1}`;
     }
 
-    if (window.location.pathname !== watchUrl) {
+    const currentFullUrl = window.location.pathname + window.location.search;
+    if (currentFullUrl !== watchUrl) {
       window.history.pushState({}, '', watchUrl);
     }
   }, [currentRoute]);

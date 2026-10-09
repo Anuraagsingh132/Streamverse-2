@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { popularProviders, allMedia, allMovies, allTVShows } from '../data/mediaData';
+import { popularProviders, allMedia } from '../data/mediaData';
 import { MediaCard } from '../components/MediaCard';
 import { MediaItem } from '../types/media';
 import { Film, Tv, TrendingUp, ArrowDownAZ } from 'lucide-react';

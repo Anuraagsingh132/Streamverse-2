@@ -15,18 +15,7 @@ interface MediaRailProps {
   posterAspect?: boolean; // false = 16:9 backdrop, true = 2:3 poster
 }
 
-const FALLBACK_BACKDROP = 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1280&auto=format&fit=crop';
-
-const optimizeRailImg = (url: string | undefined, isPoster: boolean): string => {
-  if (!url) return FALLBACK_BACKDROP;
-  if (url.includes('image.tmdb.org/t/p/')) {
-    if (isPoster) {
-      return url.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/');
-    }
-    return url.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/');
-  }
-  return url;
-};
+import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../utils/imageUtils';
 
 export const MediaRail: React.FC<MediaRailProps> = ({
   title,
@@ -149,11 +138,11 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                         loading={idx < 3 ? "eager" : "lazy"}
                         decoding="async"
                         className="object-cover transition-[filter,transform] duration-700 group-hover:scale-105 h-full w-full"
-                        src={optimizeRailImg(
+                        src={optimizeTmdbImage(
                           posterAspect
                             ? (item.poster_path || item.backdrop_path)
                             : (item.backdrop_path || item.poster_path),
-                          posterAspect
+                          posterAspect ? 'poster' : 'backdrop'
                         )}
                         onError={(e) => {
                           const target = e.currentTarget;

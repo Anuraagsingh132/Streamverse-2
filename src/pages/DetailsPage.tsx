@@ -16,7 +16,7 @@ import {
   GalleryHorizontal,
   X
 } from 'lucide-react';
-import { MediaItem, EpisodeItem, SeasonItem } from '../types/media';
+import { MediaItem, EpisodeItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
 import { PosterCard } from '../components/PosterCard';
 import { getMediaDetails, getSeasonEpisodes } from '../services/tmdb';
@@ -32,7 +32,7 @@ interface DetailsPageProps {
 }
 
 const formatDisplayDate = (dateStr?: string): string => {
-  if (!dateStr) return 'September 28, 2026';
+  if (!dateStr) return 'N/A';
   if (/^[A-Za-z]+ \d{1,2}, \d{4}$/.test(dateStr)) return dateStr;
   try {
     const parts = dateStr.split('-');
@@ -55,7 +55,7 @@ const formatDisplayDate = (dateStr?: string): string => {
 
 export const DetailsPage: React.FC<DetailsPageProps> = ({
   item: initialItem,
-  onBack,
+  onBack: _onBack,
   onPlay,
   onOpenDetails,
   watchlist,
@@ -125,8 +125,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
             recommendations: isCurated ? prev.recommendations : (fullDetails.recommendations || prev.recommendations)
           }));
 
-          if (fullDetails.trailer_key && !activeVideoKey) {
-            setActiveVideoKey(fullDetails.trailer_key);
+          if (fullDetails.trailer_key) {
+            setActiveVideoKey((prev) => prev || fullDetails.trailer_key || null);
           }
 
           // If TV show, fetch season episodes
@@ -185,11 +185,13 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
   const directorList = item.directors && item.directors.length > 0 ? item.directors : [];
   const writerList = item.writers && item.writers.length > 0 ? item.writers : [];
   const producerList = item.producers && item.producers.length > 0 ? item.producers : [];
-  const primaryDirectorName = directorList.map((d) => d.name).join(', ') || 'Alejandro G. Iñárritu';
+  const primaryDirectorName = directorList.length > 0 
+    ? directorList.map((d) => d.name).join(', ') 
+    : (item.media_type === 'tv' ? 'Creator N/A' : 'Director N/A');
 
   // Primary trailer / right aside card
   const primaryTrailer = item.videos && item.videos.length > 0 ? item.videos[0] : null;
-  const officialTrailerKey = item.trailer_key || (primaryTrailer ? primaryTrailer.key : 'fikKMZZiLD0');
+  const officialTrailerKey = item.trailer_key || (primaryTrailer ? primaryTrailer.key : '');
 
   // Similar and Recommended list
   const similarItems = (item.similar && item.similar.length > 0)
@@ -465,7 +467,11 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 ) : (
                   /* TV Show Next Episode Preview Card */
                   <div
-                    onClick={() => onPlay({ ...item, episodes_list: episodes }, 1, selectedSeason)}
+                    onClick={() => {
+                      const latestEp = episodes.length > 0 ? episodes[episodes.length - 1] : null;
+                      const nextEpNum = latestEp?.episode_number || episodes.length || 1;
+                      onPlay({ ...item, episodes_list: episodes }, nextEpNum, selectedSeason);
+                    }}
                     className="group block cursor-pointer"
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5">
@@ -583,23 +589,23 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   </dd>
                 </div>
 
-                {item.media_type === 'movie' && (item.budget !== undefined || item.id === '1248832') && (
+                {item.media_type === 'movie' && item.budget && item.budget > 0 ? (
                   <div className="min-w-0 lg:px-6">
                     <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Budget</dt>
                     <dd className="mt-1 truncate text-sm font-semibold text-white">
-                      ${((item.budget || 180000000)).toLocaleString('en-US')}
+                      ${item.budget.toLocaleString('en-US')}
                     </dd>
                   </div>
-                )}
+                ) : null}
 
-                {item.media_type === 'movie' && (item.revenue !== undefined || item.id === '1248832') && (
+                {item.media_type === 'movie' && item.revenue && item.revenue > 0 ? (
                   <div className="min-w-0 lg:px-6">
                     <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Revenue</dt>
                     <dd className="mt-1 truncate text-sm font-semibold text-white">
-                      ${((item.revenue || 3400000)).toLocaleString('en-US')}
+                      ${item.revenue.toLocaleString('en-US')}
                     </dd>
                   </div>
-                )}
+                ) : null}
               </dl>
 
               {/* Studios / Network Branding */}

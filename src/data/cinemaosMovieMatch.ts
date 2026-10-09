@@ -522,7 +522,7 @@ export const movieNowPlayingItems: MediaItem[] = [
     genres: ['Comedy', 'Drama']
   },
   {
-    id: '1339713',
+    id: '1144942',
     title: 'The Fix',
     media_type: 'movie',
     year: 2026,
@@ -671,7 +671,7 @@ export const movieUpcomingItems: MediaItem[] = [
     genres: ['Action', 'Comedy']
   },
   {
-    id: '1339713',
+    id: '1144942',
     title: 'The Fix',
     media_type: 'movie',
     year: 2026,
