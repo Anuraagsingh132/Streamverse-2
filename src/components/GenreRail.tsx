@@ -4,6 +4,7 @@ import { MediaItem } from '../types/media';
 import { liveActionMovies, liveGenreConfigs } from '../data/cinemaosLiveMatch';
 import { allMedia } from '../data/mediaData';
 import { getByGenre, GENRE_NAME_TO_MOVIE_ID, GENRE_NAME_TO_TV_ID } from '../services/tmdb';
+import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
 
 interface GenreRailProps {
   onPlay: (item: MediaItem) => void;
@@ -42,12 +43,6 @@ export const GenreRail: React.FC<GenreRailProps> = ({
   useEffect(() => {
     let isMounted = true;
 
-    // For Action + movie on initial render, liveActionMovies gives instant 1:1 render
-    if (selectedGenre === 'Action' && mediaType === 'movie') {
-      setGenreItems(liveActionMovies);
-      return;
-    }
-
     const fetchGenreData = async () => {
       setIsLoading(true);
       try {
@@ -57,7 +52,11 @@ export const GenreRail: React.FC<GenreRailProps> = ({
 
         const results = await getByGenre(genreId, mediaType);
         if (isMounted && results.length > 0) {
-          setGenreItems(results);
+          if (selectedGenre === 'Action' && mediaType === 'movie') {
+            setGenreItems(mergeValidMediaWithFallback(results, liveActionMovies));
+          } else {
+            setGenreItems(results);
+          }
         }
       } catch (err) {
         console.warn('TMDB Genre fetch error:', err);

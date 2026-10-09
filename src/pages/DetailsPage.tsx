@@ -14,7 +14,8 @@ import {
   LayoutGrid,
   List,
   GalleryHorizontal,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { MediaItem, EpisodeItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
@@ -55,7 +56,7 @@ const formatDisplayDate = (dateStr?: string): string => {
 
 export const DetailsPage: React.FC<DetailsPageProps> = ({
   item: initialItem,
-  onBack: _onBack,
+  onBack,
   onPlay,
   onOpenDetails,
   watchlist,
@@ -75,6 +76,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
   const [trailerModalOpen, setTrailerModalOpen] = useState<boolean>(false);
   const [activeVideoKey, setActiveVideoKey] = useState<string | null>(initialData.trailer_key || null);
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState<boolean>(false);
+  const [loadingEpisodes, setLoadingEpisodes] = useState<boolean>(false);
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
 
   const trailerRailRef = useRef<HTMLDivElement>(null);
@@ -132,7 +134,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           // If TV show, fetch season episodes
           if (initialItem.media_type === 'tv' && episodes.length === 0) {
             const seasonEps = await getSeasonEpisodes(initialItem.tmdbId || initialItem.id, selectedSeason);
-            if (isMounted && seasonEps.length > 0) {
+            if (isMounted && seasonEps) {
               setEpisodes(seasonEps);
             }
           }
@@ -152,13 +154,15 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
   const handleSeasonChange = async (seasonNum: number) => {
     setSelectedSeason(seasonNum);
     setSeasonDropdownOpen(false);
+    setLoadingEpisodes(true);
     try {
       const eps = await getSeasonEpisodes(item.tmdbId || item.id, seasonNum);
-      if (eps.length > 0) {
-        setEpisodes(eps);
-      }
+      setEpisodes(eps || []);
     } catch (e) {
       console.warn('Failed to load season episodes:', e);
+      setEpisodes([]);
+    } finally {
+      setLoadingEpisodes(false);
     }
   };
 
@@ -268,6 +272,17 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
         {/* Hero Content Overlays */}
         <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Go back"
+              className="absolute left-5 top-20 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/50 px-3.5 py-2 text-xs font-semibold text-white/90 shadow-xl backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:left-8 lg:left-10 cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </button>
+          )}
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column: Metadata, Logo, Overview, CTAs */}
             <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">
@@ -734,80 +749,100 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           </div>
 
           {/* Episode List */}
-          <div className="flex flex-col gap-2">
-            {episodes.map((ep) => (
-              <div
-                key={ep.id}
-                className="group flex gap-4 rounded-2xl p-2 transition hover:bg-white/[0.06] sm:p-3"
-              >
-                {/* 16:9 Thumbnail */}
-                <div className="w-36 shrink-0 sm:w-56 md:w-64">
-                  <div
-                    onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
-                    className="card-3d relative cursor-pointer rounded-xl"
-                  >
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                      <img
-                        alt={ep.name}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        src={ep.still_path || item.backdrop_path}
-                      />
-                      <span className="absolute left-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-bold text-white backdrop-blur">
-                        E{ep.episode_number}
-                      </span>
-                      {ep.runtime && (
-                        <span className="absolute bottom-2 right-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
-                          {ep.runtime}m
+          {loadingEpisodes ? (
+            <div className="flex flex-col gap-3 py-4">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="flex gap-4 rounded-2xl p-3 bg-white/[0.03] animate-pulse">
+                  <div className="w-36 sm:w-56 md:w-64 aspect-video rounded-xl bg-white/10 shrink-0" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-3 w-20 bg-white/10 rounded" />
+                    <div className="h-4 w-48 bg-white/10 rounded" />
+                    <div className="h-3 w-32 bg-white/10 rounded" />
+                    <div className="h-3 w-full bg-white/10 rounded mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : episodes.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {episodes.map((ep) => (
+                <div
+                  key={ep.id}
+                  className="group flex gap-4 rounded-2xl p-2 transition hover:bg-white/[0.06] sm:p-3"
+                >
+                  {/* 16:9 Thumbnail */}
+                  <div className="w-36 shrink-0 sm:w-56 md:w-64">
+                    <div
+                      onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
+                      className="card-3d relative cursor-pointer rounded-xl"
+                    >
+                      <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        <img
+                          alt={ep.name}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          src={ep.still_path || item.backdrop_path}
+                        />
+                        <span className="absolute left-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-bold text-white backdrop-blur">
+                          E{ep.episode_number}
                         </span>
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
-                          <Play className="ml-0.5 h-5 w-5 fill-white text-white" />
-                        </span>
+                        {ep.runtime && (
+                          <span className="absolute bottom-2 right-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+                            {ep.runtime}m
+                          </span>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+                            <Play className="ml-0.5 h-5 w-5 fill-white text-white" />
+                          </span>
+                        </div>
                       </div>
+                      <span className="card-3d-glare" aria-hidden="true" />
                     </div>
-                    <span className="card-3d-glare" aria-hidden="true" />
+                  </div>
+
+                  {/* Episode Details */}
+                  <div className="flex min-w-0 flex-1 flex-col py-0.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
+                      Episode {ep.episode_number}
+                    </p>
+                    <h3 className="mt-0.5 line-clamp-1 text-sm font-semibold text-white md:text-base">
+                      {ep.name}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-white/50">
+                      {ep.air_date || '2026'} · {ep.runtime || 50} min · ★ {ep.vote_average || '7.5'}
+                    </p>
+                    <p className="mt-2 line-clamp-2 hidden text-xs leading-relaxed text-white/60 sm:block md:text-sm">
+                      {ep.overview}
+                    </p>
+
+                    <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
+                        className="flex h-8 items-center gap-1.5 rounded-full bg-white px-3.5 text-xs font-bold text-black transition hover:bg-white/85"
+                      >
+                        <Play className="h-3.5 w-3.5 fill-current" />
+                        Play
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
+                        className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Episode Details */}
-                <div className="flex min-w-0 flex-1 flex-col py-0.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
-                    Episode {ep.episode_number}
-                  </p>
-                  <h3 className="mt-0.5 line-clamp-1 text-sm font-semibold text-white md:text-base">
-                    {ep.name}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-white/50">
-                    {ep.air_date || '2026'} · {ep.runtime || 50} min · ★ {ep.vote_average || '7.5'}
-                  </p>
-                  <p className="mt-2 line-clamp-2 hidden text-xs leading-relaxed text-white/60 sm:block md:text-sm">
-                    {ep.overview}
-                  </p>
-
-                  <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
-                      className="flex h-8 items-center gap-1.5 rounded-full bg-white px-3.5 text-xs font-bold text-black transition hover:bg-white/85"
-                    >
-                      <Play className="h-3.5 w-3.5 fill-current" />
-                      Play
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
-                      className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      Download
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center bg-white/[0.02]">
+              <p className="text-sm font-medium text-white/60">No episode information available for this season.</p>
+            </div>
+          )}
         </section>
       )}
 

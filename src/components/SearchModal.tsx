@@ -274,6 +274,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const handleSelectItem = useCallback(
     (item: SearchResultItem) => {
       saveRecentSearch(query.trim() || item.title, activeCategory);
+      if (item.media_type === 'manga') {
+        window.open(`https://anilist.co/manga/${item.id}`, '_blank', 'noopener,noreferrer');
+        onClose();
+        return;
+      }
       if (item.rawItem) {
         onOpenDetails(item.rawItem);
       } else {

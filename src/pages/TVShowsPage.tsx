@@ -30,13 +30,15 @@ interface TVShowsPageProps {
   onOpenDetails: (item: MediaItem) => void;
   watchlist: string[];
   onToggleWatchlist: (item: MediaItem) => void;
+  onNavigate?: (tab: string) => void;
 }
 
 export const TVShowsPage: React.FC<TVShowsPageProps> = ({
   onPlay,
   onOpenDetails,
   watchlist,
-  onToggleWatchlist
+  onToggleWatchlist,
+  onNavigate
 }) => {
   const [heroShowsList] = useState<MediaItem[]>(tvHeroItems);
   const [trendingShowsList, setTrendingShowsList] = useState<MediaItem[]>(tvTop10Items);
@@ -106,7 +108,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Popular Shows Rail */}
@@ -118,7 +120,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Drama Shows Rail */}
@@ -130,7 +132,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Streaming Providers Rail */}
@@ -139,7 +141,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onNavigateAll={() => {}}
+          onNavigateAll={() => onNavigate?.('providers')}
           defaultType="tv"
         />
 
@@ -152,7 +154,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Airing Today Rail */}
@@ -164,7 +166,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Top Rated Shows Rail */}
@@ -176,7 +178,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* On the Air Rail */}
@@ -188,7 +190,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
       </div>
     </div>

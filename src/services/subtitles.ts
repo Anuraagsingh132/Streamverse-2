@@ -77,15 +77,48 @@ export function getLanguageName(code?: string): string {
 
 /**
  * Converts SubRip (.srt) subtitles to WebVTT (.vtt) format for HTML5 video <track>
+ * - Strips UTF-8 Byte Order Mark (BOM)
+ * - Removes SSA / ASS style override tags ({\an8}, {\c&H...&}, {\pos(...)})
+ * - Sanitizes dangerous HTML tags while preserving text formatting
+ * - Converts comma timestamps to dot timestamps with 2-digit hour padding
  */
 export function convertSrtToVtt(srtContent: string): string {
-  // Normalize line endings
-  const normalized = srtContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  if (!srtContent) return 'WEBVTT\n\n';
 
-  // Convert comma in SRT timestamps (00:00:16,225) to dot in VTT (00:00:16.225)
-  const vttBody = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+  // 1. Strip UTF-8 Byte Order Mark (BOM)
+  let clean = srtContent.replace(/^\uFEFF/, '');
 
-  return `WEBVTT\n\n${vttBody}`;
+  // 2. Normalize line endings
+  clean = clean.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // 3. Remove SSA / ASS override tags like {\an8}, {\pos(x,y)}, {\c&H...&}, {\b1}
+  clean = clean.replace(/\{[\\/][^}]*\}/g, '');
+
+  // 4. Sanitize dangerous HTML tags (<script>, <iframe>, <object>, <embed>, <applet>, style attributes, inline handlers)
+  clean = clean.replace(/<\/?(script|iframe|object|embed|applet|meta|link|style)[^>]*>/gi, '');
+  clean = clean.replace(/on\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, '');
+
+  // 5. Convert comma in SRT timestamps (00:00:16,225 or 0:00:16,225) to dot in VTT (00:00:16.225)
+  const vttBody = clean.replace(/(\d{1,2}:\d{2}:\d{2}),(\d{3})/g, (_match, time, ms) => {
+    const parts = time.split(':');
+    if (parts[0].length === 1) parts[0] = '0' + parts[0];
+    return `${parts.join(':')}.${ms}`;
+  });
+
+  return `WEBVTT\n\n${vttBody.trim()}\n`;
+}
+
+/**
+ * Revokes a created Blob URL to avoid memory leaks
+ */
+export function revokeSubtitleBlob(url: string | null | undefined): void {
+  if (url && typeof url === 'string' && url.startsWith('blob:')) {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore
+    }
+  }
 }
 
 /**

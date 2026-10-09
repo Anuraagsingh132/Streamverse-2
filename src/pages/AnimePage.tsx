@@ -12,6 +12,7 @@ interface AnimePageProps {
   onOpenDetails: (item: MediaItem) => void;
   watchlist: string[];
   onToggleWatchlist: (item: MediaItem) => void;
+  onNavigate?: (route: string) => void;
 }
 
 const GENRES = [
@@ -64,7 +65,8 @@ export const AnimePage: React.FC<AnimePageProps> = ({
   onPlay,
   onOpenDetails,
   watchlist,
-  onToggleWatchlist
+  onToggleWatchlist,
+  onNavigate
 }) => {
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
   const [genreResults, setGenreResults] = useState<any[]>([]);
@@ -249,13 +251,18 @@ export const AnimePage: React.FC<AnimePageProps> = ({
                     </h2>
                   </div>
 
-                  <a
-                    href={`/anime/browse?genres=${selectedGenre}`}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onNavigate) {
+                        onNavigate('ai');
+                      }
+                    }}
                     className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:flex cursor-pointer"
                   >
                     <span>Browse all</span>
                     <ArrowUpRight className="h-3.5 w-3.5" />
-                  </a>
+                  </button>
                 </div>
               </div>
 
@@ -297,6 +304,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
                     rail={rail}
                     displayItems={displayItems}
                     onCardClick={handleCardClick}
+                    onNavigate={onNavigate}
                   />
                 );
               })}
@@ -313,11 +321,13 @@ export const AnimePage: React.FC<AnimePageProps> = ({
 const AnimeRailSection = React.memo(function AnimeRailSection({
   rail,
   displayItems,
-  onCardClick
+  onCardClick,
+  onNavigate
 }: {
   rail: any;
   displayItems: any[];
   onCardClick: (item: any) => void;
+  onNavigate?: (route: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -354,13 +364,18 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
             </h2>
           </div>
 
-          <a
-            href={`/anime/browse?sort=${rail.ranked ? 'TRENDING_DESC' : 'POPULARITY_DESC'}`}
-            className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:flex"
+          <button
+            type="button"
+            onClick={() => {
+              if (onNavigate) {
+                onNavigate('ai');
+              }
+            }}
+            className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:flex cursor-pointer"
           >
             <span>Browse all</span>
             <ChevronRight className="h-3.5 w-3.5" />
-          </a>
+          </button>
         </div>
       </div>
 

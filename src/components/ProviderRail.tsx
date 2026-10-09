@@ -5,6 +5,7 @@ import { exactNetflixMovies } from '../data/cinemaosRichData';
 import { tvNetflixItems } from '../data/cinemaosTvMatch';
 import { allMedia } from '../data/mediaData';
 import { getByProvider, PROVIDER_NAME_TO_ID } from '../services/tmdb';
+import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
 
 import { FALLBACK_BACKDROP } from '../utils/imageUtils';
 
@@ -58,19 +59,18 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
   useEffect(() => {
     let isMounted = true;
 
-    // For Netflix on first load, exact curated items provide instant 1:1 render matching CinemaOS
-    if (selectedProvider === 'Netflix') {
-      setProviderItems(filterType === 'tv' ? tvNetflixItems : exactNetflixMovies);
-      return;
-    }
-
     const fetchProviderData = async () => {
       setIsLoading(true);
       try {
         const providerId = currentProviderObj.id || PROVIDER_NAME_TO_ID[selectedProvider.toLowerCase()] || 8;
         const results = await getByProvider(providerId, filterType);
         if (isMounted && results.length > 0) {
-          setProviderItems(results);
+          if (selectedProvider === 'Netflix') {
+            const fallback = filterType === 'tv' ? tvNetflixItems : exactNetflixMovies;
+            setProviderItems(mergeValidMediaWithFallback(results, fallback));
+          } else {
+            setProviderItems(results);
+          }
         }
       } catch (err) {
         console.warn('TMDB Provider fetch error:', err);

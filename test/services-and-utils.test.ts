@@ -92,10 +92,14 @@ test('Subtitles: getLanguageName maps ISO codes to human-readable names', () => 
 });
 
 test('Subtitles: convertSrtToVtt converts SRT timestamps and adds WEBVTT header', () => {
-  const srtInput = `1\r\n00:00:01,500 --> 00:00:04,200\r\nHello World!\r\n\r\n2\r\n00:00:05,100 --> 00:00:08,000\r\nSecond line.`;
+  const srtInput = `\uFEFF1\r\n00:00:01,500 --> 00:00:04,200\r\n{\\an8}Hello <script>alert(1)</script>World!\r\n\r\n2\r\n0:00:05,100 --> 0:00:08,000\r\nSecond <b>line</b>.`;
   const vttOutput = convertSrtToVtt(srtInput);
 
   assert.ok(vttOutput.startsWith('WEBVTT\n\n'));
+  assert.ok(!vttOutput.includes('\uFEFF'));
+  assert.ok(!vttOutput.includes('{\\an8}'));
+  assert.ok(!vttOutput.includes('<script>'));
+  assert.ok(vttOutput.includes('<b>line</b>'));
   assert.ok(vttOutput.includes('00:00:01.500 --> 00:00:04.200'));
   assert.ok(vttOutput.includes('00:00:05.100 --> 00:00:08.000'));
   assert.ok(!vttOutput.includes('\r'));

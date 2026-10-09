@@ -42,6 +42,7 @@ import {
   fetchAvailableSubtitles, 
   fetchSubtitleVttBlob, 
   convertSrtToVtt, 
+  revokeSubtitleBlob,
   SubtitleTrackItem 
 } from '../services/subtitles';
 import {
@@ -152,6 +153,17 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   const serverDropdownRef = useRef<HTMLDivElement | null>(null);
   const settingsMenuRef = useRef<HTMLDivElement | null>(null);
   const lastTapTimeRef = useRef<{ time: number; x: number }>({ time: 0, x: 0 });
+  const createdBlobUrlsRef = useRef<Set<string>>(new Set());
+
+  // Cleanup all allocated Object URLs on unmount
+  useEffect(() => {
+    return () => {
+      createdBlobUrlsRef.current.forEach((url) => {
+        revokeSubtitleBlob(url);
+      });
+      createdBlobUrlsRef.current.clear();
+    };
+  }, []);
 
   const isTV = item.media_type === 'tv' || item.media_type === 'anime';
   const selectedStream = streams[selectedStreamIndex] || null;
@@ -604,6 +616,7 @@ interface AudioOptionItem {
       let vttUrl = sub.url;
       if (sub.url.startsWith('http')) {
         vttUrl = await fetchSubtitleVttBlob(sub.url);
+        createdBlobUrlsRef.current.add(vttUrl);
       }
       setSelectedSubtitleId(sub.id);
       setCurrentSubtitleUrl(vttUrl);
@@ -631,6 +644,8 @@ interface AudioOptionItem {
         }
         const blob = new Blob([vttContent], { type: 'text/vtt;charset=utf-8' });
         const blobUrl = URL.createObjectURL(blob);
+        createdBlobUrlsRef.current.add(blobUrl);
+
         const customSub: SubtitleTrackItem = {
           id: `custom-${Date.now()}`,
           lang: 'custom',

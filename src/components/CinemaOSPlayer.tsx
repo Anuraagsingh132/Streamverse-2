@@ -275,20 +275,42 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     return SERVERS.find((s) => s.id === selectedServerId) || SERVERS[0];
   }, [selectedServerId]);
 
-  // Max seasons and episodes
-  const totalSeasons = useMemo(() => {
-    if (!item) return 1;
-    if (item.seasons) return item.seasons;
-    if (item.seasons_list?.length) return item.seasons_list.length;
-    return 1;
+  // Available seasons (including Season 0 / Specials if present in seasons_list)
+  const availableSeasons = useMemo<{ seasonNumber: number; label: string; episodeCount?: number }[]>(() => {
+    if (!item) return [{ seasonNumber: 1, label: 'Season 1' }];
+    if (item.seasons_list && item.seasons_list.length > 0) {
+      return item.seasons_list.map((s) => ({
+        seasonNumber: s.season_number,
+        label: s.name || (s.season_number === 0 ? 'Specials' : `Season ${s.season_number}`),
+        episodeCount: s.episode_count,
+      }));
+    }
+    const count = item.seasons || 1;
+    return Array.from({ length: count }, (_, i) => ({
+      seasonNumber: i + 1,
+      label: `Season ${i + 1}`,
+    }));
   }, [item]);
+
+  const totalSeasons = availableSeasons.length;
 
   const totalEpisodesForSeason = useMemo(() => {
     if (!item) return 12;
     if (episodesList.length > 0) return episodesList.length;
+    const currentSeasonObj = availableSeasons.find((s) => s.seasonNumber === season);
+    if (currentSeasonObj?.episodeCount) return currentSeasonObj.episodeCount;
     if (item.episodes) return item.episodes;
     return 24;
-  }, [item, episodesList]);
+  }, [item, episodesList, availableSeasons, season]);
+
+  const handleSelectSeason = (sNum: number) => {
+    setSeason(sNum);
+    setEpisode(1);
+    setIsSeasonDropdownOpen(false);
+    if (onEpisodeChange) {
+      onEpisodeChange(sNum, 1);
+    }
+  };
 
   const handleSelectEpisode = (epNum: number, sNum: number = season) => {
     setSeason(sNum);
@@ -550,7 +572,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
               </div>
 
               {/* Season Selector Dropdown next to SELECT EPISODE */}
-              {totalSeasons > 1 && (
+              {availableSeasons.length > 1 && (
                 <div className="relative" ref={seasonDropdownRef}>
                   <button
                     type="button"
@@ -558,7 +580,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
                     className="flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                     title="Switch Season"
                   >
-                    <span>S{season}</span>
+                    <span>{availableSeasons.find(s => s.seasonNumber === season)?.label || (season === 0 ? 'Specials' : `S${season}`)}</span>
                     <ChevronDown className={`h-3 w-3 text-white/70 transition-transform duration-200 ${isSeasonDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
@@ -569,22 +591,19 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
                         onWheel={(e) => e.stopPropagation()}
                         className="max-h-48 overflow-y-auto space-y-0.5 drawer-scroll"
                       >
-                        {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((sNum) => (
+                        {availableSeasons.map((sObj) => (
                           <button
-                            key={sNum}
+                            key={sObj.seasonNumber}
                             type="button"
-                            onClick={() => {
-                              setSeason(sNum);
-                              setIsSeasonDropdownOpen(false);
-                            }}
+                            onClick={() => handleSelectSeason(sObj.seasonNumber)}
                             className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition ${
-                              season === sNum
+                              season === sObj.seasonNumber
                                 ? 'bg-white/15 text-white font-bold'
                                 : 'text-white/70 hover:text-white hover:bg-white/10'
                             }`}
                           >
-                            <span>Season {sNum}</span>
-                            {season === sNum && <Check className="h-3.5 w-3.5 text-primary" />}
+                            <span>{sObj.label}</span>
+                            {season === sObj.seasonNumber && <Check className="h-3.5 w-3.5 text-primary" />}
                           </button>
                         ))}
                       </div>
@@ -606,20 +625,20 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
           </div>
 
           {/* Quick Season Selector Tabs */}
-          {totalSeasons > 1 && (
+          {availableSeasons.length > 1 && (
             <div className="flex shrink-0 gap-2 overflow-x-auto px-5 py-2.5 border-b border-white/10 scrollbar-hide">
-              {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((sNum) => (
+              {availableSeasons.map((sObj) => (
                 <button
-                  key={sNum}
+                  key={sObj.seasonNumber}
                   type="button"
-                  onClick={() => setSeason(sNum)}
+                  onClick={() => handleSelectSeason(sObj.seasonNumber)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold shrink-0 transition ${
-                    season === sNum
+                    season === sObj.seasonNumber
                       ? 'bg-primary text-black font-bold shadow-sm'
                       : 'bg-white/10 text-white/70 hover:bg-white/15 hover:text-white'
                   }`}
                 >
-                  Season {sNum}
+                  {sObj.label}
                 </button>
               ))}
             </div>

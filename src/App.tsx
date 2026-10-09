@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { motion, AnimatePresence } from 'motion/react';
@@ -60,23 +60,32 @@ export const App: React.FC = () => {
     }
   }, [currentRoute, isSearchOpen]);
 
-  // Watchlist persisted in localStorage
-  const [watchlist, setWatchlist] = useState<string[]>(() => {
+  // Full MediaItems stored for Watchlist to support dynamic TMDB & AniList items
+  const [savedMediaItems, setSavedMediaItems] = useState<MediaItem[]>(() => {
     try {
-      const saved = localStorage.getItem('streamverse_watchlist');
-      return saved ? JSON.parse(saved) : ['258165', '977942', '94605'];
+      const savedItemsJson = localStorage.getItem('streamverse_watchlist_items');
+      if (savedItemsJson) {
+        const parsed = JSON.parse(savedItemsJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const savedIdsJson = localStorage.getItem('streamverse_watchlist');
+      const savedIds: string[] = savedIdsJson ? JSON.parse(savedIdsJson) : ['258165', '977942', '94605'];
+      return allMedia.filter((m) => savedIds.includes(m.id));
     } catch {
-      return ['258165', '977942', '94605'];
+      return allMedia.slice(0, 3);
     }
   });
 
+  const watchlist = useMemo(() => savedMediaItems.map((item) => item.id), [savedMediaItems]);
+
   useEffect(() => {
     try {
+      localStorage.setItem('streamverse_watchlist_items', JSON.stringify(savedMediaItems));
       localStorage.setItem('streamverse_watchlist', JSON.stringify(watchlist));
     } catch (e) {
       console.error('Failed to save watchlist to localStorage', e);
     }
-  }, [watchlist]);
+  }, [savedMediaItems, watchlist]);
 
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
@@ -134,6 +143,8 @@ export const App: React.FC = () => {
             });
           }
         }
+      } else if (path.startsWith('/anime/browse') || path === '/anime/browse') {
+        setCurrentRoute('anime');
       } else if (path.startsWith('/anime/')) {
         const id = path.replace('/anime/', '').replace(/\/$/, '');
         const match = allMedia.find((m) => m.id === id);
@@ -223,11 +234,11 @@ export const App: React.FC = () => {
         setCurrentRoute('music');
       } else if (path === '/providers') {
         setCurrentRoute('providers');
-      } else if (path === '/watchlist') {
+      } else if (path === '/watchlist' || path === '/continue-watching') {
         setCurrentRoute('watchlist');
       } else if (path === '/settings') {
         setCurrentRoute('settings');
-      } else if (path === '/ai' || path === '/ai-search' || path === '/search') {
+      } else if (path === '/ai' || path === '/ai-search' || path === '/search' || path === '/discover' || path.startsWith('/search')) {
         setCurrentRoute('ai');
       } else {
         setCurrentRoute('home');
@@ -240,14 +251,37 @@ export const App: React.FC = () => {
   }, []);
 
   const handleNavigate = useCallback((route: string) => {
-    setCurrentRoute(route);
-    setSelectedItem(null);
+    let normalizedRoute = route;
     let targetUrl = `/${route}`;
-    if (route === 'home') targetUrl = '/';
-    if (route === 'livesports') targetUrl = '/sports';
-    if (window.location.pathname !== targetUrl) {
+
+    if (route === 'home' || route === '') {
+      normalizedRoute = 'home';
+      targetUrl = '/';
+    } else if (route === 'discover') {
+      normalizedRoute = 'ai';
+      targetUrl = '/ai';
+    } else if (route === 'continue-watching') {
+      normalizedRoute = 'watchlist';
+      targetUrl = '/watchlist';
+    } else if (route.startsWith('search')) {
+      normalizedRoute = 'ai';
+      targetUrl = '/ai';
+    } else if (route === 'livesports' || route === 'sports') {
+      normalizedRoute = 'livesports';
+      targetUrl = '/sports';
+    } else if (route === 'anime/browse' || route.startsWith('anime/browse')) {
+      normalizedRoute = 'anime';
+      targetUrl = '/anime';
+    }
+
+    setCurrentRoute(normalizedRoute);
+    setSelectedItem(null);
+
+    const currentFullUrl = window.location.pathname + window.location.search;
+    if (currentFullUrl !== targetUrl && window.location.pathname !== targetUrl) {
       window.history.pushState({}, '', targetUrl);
     }
+
     if (lenisRef.current) {
       lenisRef.current.scrollTo(0, { immediate: false });
     } else {
@@ -333,13 +367,18 @@ export const App: React.FC = () => {
   }, [selectedItem, previousRoute]);
 
   const handleToggleWatchlist = useCallback((item: MediaItem) => {
-    setWatchlist((prev) =>
-      prev.includes(item.id) ? prev.filter((id) => id !== item.id) : [...prev, item.id]
-    );
+    setSavedMediaItems((prev) => {
+      const exists = prev.some((i) => i.id === item.id);
+      if (exists) {
+        return prev.filter((i) => i.id !== item.id);
+      } else {
+        return [item, ...prev];
+      }
+    });
   }, []);
 
   const handleClearWatchlist = useCallback(() => {
-    setWatchlist([]);
+    setSavedMediaItems([]);
   }, []);
 
   return (
@@ -401,6 +440,7 @@ export const App: React.FC = () => {
                   onOpenDetails={handleOpenDetails}
                   watchlist={watchlist}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onNavigate={handleNavigate}
                 />
               )}
 
@@ -410,6 +450,7 @@ export const App: React.FC = () => {
                   onOpenDetails={handleOpenDetails}
                   watchlist={watchlist}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onNavigate={handleNavigate}
                 />
               )}
 
@@ -419,6 +460,7 @@ export const App: React.FC = () => {
                   onOpenDetails={handleOpenDetails}
                   watchlist={watchlist}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onNavigate={handleNavigate}
                 />
               )}
 
@@ -447,6 +489,7 @@ export const App: React.FC = () => {
               {currentRoute === 'watchlist' && (
                 <WatchlistPage
                   watchlist={watchlist}
+                  savedItems={savedMediaItems}
                   onPlay={handlePlay}
                   onOpenDetails={handleOpenDetails}
                   onToggleWatchlist={handleToggleWatchlist}

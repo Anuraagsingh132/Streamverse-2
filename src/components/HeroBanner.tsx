@@ -30,7 +30,11 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
   const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
-    if (isPaused) return;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isPaused || prefersReducedMotion) return;
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % items.length);
@@ -74,10 +78,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
 
   return (
     <section 
-      className="" 
+      className="relative" 
       id="hero"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onFocusCapture={() => setIsPaused(true)}
+      onBlurCapture={() => setIsPaused(false)}
     >
       {/* 1:1 CinemaOS Ambient Fixed Backdrop Glow */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">

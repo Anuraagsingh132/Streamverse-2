@@ -13,6 +13,7 @@ import {
   liveTopRatedShows 
 } from '../data/cinemaosLiveMatch';
 import { getTrending, getTopRated } from '../services/tmdb';
+import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
 
 interface HomePageProps {
   onPlay: (item: MediaItem) => void;
@@ -30,27 +31,51 @@ export const HomePage: React.FC<HomePageProps> = ({
   onNavigate
 }) => {
   const [heroItemsList] = useState<MediaItem[]>(liveHeroItems);
-  const [moviesList] = useState<MediaItem[]>(liveTop10Movies);
-  const [showsList] = useState<MediaItem[]>(liveTop10Shows);
+  const [moviesList, setMoviesList] = useState<MediaItem[]>(liveTop10Movies);
+  const [showsList, setShowsList] = useState<MediaItem[]>(liveTop10Shows);
   const [topRatedFilter, setTopRatedFilter] = useState<'movie' | 'tv'>('movie');
-  const [topRatedMoviesList] = useState<MediaItem[]>(liveTopRatedMovies);
-  const [topRatedShowsList] = useState<MediaItem[]>(liveTopRatedShows);
+  const [topRatedMoviesList, setTopRatedMoviesList] = useState<MediaItem[]>(liveTopRatedMovies);
+  const [topRatedShowsList, setTopRatedShowsList] = useState<MediaItem[]>(liveTopRatedShows);
 
-  // Pre-load TMDB data in background cache for instant responsive playback & details
+  // Progressive background fetch to enrich data from TMDB API while keeping valid backdrops
   useEffect(() => {
-    const prefetchTmdbDetails = async () => {
-      try {
-        await Promise.all([
-          getTrending('movie', 'day'),
-          getTrending('tv', 'day'),
-          getTopRated('movie')
-        ]);
-      } catch {
-        // Cache prefetch is non-blocking
-      }
-    };
+    let isMounted = true;
 
-    prefetchTmdbDetails();
+    getTrending('movie', 'day')
+      .then((res) => {
+        if (isMounted && res?.length) {
+          setMoviesList(mergeValidMediaWithFallback(res, liveTop10Movies));
+        }
+      })
+      .catch(() => {});
+
+    getTrending('tv', 'day')
+      .then((res) => {
+        if (isMounted && res?.length) {
+          setShowsList(mergeValidMediaWithFallback(res, liveTop10Shows));
+        }
+      })
+      .catch(() => {});
+
+    getTopRated('movie')
+      .then((res) => {
+        if (isMounted && res?.length) {
+          setTopRatedMoviesList(mergeValidMediaWithFallback(res, liveTopRatedMovies));
+        }
+      })
+      .catch(() => {});
+
+    getTopRated('tv')
+      .then((res) => {
+        if (isMounted && res?.length) {
+          setTopRatedShowsList(mergeValidMediaWithFallback(res, liveTopRatedShows));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const activeTopRated = topRatedFilter === 'movie' ? topRatedMoviesList : topRatedShowsList;

@@ -30,13 +30,15 @@ interface MoviesPageProps {
   onOpenDetails: (item: MediaItem) => void;
   watchlist: string[];
   onToggleWatchlist: (item: MediaItem) => void;
+  onNavigate?: (tab: string) => void;
 }
 
 export const MoviesPage: React.FC<MoviesPageProps> = ({
   onPlay,
   onOpenDetails,
   watchlist,
-  onToggleWatchlist
+  onToggleWatchlist,
+  onNavigate
 }) => {
   const [heroMoviesList] = useState<MediaItem[]>(movieHeroItems);
   const [trendingMoviesList, setTrendingMoviesList] = useState<MediaItem[]>(movieTop10Items);
@@ -106,7 +108,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Popular Movies Rail */}
@@ -118,7 +120,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Action Movies Rail */}
@@ -130,7 +132,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Streaming Providers Rail */}
@@ -139,7 +141,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onNavigateAll={() => {}}
+          onNavigateAll={() => onNavigate?.('providers')}
           defaultType="movie"
         />
 
@@ -152,7 +154,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Now Playing Rail */}
@@ -164,7 +166,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Top Rated Rail */}
@@ -176,7 +178,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
 
         {/* Upcoming Movies Rail */}
@@ -188,7 +190,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
           onOpenDetails={onOpenDetails}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => {}}
+          onBrowseAll={() => onNavigate?.('providers')}
         />
       </div>
     </div>

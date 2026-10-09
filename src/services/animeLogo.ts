@@ -50,19 +50,24 @@ export async function fetchAnimeLogo(animeId: number | string): Promise<string |
     try {
       const res = await fetch(`/api/anime/logo?id=${animeId}`);
       if (!res.ok) {
-        logoCache[animeId] = null;
+        // Only permanently cache null for definitive 404 Not Found
+        if (res.status === 404) {
+          logoCache[animeId] = null;
+        }
         return null;
       }
       const data = await res.json();
       const logo = data?.clearLogo || null;
       logoCache[animeId] = logo;
-      try {
-        sessionStorage.setItem(`anime_logo_${animeId}`, JSON.stringify(logo));
-      } catch {}
+      if (logo) {
+        try {
+          sessionStorage.setItem(`anime_logo_${animeId}`, JSON.stringify(logo));
+        } catch {}
+      }
       return logo;
     } catch (err) {
       console.warn(`Could not load logo for anime ${animeId}:`, err);
-      logoCache[animeId] = null;
+      // Do not store null in cache on transient network error, allow retry
       return null;
     } finally {
       pendingPromises.delete(animeId);

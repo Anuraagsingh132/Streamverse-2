@@ -10,7 +10,8 @@ import {
   GalleryHorizontal,
   X,
   Bookmark,
-  Share2
+  Share2,
+  ArrowLeft
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { fetchAniListAnimeDetails, FullAniListAnimeDetails } from '../services/anilist';
@@ -27,7 +28,7 @@ interface AnimeDetailsPageProps {
 
 export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
   item: initialItem,
-  onBack: _onBack,
+  onBack,
   onPlay,
   onOpenDetails,
   watchlist,
@@ -237,6 +238,17 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
         {/* Content Container aligned to bottom */}
         <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Go back"
+              className="absolute left-5 top-20 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/50 px-3.5 py-2 text-xs font-semibold text-white/90 shadow-xl backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:left-8 lg:left-10 cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </button>
+          )}
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column (Meta & Synopsis) */}
             <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">
