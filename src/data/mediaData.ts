@@ -423,7 +423,8 @@ export const musicTracksData: MusicTrack[] = [
     artist: 'Sting, Ray Chen',
     sourceMedia: 'Arcane: League of Legends OST',
     duration: '3:33',
-    cover: 'https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg'
+    cover: 'https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
   },
   {
     id: 'track-2',
@@ -431,7 +432,8 @@ export const musicTracksData: MusicTrack[] = [
     artist: 'Hans Zimmer',
     sourceMedia: 'Dune: Part Two (Original Motion Picture Soundtrack)',
     duration: '4:21',
-    cover: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg'
+    cover: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
   },
   {
     id: 'track-3',
@@ -439,7 +441,8 @@ export const musicTracksData: MusicTrack[] = [
     artist: 'LiSA',
     sourceMedia: 'Demon Slayer: Kimetsu no Yaiba',
     duration: '3:58',
-    cover: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg'
+    cover: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
   },
   {
     id: 'track-4',
@@ -447,6 +450,7 @@ export const musicTracksData: MusicTrack[] = [
     artist: 'King Gnu',
     sourceMedia: 'Jujutsu Kaisen: Shibuya Incident',
     duration: '3:52',
-    cover: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg'
+    cover: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
   }
 ];
