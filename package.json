@@ -8,7 +8,7 @@
     "build:sitemap": "tsx scripts/generate-sitemap.ts",
     "build": "npm run build:sitemap && tsc -b && vite build",
     "lint": "oxlint",
-    "test": "tsx --test \"test/**/*.test.ts\"",
+    "test": "tsx --test",
     "preview": "vite preview"
   },
   "engines": {
