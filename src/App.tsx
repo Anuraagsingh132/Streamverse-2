@@ -1,10 +1,27 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+  useParams,
+  useSearchParams
+} from 'react-router-dom';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { motion, AnimatePresence } from 'motion/react';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
 import { Footer } from './components/Footer';
+import { MediaItem } from './types/media';
+import { getMediaDetails } from './services/tmdb';
+import { useWatchlistStore } from './store/useWatchlistStore';
+import { purgeMediaItemCache } from './utils/cacheManager';
+import { getRouteHref } from './utils/routeUtils';
+
+// Lazy-loaded route views
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const MoviesPage = React.lazy(() => import('./pages/MoviesPage'));
 const TVShowsPage = React.lazy(() => import('./pages/TVShowsPage'));
@@ -19,21 +36,340 @@ const DetailsPage = React.lazy(() => import('./pages/DetailsPage'));
 const AnimeDetailsPage = React.lazy(() => import('./pages/AnimeDetailsPage').then(m => ({ default: m.AnimeDetailsPage })));
 const CinemaOSPlayer = React.lazy(() => import('./components/CinemaOSPlayer').then(m => ({ default: m.CinemaOSPlayer })));
 const SearchModal = React.lazy(() => import('./components/SearchModal').then(m => ({ default: m.SearchModal })));
-import { MediaItem } from './types/media';
-import { getMediaDetails } from './services/tmdb';
-import { useWatchlistStore } from './store/useWatchlistStore';
-import { purgeMediaItemCache } from './utils/cacheManager';
 
-export const App: React.FC = () => {
-  const [currentRoute, setCurrentRoute] = useState<string>('home');
-  const [previousRoute, setPreviousRoute] = useState<string>('home');
+function getRouteKeyFromPath(pathname: string): string {
+  if (pathname === '/' || pathname === '') return 'home';
+  if (pathname.startsWith('/movie/') || pathname.startsWith('/tv/')) return 'details';
+  if (pathname === '/movies' || pathname === '/movie') return 'movie';
+  if (pathname === '/tv' || pathname === '/tv-shows') return 'tv';
+  if (pathname === '/anime' || pathname === '/anime/browse') return 'anime';
+  if (pathname.startsWith('/anime/')) return 'anime-details';
+  if (pathname.startsWith('/watch/')) return 'watch';
+  if (pathname === '/sports' || pathname === '/livesports') return 'livesports';
+  if (pathname === '/music') return 'music';
+  if (pathname === '/providers') return 'providers';
+  if (pathname === '/watchlist' || pathname === '/continue-watching') return 'watchlist';
+  if (pathname === '/settings') return 'settings';
+  if (pathname.startsWith('/ai') || pathname.startsWith('/search') || pathname === '/discover') return 'ai';
+  return 'home';
+}
+
+// Dynamic loader for route-based media resolution (avoids bundling large static datasets into root bundle)
+async function resolveRouteMedia(id: string, type: 'movie' | 'tv' | 'anime'): Promise<MediaItem | null> {
+  if (type === 'movie' && id === '1248832') {
+    const { diggerCuratedDetails } = await import('./data/cinemaosLiveMatch');
+    return diggerCuratedDetails;
+  }
+  if (type === 'tv' && id === '95350') {
+    const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
+    return lanternsCuratedDetails;
+  }
+  try {
+    const { allMedia } = await import('./data/mediaData');
+    const match = allMedia.find((m) => m.id === id);
+    if (match) return match;
+  } catch {
+    // Fall through to TMDB or fallback
+  }
+  if (type === 'anime') {
+    return {
+      id,
+      title: 'Anime',
+      overview: '',
+      media_type: 'anime',
+      poster_path: '',
+      backdrop_path: '',
+      vote_average: 8.5,
+    };
+  }
+  try {
+    return await getMediaDetails(id, type);
+  } catch {
+    if (type === 'movie') {
+      const { diggerCuratedDetails } = await import('./data/cinemaosLiveMatch');
+      return diggerCuratedDetails;
+    }
+    const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
+    return lanternsCuratedDetails;
+  }
+}
+
+// ---------------- Route Handlers with Automatic Param Resolution ----------------
+
+interface DetailsRouteProps {
+  type: 'movie' | 'tv';
+  selectedItem: MediaItem | null;
+  setSelectedItem: (item: MediaItem | null) => void;
+  onPlay: (item: MediaItem, ep?: number, season?: number) => void;
+  onOpenDetails: (item: MediaItem) => void;
+  watchlist: string[];
+  onToggleWatchlist: (item: MediaItem) => void;
+  onBack: () => void;
+}
+
+const DetailsRoute: React.FC<DetailsRouteProps> = ({
+  type,
+  selectedItem,
+  setSelectedItem,
+  onPlay,
+  onOpenDetails,
+  watchlist,
+  onToggleWatchlist,
+  onBack
+}) => {
+  const { id } = useParams<{ id: string }>();
+  const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+
+  const activeItem = (selectedItem && selectedItem.id === id) ? selectedItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
+
+  useEffect(() => {
+    if (!id || (selectedItem && selectedItem.id === id)) return;
+    let isMounted = true;
+    resolveRouteMedia(id, type).then((resolved) => {
+      if (isMounted && resolved) {
+        setResolvedItem(resolved);
+        setSelectedItem(resolved);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [id, type, selectedItem, setSelectedItem]);
+
+  if (!activeItem) {
+    return <div className="min-h-screen bg-transparent" />;
+  }
+
+  return (
+    <DetailsPage
+      item={activeItem}
+      onBack={onBack}
+      onPlay={onPlay}
+      onOpenDetails={onOpenDetails}
+      watchlist={watchlist}
+      onToggleWatchlist={onToggleWatchlist}
+    />
+  );
+};
+
+interface AnimeDetailsRouteProps {
+  selectedItem: MediaItem | null;
+  setSelectedItem: (item: MediaItem | null) => void;
+  onPlay: (item: MediaItem, ep?: number, season?: number) => void;
+  onOpenDetails: (item: MediaItem) => void;
+  watchlist: string[];
+  onToggleWatchlist: (item: MediaItem) => void;
+  onBack: () => void;
+}
+
+const AnimeDetailsRoute: React.FC<AnimeDetailsRouteProps> = ({
+  selectedItem,
+  setSelectedItem,
+  onPlay,
+  onOpenDetails,
+  watchlist,
+  onToggleWatchlist,
+  onBack
+}) => {
+  const { id } = useParams<{ id: string }>();
+  const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+
+  const activeItem = (selectedItem && selectedItem.id === id) ? selectedItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
+
+  useEffect(() => {
+    if (!id || (selectedItem && selectedItem.id === id)) return;
+    let isMounted = true;
+    resolveRouteMedia(id, 'anime').then((resolved) => {
+      if (isMounted && resolved) {
+        setResolvedItem(resolved);
+        setSelectedItem(resolved);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [id, selectedItem, setSelectedItem]);
+
+  if (!activeItem) {
+    return <div className="min-h-screen bg-transparent" />;
+  }
+
+  return (
+    <AnimeDetailsPage
+      item={activeItem}
+      onBack={onBack}
+      onPlay={(item, ep) => onPlay(item, ep || 1, 1)}
+      onOpenDetails={onOpenDetails}
+      watchlist={watchlist}
+      onToggleWatchlist={onToggleWatchlist}
+    />
+  );
+};
+
+interface WatchMovieRouteProps {
+  playingItem: MediaItem | null;
+  setPlayingItem: (item: MediaItem | null) => void;
+  onClose: () => void;
+}
+
+const WatchMovieRoute: React.FC<WatchMovieRouteProps> = ({
+  playingItem,
+  setPlayingItem,
+  onClose
+}) => {
+  const { id } = useParams<{ id: string }>();
+  const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+
+  const activeItem = (playingItem && playingItem.id === id) ? playingItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
+
+  useEffect(() => {
+    if (!id || (playingItem && playingItem.id === id)) return;
+    let isMounted = true;
+    resolveRouteMedia(id, 'movie').then((resolved) => {
+      if (isMounted && resolved) {
+        setResolvedItem(resolved);
+        setPlayingItem(resolved);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [id, playingItem, setPlayingItem]);
+
+  if (!activeItem) {
+    return <div className="min-h-screen bg-black" />;
+  }
+
+  return (
+    <CinemaOSPlayer
+      item={activeItem}
+      initialSeason={1}
+      initialEpisode={1}
+      episodesList={activeItem.episodes_list}
+      onClose={onClose}
+    />
+  );
+};
+
+interface WatchTvRouteProps {
+  playingItem: MediaItem | null;
+  setPlayingItem: (item: MediaItem | null) => void;
+  onClose: () => void;
+}
+
+const WatchTvRoute: React.FC<WatchTvRouteProps> = ({
+  playingItem,
+  setPlayingItem,
+  onClose
+}) => {
+  const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const season = Number(searchParams.get('season')) || 1;
+  const episode = Number(searchParams.get('episode')) || 1;
+  const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+
+  const activeItem = (playingItem && playingItem.id === id) ? playingItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
+
+  useEffect(() => {
+    if (!id || (playingItem && playingItem.id === id)) return;
+    let isMounted = true;
+    resolveRouteMedia(id, 'tv').then((resolved) => {
+      if (isMounted && resolved) {
+        setResolvedItem(resolved);
+        setPlayingItem(resolved);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [id, playingItem, setPlayingItem]);
+
+  if (!activeItem) {
+    return <div className="min-h-screen bg-black" />;
+  }
+
+  return (
+    <CinemaOSPlayer
+      item={activeItem}
+      initialSeason={season}
+      initialEpisode={episode}
+      episodesList={activeItem.episodes_list}
+      onClose={onClose}
+      onEpisodeChange={(s, ep) => {
+        setSearchParams({ season: String(s), episode: String(ep) });
+      }}
+    />
+  );
+};
+
+interface WatchAnimeRouteProps {
+  playingItem: MediaItem | null;
+  setPlayingItem: (item: MediaItem | null) => void;
+  onClose: () => void;
+}
+
+const WatchAnimeRoute: React.FC<WatchAnimeRouteProps> = ({
+  playingItem,
+  setPlayingItem,
+  onClose
+}) => {
+  const { id, episode: epParam } = useParams<{ id: string; episode?: string }>();
+  const navigate = useNavigate();
+  const episode = Number(epParam) || 1;
+  const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+
+  const activeItem = (playingItem && playingItem.id === id) ? playingItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
+
+  useEffect(() => {
+    if (!id || (playingItem && playingItem.id === id)) return;
+    let isMounted = true;
+    resolveRouteMedia(id, 'anime').then((resolved) => {
+      if (isMounted) {
+        const item = resolved || {
+          id,
+          title: 'Anime',
+          overview: '',
+          media_type: 'anime',
+          poster_path: '',
+          backdrop_path: '',
+          vote_average: 8.5,
+        };
+        setResolvedItem(item);
+        setPlayingItem(item);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [id, playingItem, setPlayingItem]);
+
+  if (!activeItem) {
+    return <div className="min-h-screen bg-black" />;
+  }
+
+  return (
+    <CinemaOSPlayer
+      item={activeItem}
+      initialSeason={1}
+      initialEpisode={episode}
+      episodesList={activeItem.episodes_list}
+      onClose={onClose}
+      onEpisodeChange={(_s, ep) => {
+        navigate(`/watch/anime/${activeItem.id}/${ep}`, { replace: true });
+      }}
+    />
+  );
+};
+
+// ---------------- Main Router Application Shell ----------------
+
+const AppContent: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [playingItem, setPlayingItem] = useState<MediaItem | null>(null);
-  const [playingEpisode, setPlayingEpisode] = useState<number>(1);
-  const [playingSeason, setPlayingSeason] = useState<number>(1);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+
   const lenisRef = useRef<Lenis | null>(null);
   const lastActiveMediaRef = useRef<MediaItem | null>(null);
+
+  const isWatchRoute = location.pathname.startsWith('/watch/');
+  const currentRouteKey = getRouteKeyFromPath(location.pathname);
 
   useEffect(() => {
     if (playingItem) {
@@ -43,7 +379,21 @@ export const App: React.FC = () => {
     }
   }, [playingItem, selectedItem]);
 
-  // Initialize Lenis smooth natural scroll
+  // Purge disk/memory cache when navigating away from a media view
+  useEffect(() => {
+    const isMediaRoute =
+      location.pathname.startsWith('/movie/') ||
+      location.pathname.startsWith('/tv/') ||
+      location.pathname.startsWith('/anime/') ||
+      location.pathname.startsWith('/watch/');
+
+    if (!isMediaRoute && lastActiveMediaRef.current) {
+      purgeMediaItemCache(lastActiveMediaRef.current);
+      lastActiveMediaRef.current = null;
+    }
+  }, [location.pathname]);
+
+  // Initialize Lenis smooth scroll
   useEffect(() => {
     const lenis = new Lenis({
       autoRaf: true,
@@ -62,14 +412,25 @@ export const App: React.FC = () => {
 
   // Pause Lenis when video player is full-screened or search modal is open
   useEffect(() => {
-    if (currentRoute === 'watch' || isSearchOpen) {
+    if (isWatchRoute || isSearchOpen) {
       lenisRef.current?.stop();
     } else {
       lenisRef.current?.start();
     }
-  }, [currentRoute, isSearchOpen]);
+  }, [isWatchRoute, isSearchOpen]);
 
-  // Unified reactive Watchlist store with automatic cross-component sync & persistence
+  // Scroll to top on non-watch page navigation
+  useEffect(() => {
+    if (!isWatchRoute) {
+      if (lenisRef.current) {
+        lenisRef.current.scrollTo(0, { immediate: false });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }, [location.pathname, isWatchRoute]);
+
+  // Watchlist store
   const {
     items: savedMediaItems,
     watchlistIds: watchlist,
@@ -89,254 +450,50 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Dynamic loader for route-based media resolution (avoids bundling large static datasets into root bundle)
-  const resolveRouteMedia = useCallback(async (id: string, type: 'movie' | 'tv' | 'anime'): Promise<MediaItem | null> => {
-    if (type === 'movie' && id === '1248832') {
-      const { diggerCuratedDetails } = await import('./data/cinemaosLiveMatch');
-      return diggerCuratedDetails;
-    }
-    if (type === 'tv' && id === '95350') {
-      const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
-      return lanternsCuratedDetails;
-    }
-    try {
-      const { allMedia } = await import('./data/mediaData');
-      const match = allMedia.find((m) => m.id === id);
-      if (match) return match;
-    } catch {
-      // Fall through to TMDB or fallback
-    }
-    if (type === 'anime') {
-      return {
-        id,
-        title: 'Anime',
-        overview: '',
-        media_type: 'anime',
-        poster_path: '',
-        backdrop_path: '',
-        vote_average: 8.5,
-      };
-    }
-    try {
-      return await getMediaDetails(id, type);
-    } catch {
-      if (type === 'movie') {
-        const { diggerCuratedDetails } = await import('./data/cinemaosLiveMatch');
-        return diggerCuratedDetails;
+  // Navigation handlers
+  const handleNavigate = useCallback(
+    (route: string) => {
+      if (selectedItem) {
+        purgeMediaItemCache(selectedItem);
       }
-      const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
-      return lanternsCuratedDetails;
-    }
-  }, []);
-
-  // Sync route and media details with window.location.pathname
-  useEffect(() => {
-    const parseUrl = () => {
-      const path = window.location.pathname;
-      const isMediaRoute =
-        path.startsWith('/movie/') ||
-        path.startsWith('/tv/') ||
-        path.startsWith('/anime/') ||
-        path.startsWith('/watch/');
-
-      // If user navigated back away from a media route, clear its disk & memory cache
-      if (!isMediaRoute && lastActiveMediaRef.current) {
-        purgeMediaItemCache(lastActiveMediaRef.current);
-        lastActiveMediaRef.current = null;
+      if (playingItem) {
+        purgeMediaItemCache(playingItem);
       }
+      lastActiveMediaRef.current = null;
+      setSelectedItem(null);
+      navigate(getRouteHref(route));
+    },
+    [selectedItem, playingItem, navigate]
+  );
 
-      if (path.startsWith('/movie/')) {
-        const id = path.replace('/movie/', '').replace(/\/$/, '');
-        resolveRouteMedia(id, 'movie').then((m) => {
-          if (m) setSelectedItem(m);
-          setCurrentRoute('details');
-        });
-      } else if (path.startsWith('/tv/')) {
-        const id = path.replace('/tv/', '').replace(/\/$/, '');
-        resolveRouteMedia(id, 'tv').then((m) => {
-          if (m) setSelectedItem(m);
-          setCurrentRoute('details');
-        });
-      } else if (path.startsWith('/anime/browse') || path === '/anime/browse') {
-        setCurrentRoute('anime');
-      } else if (path.startsWith('/anime/')) {
-        const id = path.replace('/anime/', '').replace(/\/$/, '');
-        resolveRouteMedia(id, 'anime').then((m) => {
-          if (m) setSelectedItem(m);
-          setCurrentRoute('anime-details');
-        });
-      } else if (path.startsWith('/watch/movie/')) {
-        const id = path.replace('/watch/movie/', '').replace(/\/$/, '');
-        resolveRouteMedia(id, 'movie').then((m) => {
-          if (m) {
-            setPlayingItem(m);
-            setPlayingEpisode(1);
-            setPlayingSeason(1);
-            setCurrentRoute('watch');
-          } else {
-            setCurrentRoute('home');
-          }
-        });
-      } else if (path.startsWith('/watch/tv/')) {
-        const urlObj = new URL(window.location.href);
-        const sParam = Number(urlObj.searchParams.get('season')) || 1;
-        const epParam = Number(urlObj.searchParams.get('episode')) || 1;
-        const id = path.replace('/watch/tv/', '').split('?')[0].replace(/\/$/, '');
-        resolveRouteMedia(id, 'tv').then((m) => {
-          if (m) {
-            setPlayingItem(m);
-            setPlayingSeason(sParam);
-            setPlayingEpisode(epParam);
-            setCurrentRoute('watch');
-          } else {
-            setCurrentRoute('home');
-          }
-        });
-      } else if (path.startsWith('/watch/anime/')) {
-        const parts = path.replace('/watch/anime/', '').split('/');
-        const id = parts[0];
-        const epParam = Number(parts[1]) || 1;
-        resolveRouteMedia(id, 'anime').then((m) => {
-          setPlayingItem(m || {
-            id,
-            title: 'Anime',
-            overview: '',
-            media_type: 'anime',
-            poster_path: '',
-            backdrop_path: '',
-            vote_average: 8.5,
-          });
-          setPlayingSeason(1);
-          setPlayingEpisode(epParam);
-          setCurrentRoute('watch');
-        });
-      } else if (path === '/movies' || path === '/movie') {
-        setCurrentRoute('movie');
-      } else if (path === '/tv' || path === '/tv-shows') {
-        setCurrentRoute('tv');
-      } else if (path === '/anime') {
-        setCurrentRoute('anime');
-      } else if (path === '/sports' || path === '/livesports') {
-        setCurrentRoute('livesports');
-      } else if (path === '/music') {
-        setCurrentRoute('music');
-      } else if (path === '/providers') {
-        setCurrentRoute('providers');
-      } else if (path === '/watchlist' || path === '/continue-watching') {
-        setCurrentRoute('watchlist');
-      } else if (path === '/settings') {
-        setCurrentRoute('settings');
-      } else if (path === '/ai' || path === '/ai-search' || path === '/search' || path === '/discover' || path.startsWith('/search')) {
-        setCurrentRoute('ai');
+  const handleOpenDetails = useCallback(
+    (item: MediaItem) => {
+      if (selectedItem && selectedItem.id !== item.id) {
+        purgeMediaItemCache(selectedItem);
+      }
+      setSelectedItem(item);
+      if (item.media_type === 'anime') {
+        navigate(`/anime/${item.id}`);
       } else {
-        setCurrentRoute('home');
+        navigate(`/${item.media_type === 'tv' ? 'tv' : 'movie'}/${item.id}`);
       }
-    };
+    },
+    [selectedItem, navigate]
+  );
 
-    parseUrl();
-    window.addEventListener('popstate', parseUrl);
-    return () => window.removeEventListener('popstate', parseUrl);
-  }, [resolveRouteMedia]);
-
-  const handleNavigate = useCallback((route: string) => {
-    // When navigating away from a movie or player, clear its disk and memory cache
-    if (selectedItem) {
-      purgeMediaItemCache(selectedItem);
-    }
-    if (playingItem) {
-      purgeMediaItemCache(playingItem);
-    }
-    lastActiveMediaRef.current = null;
-
-    let normalizedRoute = route;
-    let targetUrl = `/${route}`;
-
-    if (route === 'home' || route === '') {
-      normalizedRoute = 'home';
-      targetUrl = '/';
-    } else if (route === 'discover') {
-      normalizedRoute = 'ai';
-      targetUrl = '/ai';
-    } else if (route === 'continue-watching') {
-      normalizedRoute = 'watchlist';
-      targetUrl = '/watchlist';
-    } else if (route.startsWith('search')) {
-      normalizedRoute = 'ai';
-      targetUrl = '/ai';
-    } else if (route === 'livesports' || route === 'sports') {
-      normalizedRoute = 'livesports';
-      targetUrl = '/sports';
-    } else if (route === 'anime/browse' || route.startsWith('anime/browse')) {
-      normalizedRoute = 'anime';
-      targetUrl = '/anime';
-    }
-
-    setCurrentRoute(normalizedRoute);
-    setSelectedItem(null);
-
-    const currentFullUrl = window.location.pathname + window.location.search;
-    if (currentFullUrl !== targetUrl && window.location.pathname !== targetUrl) {
-      window.history.pushState({}, '', targetUrl);
-    }
-
-    if (lenisRef.current) {
-      lenisRef.current.scrollTo(0, { immediate: false });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [selectedItem, playingItem]);
-
-  const handleOpenDetails = useCallback((item: MediaItem) => {
-    if (selectedItem && selectedItem.id !== item.id) {
-      purgeMediaItemCache(selectedItem);
-    }
-    setSelectedItem(item);
-    if (item.media_type === 'anime') {
-      setCurrentRoute('anime-details');
-      const targetUrl = `/anime/${item.id}`;
-      if (window.location.pathname !== targetUrl) {
-        window.history.pushState({}, '', targetUrl);
-      }
-      if (lenisRef.current) {
-        lenisRef.current.scrollTo(0, { immediate: false });
+  const handlePlay = useCallback(
+    (item: MediaItem, episode: number = 1, season: number = 1) => {
+      setPlayingItem(item);
+      if (item.media_type === 'movie') {
+        navigate(`/watch/movie/${item.id}`);
+      } else if (item.media_type === 'anime') {
+        navigate(`/watch/anime/${item.id}/${episode || 1}`);
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        navigate(`/watch/tv/${item.id}?season=${season || 1}&episode=${episode || 1}`);
       }
-      return;
-    }
-    setCurrentRoute('details');
-    const targetUrl = `/${item.media_type === 'tv' ? 'tv' : 'movie'}/${item.id}`;
-    if (window.location.pathname !== targetUrl) {
-      window.history.pushState({}, '', targetUrl);
-    }
-    if (lenisRef.current) {
-      lenisRef.current.scrollTo(0, { immediate: false });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [selectedItem]);
-
-  const handlePlay = useCallback((item: MediaItem, episode: number = 1, season: number = 1) => {
-    setPlayingSeason(season || 1);
-    setPlayingEpisode(episode || 1);
-    setPlayingItem(item);
-    setPreviousRoute(currentRoute);
-    setCurrentRoute('watch');
-
-    let watchUrl = '';
-    if (item.media_type === 'movie') {
-      watchUrl = `/watch/movie/${item.id}`;
-    } else if (item.media_type === 'anime') {
-      watchUrl = `/watch/anime/${item.id}/${episode || 1}`;
-    } else {
-      watchUrl = `/watch/tv/${item.id}?season=${season || 1}&episode=${episode || 1}`;
-    }
-
-    const currentFullUrl = window.location.pathname + window.location.search;
-    if (currentFullUrl !== watchUrl) {
-      window.history.pushState({}, '', watchUrl);
-    }
-  }, [currentRoute]);
+    },
+    [navigate]
+  );
 
   const handleClosePlayer = useCallback(() => {
     if (playingItem) {
@@ -345,190 +502,238 @@ export const App: React.FC = () => {
     setPlayingItem(null);
     if (selectedItem) {
       if (selectedItem.media_type === 'anime') {
-        setCurrentRoute('anime-details');
-        const targetUrl = `/anime/${selectedItem.id}`;
-        if (window.location.pathname !== targetUrl) {
-          window.history.pushState({}, '', targetUrl);
-        }
+        navigate(`/anime/${selectedItem.id}`);
       } else {
-        setCurrentRoute('details');
-        const targetUrl = `/${selectedItem.media_type === 'tv' ? 'tv' : 'movie'}/${selectedItem.id}`;
-        if (window.location.pathname !== targetUrl) {
-          window.history.pushState({}, '', targetUrl);
-        }
+        navigate(`/${selectedItem.media_type === 'tv' ? 'tv' : 'movie'}/${selectedItem.id}`);
       }
     } else {
-      const backRoute = previousRoute === 'watch' ? 'home' : (previousRoute || 'home');
-      setCurrentRoute(backRoute);
-      let targetUrl = `/${backRoute}`;
-      if (backRoute === 'home') targetUrl = '/';
-      if (backRoute === 'livesports') targetUrl = '/sports';
-      if (window.location.pathname !== targetUrl) {
-        window.history.pushState({}, '', targetUrl);
-      }
+      navigate(-1);
     }
-  }, [selectedItem, previousRoute, playingItem]);
+  }, [playingItem, selectedItem, navigate]);
 
   return (
     <div className="relative flex min-h-screen flex-col font-sans bg-transparent text-foreground">
       {/* Header Navigation - Hidden on watch page */}
-      {currentRoute !== 'watch' && (
+      {!isWatchRoute && (
         <Navbar
-          currentRoute={currentRoute}
+          currentRoute={currentRouteKey}
           onNavigate={handleNavigate}
           onOpenSearch={() => setIsSearchOpen(true)}
           watchlistCount={watchlist.length}
         />
       )}
 
-      {/* Main Page View */}
+      {/* Main Page View with Animated Transitions */}
       <main className="flex-1">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentRoute + (selectedItem?.id ? `-${selectedItem.id}` : '')}
+            key={location.pathname}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
             <React.Suspense fallback={<div className="min-h-screen bg-transparent" />}>
-              {/* Dedicated Full-Page CinemaOS Player */}
-              {currentRoute === 'watch' && playingItem && (
-                <CinemaOSPlayer
-                  item={playingItem}
-                  initialSeason={playingSeason}
-                  initialEpisode={playingEpisode}
-                  episodesList={playingItem?.episodes_list}
-                  onClose={handleClosePlayer}
-                  onEpisodeChange={(s, ep) => {
-                    setPlayingSeason(s);
-                    setPlayingEpisode(ep);
-                    if (playingItem.media_type === 'tv') {
-                      window.history.replaceState({}, '', `/watch/tv/${playingItem.id}?season=${s}&episode=${ep}`);
-                    } else if (playingItem.media_type === 'anime') {
-                      window.history.replaceState({}, '', `/watch/anime/${playingItem.id}/${ep}`);
-                    }
-                  }}
+              <Routes location={location}>
+                {/* Core Top-Level Routes */}
+                <Route
+                  path="/"
+                  element={
+                    <HomePage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onNavigate={handleNavigate}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'home' && (
-                <HomePage
-                  onPlay={handlePlay}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
-                  onNavigate={handleNavigate}
+                <Route
+                  path="/movies"
+                  element={
+                    <MoviesPage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onNavigate={handleNavigate}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'movie' && (
-                <MoviesPage
-                  onPlay={handlePlay}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
-                  onNavigate={handleNavigate}
+                <Route path="/movie" element={<Navigate to="/movies" replace />} />
+                <Route
+                  path="/tv"
+                  element={
+                    <TVShowsPage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onNavigate={handleNavigate}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'tv' && (
-                <TVShowsPage
-                  onPlay={handlePlay}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
-                  onNavigate={handleNavigate}
+                <Route path="/tv-shows" element={<Navigate to="/tv" replace />} />
+                <Route
+                  path="/anime"
+                  element={
+                    <AnimePage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onNavigate={handleNavigate}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'anime' && (
-                <AnimePage
-                  onPlay={handlePlay}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
-                  onNavigate={handleNavigate}
+                <Route path="/anime/browse" element={<Navigate to="/anime" replace />} />
+                <Route path="/sports" element={<LiveSportsPage />} />
+                <Route path="/livesports" element={<Navigate to="/sports" replace />} />
+                <Route path="/music" element={<MusicPage />} />
+                <Route
+                  path="/providers"
+                  element={
+                    <ProvidersPage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'ai' && (
-                <AISearchPage
-                  onPlay={handlePlay}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
+                <Route
+                  path="/watchlist"
+                  element={
+                    <WatchlistPage
+                      watchlist={watchlist}
+                      savedItems={savedMediaItems}
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onClearWatchlist={handleClearWatchlist}
+                      onNavigate={handleNavigate}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'livesports' && <LiveSportsPage />}
-
-              {currentRoute === 'music' && <MusicPage />}
-
-              {currentRoute === 'providers' && (
-                <ProvidersPage
-                  onPlay={handlePlay}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
+                <Route path="/continue-watching" element={<Navigate to="/watchlist" replace />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route
+                  path="/ai"
+                  element={
+                    <AISearchPage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                    />
+                  }
                 />
-              )}
+                <Route path="/ai-search" element={<Navigate to="/ai" replace />} />
+                <Route path="/search" element={<Navigate to="/ai" replace />} />
+                <Route path="/discover" element={<Navigate to="/ai" replace />} />
 
-              {currentRoute === 'watchlist' && (
-                <WatchlistPage
-                  watchlist={watchlist}
-                  savedItems={savedMediaItems}
-                  onPlay={handlePlay}
-                  onOpenDetails={handleOpenDetails}
-                  onToggleWatchlist={handleToggleWatchlist}
-                  onClearWatchlist={handleClearWatchlist}
-                  onNavigate={handleNavigate}
+                {/* Media Details Routes */}
+                <Route
+                  path="/movie/:id"
+                  element={
+                    <DetailsRoute
+                      type="movie"
+                      selectedItem={selectedItem}
+                      setSelectedItem={setSelectedItem}
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onBack={() => {
+                        if (selectedItem) purgeMediaItemCache(selectedItem);
+                        handleNavigate('home');
+                      }}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'settings' && <SettingsPage />}
-
-              {currentRoute === 'anime-details' && selectedItem && (
-                <AnimeDetailsPage
-                  item={selectedItem}
-                  onBack={() => {
-                    purgeMediaItemCache(selectedItem);
-                    handleNavigate('anime');
-                  }}
-                  onPlay={(item, ep) => handlePlay(item, ep || 1, 1)}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
+                <Route
+                  path="/tv/:id"
+                  element={
+                    <DetailsRoute
+                      type="tv"
+                      selectedItem={selectedItem}
+                      setSelectedItem={setSelectedItem}
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onBack={() => {
+                        if (selectedItem) purgeMediaItemCache(selectedItem);
+                        handleNavigate('home');
+                      }}
+                    />
+                  }
                 />
-              )}
-
-              {currentRoute === 'details' && selectedItem && (
-                <DetailsPage
-                  item={selectedItem}
-                  onBack={() => {
-                    purgeMediaItemCache(selectedItem);
-                    handleNavigate('home');
-                  }}
-                  onPlay={(item, ep, season) => handlePlay(item, ep || 1, season || 1)}
-                  onOpenDetails={handleOpenDetails}
-                  watchlist={watchlist}
-                  onToggleWatchlist={handleToggleWatchlist}
+                <Route
+                  path="/anime/:id"
+                  element={
+                    <AnimeDetailsRoute
+                      selectedItem={selectedItem}
+                      setSelectedItem={setSelectedItem}
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onBack={() => {
+                        if (selectedItem) purgeMediaItemCache(selectedItem);
+                        handleNavigate('anime');
+                      }}
+                    />
+                  }
                 />
-              )}
+
+                {/* Full-Page Player Routes */}
+                <Route
+                  path="/watch/movie/:id"
+                  element={
+                    <WatchMovieRoute
+                      playingItem={playingItem}
+                      setPlayingItem={setPlayingItem}
+                      onClose={handleClosePlayer}
+                    />
+                  }
+                />
+                <Route
+                  path="/watch/tv/:id"
+                  element={
+                    <WatchTvRoute
+                      playingItem={playingItem}
+                      setPlayingItem={setPlayingItem}
+                      onClose={handleClosePlayer}
+                    />
+                  }
+                />
+                <Route
+                  path="/watch/anime/:id/:episode?"
+                  element={
+                    <WatchAnimeRoute
+                      playingItem={playingItem}
+                      setPlayingItem={setPlayingItem}
+                      onClose={handleClosePlayer}
+                    />
+                  }
+                />
+
+                {/* Catch-all Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
             </React.Suspense>
           </motion.div>
         </AnimatePresence>
       </main>
 
       {/* Footer - Hidden on watch page */}
-      {currentRoute !== 'watch' && (
-        <Footer onNavigate={handleNavigate} />
-      )}
+      {!isWatchRoute && <Footer onNavigate={handleNavigate} />}
 
       {/* Floating Mobile Dock - Hidden on watch page */}
-      {currentRoute !== 'watch' && (
+      {!isWatchRoute && (
         <MobileNav
-          currentRoute={currentRoute}
+          currentRoute={currentRouteKey}
           onNavigate={handleNavigate}
           onOpenSearch={() => setIsSearchOpen(true)}
         />
@@ -549,6 +754,14 @@ export const App: React.FC = () => {
         )}
       </AnimatePresence>
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 };
 
