@@ -22,6 +22,17 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error in Streamverse:', error, errorInfo);
+    try {
+      import('@sentry/react').then((Sentry) => {
+        Sentry.captureException(error, {
+          extra: {
+            componentStack: errorInfo.componentStack
+          }
+        });
+      });
+    } catch {
+      // ignore
+    }
   }
 
   private handleReload = () => {
