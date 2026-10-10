@@ -152,6 +152,11 @@ const DetailsRoute: React.FC<DetailsRouteProps> = ({
   );
 };
 
+const DetailsRouteAlias: React.FC<{ type: 'movie' | 'tv' | 'anime' }> = ({ type }) => {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/${type}/${id || ''}`} replace />;
+};
+
 interface AnimeDetailsRouteProps {
   selectedItem: MediaItem | null;
   setSelectedItem: (item: MediaItem | null) => void;
@@ -631,6 +636,10 @@ const AppContent: React.FC = () => {
                 <Route path="/ai-search" element={<Navigate to="/ai" replace />} />
                 <Route path="/search" element={<Navigate to="/ai" replace />} />
                 <Route path="/discover" element={<Navigate to="/ai" replace />} />
+
+                <Route path="/details/movie/:id" element={<DetailsRouteAlias type="movie" />} />
+                <Route path="/details/tv/:id" element={<DetailsRouteAlias type="tv" />} />
+                <Route path="/details/anime/:id" element={<DetailsRouteAlias type="anime" />} />
 
                 {/* Media Details Routes */}
                 <Route

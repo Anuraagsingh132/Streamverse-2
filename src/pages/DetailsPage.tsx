@@ -326,15 +326,18 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               {/* Title Logo (1:1 with transparent PNG or typography fallback) */}
               <div className="h-20 w-full max-w-[280px] sm:h-24 sm:max-w-sm lg:h-32 lg:max-w-lg">
                 {item.logo_path ? (
-                  <img
-                    src={item.logo_path}
-                    alt={item.title}
-                    loading="eager"
-                    className="h-full w-full object-contain object-left-bottom transition-opacity duration-300"
-                    style={{
-                      filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.75)) drop-shadow(0 0 2px rgba(0,0,0,0.5))'
-                    }}
-                  />
+                  <>
+                    <h1 className="sr-only">{item.title}</h1>
+                    <img
+                      src={item.logo_path}
+                      alt={item.title}
+                      loading="eager"
+                      className="h-full w-full object-contain object-left-bottom transition-opacity duration-300"
+                      style={{
+                        filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.75)) drop-shadow(0 0 2px rgba(0,0,0,0.5))'
+                      }}
+                    />
+                  </>
                 ) : (
                   <h1 className="text-3xl font-black uppercase tracking-tight text-white drop-shadow-md sm:text-5xl lg:text-6xl">
                     {item.title}
