@@ -47,9 +47,8 @@ export function useDocumentMetadata(options: DocumentMetadataOptions) {
     setMetaTag('og:title', fullTitle, true);
     setMetaTag('og:description', metaDesc, true);
     setMetaTag('og:type', type, true);
-    if (image) {
-      setMetaTag('og:image', image, true);
-    }
+    const ogImage = image || DEFAULT_IMAGE;
+    setMetaTag('og:image', ogImage, true);
     const currentUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
     if (currentUrl) {
       setMetaTag('og:url', currentUrl, true);
@@ -58,10 +57,8 @@ export function useDocumentMetadata(options: DocumentMetadataOptions) {
     // 4. Twitter Card Tags
     setMetaTag('twitter:card', image ? 'summary_large_image' : 'summary');
     setMetaTag('twitter:title', fullTitle);
+    setMetaTag('twitter:image', ogImage);
     setMetaTag('twitter:description', metaDesc);
-    if (image) {
-      setMetaTag('twitter:image', image);
-    }
 
     // 5. Schema.org JSON-LD Structured Data
     let scriptTag = document.getElementById('streamverse-jsonld') as HTMLScriptElement | null;

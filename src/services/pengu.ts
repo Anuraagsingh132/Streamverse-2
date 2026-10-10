@@ -15,8 +15,17 @@ export interface PenguResolutionResult {
 const penguCache = new Map<string, { timestamp: number; result: PenguResolutionResult }>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-export function clearPenguCache(): void {
-  penguCache.clear();
+export function clearPenguCache(targetId?: string | number): void {
+  if (targetId !== undefined && targetId !== null) {
+    const idStr = String(targetId);
+    for (const key of Array.from(penguCache.keys())) {
+      if (key.includes(idStr)) {
+        penguCache.delete(key);
+      }
+    }
+  } else {
+    penguCache.clear();
+  }
 }
 
 registerPixelDrainCacheInvalidator(() => {
@@ -109,7 +118,8 @@ export async function fetchPenguStreams(
   mediaType: MediaType,
   providedImdbId?: string,
   season: number = 1,
-  episode: number = 1
+  episode: number = 1,
+  forceFresh: boolean = false
 ): Promise<PenguResolutionResult> {
   const isTV = mediaType === 'tv' || mediaType === 'anime';
 
@@ -130,17 +140,24 @@ export async function fetchPenguStreams(
   // Cache key
   const cacheKey = isTV ? `${imdbId}:s${season}e${episode}` : `${imdbId}:movie`;
   const cached = penguCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+  if (!forceFresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.result;
   }
 
-  // 2. Query Pengu resolver endpoint
-  const targetUrl = isTV
+  // 2. Query Pengu resolver endpoint with cache busting to guarantee live fresh stream URLs (bypasses browser disk cache)
+  const baseTargetUrl = isTV
     ? `${PENGU_BASE_RESOLVER}/series/${imdbId}:${season}:${episode}.json`
     : `${PENGU_BASE_RESOLVER}/movie/${imdbId}.json`;
+  const targetUrl = `${baseTargetUrl}?_t=${Date.now()}`;
 
   try {
-    const res = await fetch(targetUrl);
+    const res = await fetch(targetUrl, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    });
     if (!res.ok) {
       throw new Error(`Pengu resolver responded with HTTP status ${res.status}`);
     }

@@ -117,7 +117,16 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                 }
               >
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View details for ${item.title}`}
                   onClick={() => onOpenDetails(item)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onOpenDetails(item);
+                    }
+                  }}
                   onMouseEnter={() => {
                     if (item.media_type === 'anime') {
                       import('../pages/AnimeDetailsPage');
@@ -125,7 +134,7 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                       import('../pages/DetailsPage');
                     }
                   }}
-                  className="group block cursor-pointer"
+                  className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                 >
                   <div className="card-3d relative rounded-xl">
                     <div
@@ -142,7 +151,7 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                           posterAspect
                             ? (item.poster_path || item.backdrop_path)
                             : (item.backdrop_path || item.poster_path),
-                          posterAspect ? 'poster' : 'backdrop'
+                          posterAspect ? 'poster' : 'card'
                         )}
                         onError={(e) => {
                           const target = e.currentTarget;

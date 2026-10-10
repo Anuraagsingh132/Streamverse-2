@@ -1,5 +1,5 @@
-import apothecaryEpisodes from '../data/apothecaryEpisodes.json';
 import { LRUCache, deduplicateInFlight } from '../utils/lruCache';
+import { safeSetStorageItem, safeGetStorageItem, clearMediaDiskCache } from '../utils/storageManager';
 
 export interface AniListCharacter {
   id: number;
@@ -213,6 +213,22 @@ query ($id: Int) {
 const detailsCache = new LRUCache<number, FullAniListAnimeDetails>(100);
 const inFlightDetails = new Map<string, Promise<FullAniListAnimeDetails | null>>();
 
+/**
+ * Purges cached AniList details from in-memory LRU cache and persistent disk storage.
+ * If itemId is passed, clears only that specific anime.
+ */
+export function clearAniListCache(itemId?: string | number): void {
+  const numericId = itemId !== undefined && itemId !== null ? parseInt(itemId.toString(), 10) : NaN;
+  if (!isNaN(numericId)) {
+    detailsCache.delete(numericId);
+    inFlightDetails.delete(String(numericId));
+  } else if (!itemId) {
+    detailsCache.clear();
+    inFlightDetails.clear();
+  }
+  clearMediaDiskCache(itemId);
+}
+
 export async function fetchAniListAnimeDetails(id: number | string): Promise<FullAniListAnimeDetails | null> {
   const numericId = parseInt(id.toString(), 10);
   if (isNaN(numericId)) return null;
@@ -222,7 +238,7 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
   }
 
   try {
-    const cached = localStorage.getItem(`anilist_details_${numericId}`) || sessionStorage.getItem(`anilist_details_${numericId}`);
+    const cached = safeGetStorageItem(`anilist_details_${numericId}`);
     if (cached) {
       const parsed = JSON.parse(cached);
       detailsCache.set(numericId, parsed);
@@ -325,7 +341,8 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
     // Episodes
     let episodes_list: AniListEpisode[] = [];
     if (numericId === 161645) {
-      episodes_list = apothecaryEpisodes as AniListEpisode[];
+      const apothecaryModule = await import('../data/apothecaryEpisodes.json');
+      episodes_list = (apothecaryModule.default || apothecaryModule) as unknown as AniListEpisode[];
     } else {
       const epCount = media.episodes || 12;
       const baseBackdrop = media.bannerImage || media.coverImage?.extraLarge || media.coverImage?.large;
@@ -390,13 +407,7 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
     };
 
     detailsCache.set(numericId, result);
-    try {
-      localStorage.setItem(`anilist_details_${numericId}`, JSON.stringify(result));
-    } catch {
-      try {
-        sessionStorage.setItem(`anilist_details_${numericId}`, JSON.stringify(result));
-      } catch {}
-    }
+    safeSetStorageItem(`anilist_details_${numericId}`, JSON.stringify(result), { prefix: 'anilist_', maxItems: 30 });
 
       return result;
     } catch (error) {
@@ -457,7 +468,7 @@ export async function fetchAniListRail(variables: {
     return railCache.get(cacheKey)!;
   }
   try {
-    const cached = localStorage.getItem(`anilist_rail_${cacheKey}`) || sessionStorage.getItem(`anilist_rail_${cacheKey}`);
+    const cached = safeGetStorageItem(`anilist_rail_${cacheKey}`);
     if (cached) {
       const parsed = JSON.parse(cached);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -491,13 +502,7 @@ export async function fetchAniListRail(variables: {
         const media = json?.data?.Page?.media || [];
         if (media.length > 0) {
           railCache.set(cacheKey, media);
-          try {
-            localStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
-          } catch {
-            try {
-              sessionStorage.setItem(`anilist_rail_${cacheKey}`, JSON.stringify(media));
-            } catch {}
-          }
+          safeSetStorageItem(`anilist_rail_${cacheKey}`, JSON.stringify(media), { prefix: 'anilist_', maxItems: 30 });
         }
         return media;
       } catch (e) {

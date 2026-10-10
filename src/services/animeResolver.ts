@@ -16,6 +16,19 @@ export interface ResolvedAnimeMetadata {
 const animeResolverCache = new LRUCache<string, ResolvedAnimeMetadata | null>(200);
 
 /**
+ * Clears cached anime-to-TMDB resolution metadata.
+ * If animeId is passed, clears only cache keys associated with that anime ID.
+ */
+export function clearAnimeResolverCache(animeId?: string | number): void {
+  if (animeId !== undefined && animeId !== null) {
+    const idStr = String(animeId);
+    animeResolverCache.deleteWhere((k) => k.startsWith(`${idStr}:`) || k.includes(`:${idStr}:`));
+  } else {
+    animeResolverCache.clear();
+  }
+}
+
+/**
  * Normalizes an anime title for TMDB querying by stripping common season, cour, and part tags
  * while extracting the detected season number.
  */
@@ -180,7 +193,6 @@ export async function resolveAnimeToTmdb(
       return resolved;
     } catch (err) {
       console.warn(`[animeResolver] Failed to resolve anime ${anime.id}:`, err);
-      animeResolverCache.set(cacheKey, null);
       return null;
     }
   });

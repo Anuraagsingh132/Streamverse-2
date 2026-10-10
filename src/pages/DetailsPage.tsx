@@ -14,8 +14,7 @@ import {
   LayoutGrid,
   List,
   GalleryHorizontal,
-  X,
-  ArrowLeft
+  X
 } from 'lucide-react';
 import { MediaItem, EpisodeItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
@@ -24,6 +23,7 @@ import { getMediaDetails, getSeasonEpisodes } from '../services/tmdb';
 import { diggerCuratedDetails, lanternsCuratedDetails } from '../data/cinemaosLiveMatch';
 import { SEOHead } from '../components/SEOHead';
 import { GlassBackButton } from '../components/details/GlassBackButton';
+import { purgeMediaItemCache } from '../utils/cacheManager';
 
 interface DetailsPageProps {
   item: MediaItem;
@@ -84,9 +84,11 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
   const trailerRailRef = useRef<HTMLDivElement>(null);
   const moreLikeRailRef = useRef<HTMLDivElement>(null);
   const recommendedRailRef = useRef<HTMLDivElement>(null);
+  const [prevInitialId, setPrevInitialId] = useState<string | number>(initialItem.id);
 
-  // Sync state if initialItem changes
-  useEffect(() => {
+  // Sync state when initialItem changes (React official render-time pattern)
+  if (initialItem.id !== prevInitialId) {
+    setPrevInitialId(initialItem.id);
     const freshData = initialItem.id === '1248832' || initialItem.title.toLowerCase() === 'digger'
       ? { ...initialItem, ...diggerCuratedDetails }
       : (initialItem.id === '95350' || initialItem.title.toLowerCase() === 'lanterns'
@@ -97,7 +99,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
     setEpisodes(freshData.episodes_list || []);
     setActiveVideoKey(freshData.trailer_key || null);
     setTrailerModalOpen(false);
-  }, [initialItem]);
+  }
 
   // Fetch full details from TMDB
   useEffect(() => {
@@ -212,6 +214,11 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
   const ratingStars = Math.round(item.vote_average / 2) || 4;
   const releaseYear = item.release_date ? item.release_date.split('-')[0] : (item.year ? String(item.year) : '');
 
+  const handleBackClick = () => {
+    purgeMediaItemCache(item);
+    onBack();
+  };
+
   return (
     <div className="relative min-h-screen text-white">
       <SEOHead
@@ -230,7 +237,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
             '@type': 'AggregateRating',
             ratingValue: item.vote_average,
             bestRating: 10,
-            ratingCount: 1000,
+            ratingCount: item.vote_count || 100,
           },
         }}
       />
@@ -295,12 +302,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
         {/* Hero Content Overlays */}
         <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
-          {onBack && (
-            <GlassBackButton
-              onClick={onBack}
-              className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
-            />
-          )}
+          <GlassBackButton
+            onClick={handleBackClick}
+            className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
+          />
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column: Metadata, Logo, Overview, CTAs */}
             <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">
@@ -427,6 +432,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   type="button"
                   onClick={() => onToggleWatchlist(item)}
                   title={isSaved ? 'In Watchlist' : 'Watch Later'}
+                  aria-label={isSaved ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
                   className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 backdrop-blur-md transition ${
                     isSaved ? 'bg-rose-600 text-white border-rose-500' : 'bg-white/10 text-white hover:bg-white/20'
                   }`}
@@ -439,6 +445,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   type="button"
                   onClick={handleShare}
                   title={copiedShare ? 'Copied URL!' : 'Share'}
+                  aria-label="Share"
                   className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
                 >
                   {copiedShare ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
@@ -449,6 +456,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   type="button"
                   onClick={() => onPlay({ ...item, episodes_list: episodes }, 1, selectedSeason)}
                   title="Download"
+                  aria-label="Download"
                   className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
                 >
                   <Download className="h-4 w-4" />
@@ -470,7 +478,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5">
                       <img
-                        alt="You Decide"
+                        alt={primaryTrailer?.name || `${item.title} trailer`}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         src={`https://img.youtube.com/vi/${officialTrailerKey}/hqdefault.jpg`}
@@ -486,7 +494,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                       </span>
                       <div className="absolute inset-x-3 bottom-3">
                         <p className="line-clamp-1 text-sm font-semibold text-white">
-                          {primaryTrailer ? primaryTrailer.name : 'You Decide'}
+                          {primaryTrailer ? primaryTrailer.name : `${item.title} Trailer`}
                         </p>
                         <p className="mt-0.5 text-xs text-white/60">
                           +{Math.max(1, (item.videos?.length || 8) - 1)} more videos
@@ -509,7 +517,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5">
                       <img
-                        alt="Next episode"
+                        alt={`${item.title} - ${episodes[0]?.name || 'Next episode'}`}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         src={episodes[0]?.still_path || item.backdrop_path}
@@ -645,7 +653,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               {/* Studios / Network Branding */}
               {(((item.media_type === 'tv' ? item.networks : item.studios)?.filter((p) => Boolean(p.logo_path)).length || 0) > 0) && (
                 <div className="flex items-center gap-3 border-t border-white/10 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/35 shrink-0 [writing-mode:horizontal-tb] lg:rotate-180 lg:[writing-mode:vertical-rl]">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/60 shrink-0 [writing-mode:horizontal-tb] lg:rotate-180 lg:[writing-mode:vertical-rl]">
                     {item.media_type === 'tv' ? 'Network' : 'Studios'}
                   </span>
                   <div className="flex items-center gap-4 sm:gap-6 flex-wrap sm:flex-nowrap overflow-hidden">

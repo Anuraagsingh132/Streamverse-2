@@ -20,6 +20,7 @@ import {
   History,
   Tv2
 } from 'lucide-react';
+import { getRouteHref } from '../utils/routeUtils';
 
 interface NavbarProps {
   currentRoute: string;
@@ -127,9 +128,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="fixed left-1/2 top-3 sm:top-4 z-[100] -translate-x-1/2 rounded-full border border-white/10 bg-[#060812]/92 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-2xl backdrop-saturate-150 transition-all duration-200">
       <div className="flex h-14 items-center px-2.5 sm:px-3 gap-1">
         {/* Brand Logo Link */}
-        <motion.button
+        <motion.a
+          href={getRouteHref('home')}
           whileTap={{ scale: 0.95 }}
-          onClick={() => onNavigate('home')}
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('home');
+          }}
           onMouseEnter={() => prefetchRoute('home')}
           onFocus={() => prefetchRoute('home')}
           aria-label="Streamverse Home"
@@ -137,7 +142,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/75 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
         >
           <Clapperboard className="h-[18px] w-[18px]" strokeWidth={1.5} />
-        </motion.button>
+        </motion.a>
 
         {/* Left Divider (Desktop) */}
         <div className="hidden lg:block h-5 w-[1px] bg-white/10 mx-1 shrink-0" aria-hidden="true" />
@@ -148,9 +153,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             const Icon = item.icon;
             const isActive = currentRoute === item.route || (item.route === 'anime' && currentRoute === 'anime-details');
             return (
-              <button
+              <a
                 key={item.route}
-                onClick={() => onNavigate(item.route)}
+                href={getRouteHref(item.route)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onNavigate(item.route);
+                }}
                 onMouseEnter={() => prefetchRoute(item.route)}
                 onFocus={() => prefetchRoute(item.route)}
                 className={`relative inline-flex h-10 items-center gap-2 px-3.5 rounded-full text-sm whitespace-nowrap transition duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
@@ -161,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-white' : 'text-white/65'}`} strokeWidth={1.5} />
                 <span>{item.label}</span>
-              </button>
+              </a>
             );
           })}
 
@@ -200,9 +209,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {browseItems.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <button
+                      <a
                         key={item.route}
-                        onClick={() => {
+                        href={getRouteHref(item.route)}
+                        onClick={(e) => {
+                          e.preventDefault();
                           onNavigate(item.route);
                           setIsBrowseOpen(false);
                         }}
@@ -217,7 +228,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <p className="text-sm font-medium leading-none text-white">{item.label}</p>
                           <p className="mt-0.5 text-[11px] text-white/40 truncate">{item.description}</p>
                         </div>
-                      </button>
+                      </a>
                     );
                   })}
                 </motion.div>

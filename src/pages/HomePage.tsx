@@ -5,6 +5,7 @@ import { ProviderRail } from '../components/ProviderRail';
 import { GenreRail } from '../components/GenreRail';
 import { PlatformsMarquee } from '../components/PlatformsMarquee';
 import { SEOHead } from '../components/SEOHead';
+import { ContinueWatchingRail } from '../components/ContinueWatchingRail';
 import { MediaItem } from '../types/media';
 import { 
   liveHeroItems, 
@@ -98,6 +99,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* Main Content Overlapping Hero with exact negative margin */}
       <div className="relative z-10 -mt-[32vh] sm:-mt-20 md:-mt-24 lg:-mt-52 4xl:-mt-72 space-y-6">
+        {/* Continue Watching Rail */}
+        <ContinueWatchingRail onPlay={onPlay} onOpenDetails={onOpenDetails} />
+
         {/* Top 10 Movies */}
         <TopTenRow
           title="Top 10 movies"

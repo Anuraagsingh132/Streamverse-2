@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
 import { 
   Sparkles, 
   Star, 
@@ -214,6 +213,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                maxLength={280}
                 placeholder="Describe a plot, feeling, actor, or genre combination..."
                 className="w-full bg-transparent py-4 sm:py-4.5 pl-0 pr-32 sm:pr-36 text-sm sm:text-base text-white placeholder:text-white/40 focus:outline-none"
               />
@@ -239,7 +239,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
             {/* Recent Searches: Small Quiet Chips on ONE Single Line with "Clear" at the End */}
             {recentSearches.length > 0 && !activeQuery && (
               <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3 text-xs text-white/40">
-                <span className="text-[10px] uppercase tracking-wider text-white/35 mr-1 flex items-center gap-1">
+                <span className="text-[10px] uppercase tracking-wider text-white/60 mr-1 flex items-center gap-1">
                   <Clock className="h-2.5 w-2.5" /> Recent:
                 </span>
                 {recentSearches.map((item) => (
@@ -255,11 +255,11 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                     <span>{item}</span>
                   </button>
                 ))}
-                <span className="text-white/20 select-none">·</span>
+                <span className="text-white/40 select-none">·</span>
                 <button
                   type="button"
                   onClick={handleClearRecent}
-                  className="text-[10px] text-white/35 hover:text-white/70 underline underline-offset-2 transition cursor-pointer"
+                  className="text-[10px] text-white/60 hover:text-white underline underline-offset-2 transition cursor-pointer"
                   title="Clear recent searches"
                 >
                   Clear
@@ -339,13 +339,10 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                     : posterImg;
 
                   return (
-                    <motion.div
+                    <div
                       key={item.id}
                       onClick={() => onOpenDetails(item)}
-                      whileHover={{ y: -4, scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                      className="group/card block cursor-pointer select-none"
+                      className="group/card block cursor-pointer select-none transition-transform duration-200 hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <div className="card-3d relative rounded-xl">
                         <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-md">
@@ -403,7 +400,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                           )}
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
@@ -439,15 +436,13 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
               {MOOD_CARDS.map((mood) => {
                 const MoodIcon = mood.icon;
                 return (
-                  <motion.div
+                  <div
                     key={mood.title}
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setPrompt(mood.query);
                       handleSearch(mood.query);
                     }}
-                    className="group relative h-40 sm:h-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 cursor-pointer shadow-lg transition duration-200"
+                    className="group relative h-40 sm:h-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 cursor-pointer shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     {/* Darkened Image Layer */}
                     <img 
@@ -475,7 +470,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                         <ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>

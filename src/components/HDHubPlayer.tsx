@@ -36,12 +36,13 @@ import {
 import { MediaItem } from '../types/media';
 import { fetchHDHubStreams, HDHubStream } from '../services/hdhub';
 import { fetchPenguStreams } from '../services/pengu';
-import Hls from 'hls.js';
+import type Hls from 'hls.js';
 import { getImdbId } from '../services/tmdb';
 import { 
   fetchAvailableSubtitles, 
   fetchSubtitleVttBlob, 
   convertSrtToVtt, 
+  sanitizeVtt,
   revokeSubtitleBlob,
   SubtitleTrackItem 
 } from '../services/subtitles';
@@ -56,6 +57,7 @@ import {
 import { useUserSettings } from '../hooks/useUserSettings';
 import { usePlayerShortcuts } from './player/usePlayerShortcuts';
 import { useScrubberDrag } from './player/useScrubberDrag';
+import { savePlaybackRecord, removePlaybackRecord } from '../store/useContinueWatchingStore';
 
 export interface HDHubPlayerProps {
   item: MediaItem;
@@ -174,51 +176,48 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   const lastTimeUpdateRef = useRef<number>(0);
   const lastSaveTimeRef = useRef<number>(0);
   const hasResumedRef = useRef<boolean>(false);
+  const failoverAttemptedRef = useRef<boolean>(false);
 
-  // Storage key for persistent playback progress
-  const progressKey = useMemo(() => {
-    const isTVSeries = item.media_type === 'tv' || item.media_type === 'anime';
-    const baseId = item.tmdbId || item.id;
-    return isTVSeries
-      ? `streamverse_playback_progress_${baseId}_s${season}_e${episode}`
-      : `streamverse_playback_progress_${baseId}`;
-  }, [item.id, item.tmdbId, item.media_type, season, episode]);
+  const isTV = item.media_type === 'tv' || item.media_type === 'anime';
 
   const saveProgress = useCallback((time: number, dur: number) => {
     if (!Number.isFinite(time) || time < 5) return;
     try {
       if (dur > 0 && time > dur - 10) {
-        localStorage.removeItem(progressKey);
+        removePlaybackRecord(item.id, isTV ? season : undefined, isTV ? episode : undefined);
         return;
       }
-      localStorage.setItem(progressKey, JSON.stringify({
-        time: Math.floor(time),
-        duration: Math.floor(dur || 0),
-        updatedAt: Date.now()
-      }));
+      savePlaybackRecord(item, {
+        season: isTV ? season : undefined,
+        episode: isTV ? episode : undefined,
+        currentTime: time,
+        duration: dur
+      });
     } catch {
       // ignore
     }
-  }, [progressKey]);
+  }, [item, isTV, season, episode]);
 
   useEffect(() => {
     hasResumedRef.current = false;
+    failoverAttemptedRef.current = false;
   }, [item.id, season, episode, selectedStreamIndex]);
 
   // Cleanup all allocated Object URLs and save progress on unmount
   useEffect(() => {
+    const video = videoRef.current;
+    const blobUrls = Array.from(createdBlobUrlsRef.current);
+    const createdBlobUrls = createdBlobUrlsRef.current;
     return () => {
-      if (videoRef.current && videoRef.current.currentTime > 5) {
-        saveProgress(videoRef.current.currentTime, videoRef.current.duration);
+      if (video && video.currentTime > 5) {
+        saveProgress(video.currentTime, video.duration);
       }
-      createdBlobUrlsRef.current.forEach((url) => {
+      blobUrls.forEach((url) => {
         revokeSubtitleBlob(url);
       });
-      createdBlobUrlsRef.current.clear();
+      createdBlobUrls.clear();
     };
   }, [saveProgress]);
-
-  const isTV = item.media_type === 'tv' || item.media_type === 'anime';
   const selectedStream = streams[selectedStreamIndex] || null;
 
   // Resolve current server name for UI labels
@@ -293,11 +292,12 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   // 1. Fetch available Direct / Cloud streams (HDHub or Pengu)
   useEffect(() => {
     let isCancelled = false;
-    setLoading(true);
-    setError(null);
-    setPlaybackError(false);
 
     async function loadStreams() {
+      setLoading(true);
+      setError(null);
+      setPlaybackError(false);
+
       try {
         const fetchFn = currentServerId === 'pengu' ? fetchPenguStreams : fetchHDHubStreams;
         const res = await fetchFn(
@@ -336,11 +336,12 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   // 2. Fetch available Subtitles for this title
   useEffect(() => {
     let isCancelled = false;
-    setSubtitlesLoading(true);
-    setSelectedSubtitleId(null);
-    setCurrentSubtitleUrl(null);
 
     async function loadSubs() {
+      setSubtitlesLoading(true);
+      setSelectedSubtitleId(null);
+      setCurrentSubtitleUrl(null);
+
       try {
         let imdbId = item.imdbId;
         if (!imdbId) {
@@ -366,15 +367,17 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     };
   }, [item.id, item.tmdbId, item.media_type, item.imdbId, season, episode]);
 
-  // Handle stream change
-  useEffect(() => {
+  // Handle stream change during render (React official pattern)
+  const [prevStreamIndex, setPrevStreamIndex] = useState<number>(selectedStreamIndex);
+  if (selectedStreamIndex !== prevStreamIndex) {
+    setPrevStreamIndex(selectedStreamIndex);
     setPlaybackError(false);
     setIsPlaying(false);
     setCurrentTime(0);
     setBufferedPercent(0);
     setNativeAudioTracks([]);
     setSelectedAudioLang('default');
-  }, [selectedStreamIndex]);
+  }
 
   // HLS ref & stream attachment effect
   const hlsRef = useRef<Hls | null>(null);
@@ -392,82 +395,106 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     }
 
     const isHls = selectedStream.url.includes('.m3u8') || selectedStream.url.includes('/hls/');
+    let isDisposed = false;
 
-    if (isHls && Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: false,
-        backBufferLength: 90
-      });
+    if (isHls) {
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS support in Safari / iOS
+        video.src = selectedStream.url;
+        video.load();
+      } else {
+        // Dynamically load HLS.js only when stream requires it on browsers without native HLS
+        import('hls.js')
+          .then(({ default: HlsClass }) => {
+            if (isDisposed) return;
+            if (HlsClass.isSupported()) {
+              const hls = new HlsClass({
+                enableWorker: true,
+                lowLatencyMode: false,
+                backBufferLength: 90
+              });
 
-      hls.loadSource(selectedStream.url);
-      hls.attachMedia(video);
+              hls.loadSource(selectedStream.url);
+              hls.attachMedia(video);
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setPlaybackError(false);
-        if (hls.audioTracks && hls.audioTracks.length > 0) {
-          const list = hls.audioTracks.map((t, idx) => ({
-            id: `hls-${idx}`,
-            label: t.name || t.lang || `Audio Track ${idx + 1}`,
-            language: t.lang,
-            index: idx
-          }));
-          setNativeAudioTracks(list);
-        }
-      });
+              hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
+                setPlaybackError(false);
+                if (hls.audioTracks && hls.audioTracks.length > 0) {
+                  const list = hls.audioTracks.map((t, idx) => ({
+                    id: `hls-${idx}`,
+                    label: t.name || t.lang || `Audio Track ${idx + 1}`,
+                    language: t.lang,
+                    index: idx
+                  }));
+                  setNativeAudioTracks(list);
+                }
+              });
 
-      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
-        if (hls.audioTracks && hls.audioTracks.length > 0) {
-          const list = hls.audioTracks.map((t, idx) => ({
-            id: `hls-${idx}`,
-            label: t.name || t.lang || `Audio Track ${idx + 1}`,
-            language: t.lang,
-            index: idx
-          }));
-          setNativeAudioTracks(list);
-        }
-      });
+              hls.on(HlsClass.Events.AUDIO_TRACKS_UPDATED, () => {
+                if (hls.audioTracks && hls.audioTracks.length > 0) {
+                  const list = hls.audioTracks.map((t, idx) => ({
+                    id: `hls-${idx}`,
+                    label: t.name || t.lang || `Audio Track ${idx + 1}`,
+                    language: t.lang,
+                    index: idx
+                  }));
+                  setNativeAudioTracks(list);
+                }
+              });
 
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        // Recover from non-fatal audio track load errors
-        if (
-          data.details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_ERROR || 
-          data.details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_TIMEOUT
-        ) {
-          console.warn('HLS audio track error, recovering...', data.details);
-          if (hls.audioTracks && hls.audioTracks.length > 1) {
-            hls.audioTrack = (hls.audioTrack + 1) % hls.audioTracks.length;
-          }
-          return;
-        }
+              hls.on(HlsClass.Events.ERROR, (_event, data) => {
+                if (
+                  data.details === HlsClass.ErrorDetails.AUDIO_TRACK_LOAD_ERROR || 
+                  data.details === HlsClass.ErrorDetails.AUDIO_TRACK_LOAD_TIMEOUT
+                ) {
+                  console.warn('HLS audio track error, recovering...', data.details);
+                  if (hls.audioTracks && hls.audioTracks.length > 1) {
+                    hls.audioTrack = (hls.audioTrack + 1) % hls.audioTracks.length;
+                  }
+                  return;
+                }
 
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn('HLS Network error, attempting recovery...');
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.warn('HLS Media error, attempting recovery...');
-              hls.recoverMediaError();
-              break;
-            default:
-              console.error('Fatal HLS error, destroying instance:', data);
-              hls.destroy();
-              hlsRef.current = null;
-              setPlaybackError(true);
-              break;
-          }
-        }
-      });
+                if (data.fatal) {
+                  switch (data.type) {
+                    case HlsClass.ErrorTypes.NETWORK_ERROR:
+                      console.warn('HLS Network error, attempting recovery...');
+                      hls.startLoad();
+                      break;
+                    case HlsClass.ErrorTypes.MEDIA_ERROR:
+                      console.warn('HLS Media error, attempting recovery...');
+                      hls.recoverMediaError();
+                      break;
+                    default:
+                      console.error('Fatal HLS error, destroying instance:', data);
+                      hls.destroy();
+                      hlsRef.current = null;
+                      setPlaybackError(true);
+                      break;
+                  }
+                }
+              });
 
-      hlsRef.current = hls;
+              hlsRef.current = hls;
+            } else {
+              video.src = selectedStream.url;
+              video.load();
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to dynamically load HLS library:', err);
+            if (!isDisposed) {
+              video.src = selectedStream.url;
+              video.load();
+            }
+          });
+      }
     } else {
       video.src = selectedStream.url;
       video.load();
     }
 
     return () => {
+      isDisposed = true;
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
@@ -605,11 +632,9 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       /*
       if (!hasResumedRef.current) {
         hasResumedRef.current = true;
-        try {
-          const raw = localStorage.getItem(progressKey);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            const savedTime = typeof parsed.time === 'number' ? parsed.time : 0;
+          const record = getPlaybackRecord(item.id, isTV ? season : undefined, isTV ? episode : undefined);
+          if (record) {
+            const savedTime = record.currentTime || 0;
             const effectiveDuration = d || duration;
             if (savedTime > 10 && (!effectiveDuration || savedTime < effectiveDuration - 30)) {
               videoRef.current.currentTime = savedTime;
@@ -617,7 +642,6 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
               showToast(`Resumed from ${formatTime(savedTime)}`);
             }
           }
-        } catch {}
       }
       */
 
@@ -811,6 +835,8 @@ interface AudioOptionItem {
         let vttContent = content;
         if (file.name.toLowerCase().endsWith('.srt')) {
           vttContent = convertSrtToVtt(content);
+        } else {
+          vttContent = sanitizeVtt(content);
         }
         const blob = new Blob([vttContent], { type: 'text/vtt;charset=utf-8' });
         const blobUrl = URL.createObjectURL(blob);
@@ -1050,6 +1076,27 @@ interface AudioOptionItem {
           onError={() => {
             const err = videoRef.current?.error;
             console.warn('Stream playback error on stream index', selectedStreamIndex, err);
+
+            // If the browser encounters a container/codec format error (MEDIA_ERR_SRC_NOT_SUPPORTED === 4),
+            // switching mirrors cannot bypass native browser decoder constraints (e.g. MKV with AC-3).
+            // Directly display the MKV/Codec notice modal so user can switch streams or open in VLC.
+            if (err?.code === 4) {
+              setPlaybackError(true);
+              return;
+            }
+
+            // Automatic PixelDrain proxy failover to direct EU CDN mirror for network drops (one attempt only)
+            const pdId = extractPixelDrainId(selectedStream?.url);
+            if (pdId && videoRef.current && !failoverAttemptedRef.current) {
+              failoverAttemptedRef.current = true;
+              const cdnMirror = `https://cdn.pixeldrain.eu.cc/${pdId}`;
+              console.info('[HDHubPlayer] Network error detected. Attempting direct EU CDN mirror failover once:', cdnMirror);
+              videoRef.current.src = cdnMirror;
+              videoRef.current.load();
+              videoRef.current.play().catch(() => {});
+              return;
+            }
+
             setPlaybackError(true);
           }}
           onClick={handleTogglePlay}
@@ -1459,7 +1506,7 @@ interface AudioOptionItem {
                 setLoading(true);
                 setError(null);
                 const fetchFn = currentServerId === 'pengu' ? fetchPenguStreams : fetchHDHubStreams;
-                fetchFn(item.tmdbId || item.id, item.media_type, item.imdbId, season, episode)
+                fetchFn(item.tmdbId || item.id, item.media_type, item.imdbId, season, episode, true)
                   .then((res) => {
                     setStreams(res.streams);
                     if (res.streams.length > 0) setSelectedStreamIndex(0);

@@ -13,6 +13,19 @@ export interface HoverProgress {
   time: number;
 }
 
+export function computeScrubPosition(
+  clientX: number,
+  rect: { left: number; width: number },
+  duration: number
+): { percent: number; time: number } {
+  const rawX = clientX - rect.left;
+  const clampedX = Math.max(0, Math.min(rect.width, rawX));
+  const percent = rect.width > 0 ? (clampedX / rect.width) * 100 : 0;
+  const validDur = Number.isFinite(duration) && duration > 0 ? duration : 100;
+  const time = Math.max(0, Math.min(validDur, (percent / 100) * validDur));
+  return { percent, time };
+}
+
 /**
  * Custom hook to encapsulate the scrubber bar dragging, touch tracking,
  * percentage clamp math, and hover time preview calculations for HTML5 video playback.
@@ -32,12 +45,7 @@ export function useScrubberDrag({
     (clientX: number): { percent: number; time: number } => {
       if (!scrubberRef.current) return { percent: 0, time: 0 };
       const rect = scrubberRef.current.getBoundingClientRect();
-      const rawX = clientX - rect.left;
-      const clampedX = Math.max(0, Math.min(rect.width, rawX));
-      const percent = rect.width > 0 ? (clampedX / rect.width) * 100 : 0;
-      const validDur = Number.isFinite(duration) && duration > 0 ? duration : 100;
-      const time = Math.max(0, Math.min(validDur, (percent / 100) * validDur));
-      return { percent, time };
+      return computeScrubPosition(clientX, rect, duration);
     },
     [duration, scrubberRef]
   );

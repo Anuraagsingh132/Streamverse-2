@@ -1,5 +1,6 @@
 import { MediaItem, MediaType, CastMember, CrewMember, StudioOrNetwork, VideoItem, EpisodeItem, SeasonItem } from '../types/media';
 import { LRUCache, deduplicateInFlight } from '../utils/lruCache';
+import { safeSetStorageItem, safeGetStorageItem, clearMediaDiskCache } from '../utils/storageManager';
 
 export const TMDB_API_KEY = (import.meta.env?.VITE_TMDB_API_KEY as string) || '1cf50e6248dc270629e802686245c2c8';
 export const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -10,6 +11,26 @@ const cache = new LRUCache<string, { timestamp: number; data: any }>(100);
 const inFlightPromises = new Map<string, Promise<any>>();
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes fresh TTL
 
+/**
+ * Purges cached TMDB requests from both bounded in-memory LRU cache and persistent disk storage.
+ * If itemId is passed, clears all endpoints corresponding to that specific movie/show/season.
+ */
+export function clearTmdbCache(itemId?: string | number): void {
+  const idStr = itemId !== undefined && itemId !== null ? String(itemId) : '';
+  if (idStr) {
+    cache.deleteWhere((k) => k.includes(`/${idStr}`) || k.includes(`%2F${idStr}`) || k.includes(`=${idStr}`));
+    for (const k of Array.from(inFlightPromises.keys())) {
+      if (k.includes(`/${idStr}`) || k.includes(`%2F${idStr}`) || k.includes(`=${idStr}`)) {
+        inFlightPromises.delete(k);
+      }
+    }
+  } else {
+    cache.clear();
+    inFlightPromises.clear();
+  }
+  clearMediaDiskCache(itemId);
+}
+
 function revalidateInBackground(url: string, cacheKey: string) {
   if (inFlightPromises.has(url)) return;
   const p = (async () => {
@@ -19,13 +40,7 @@ function revalidateInBackground(url: string, cacheKey: string) {
         const data = await res.json();
         const entry = { timestamp: Date.now(), data };
         cache.set(url, entry);
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(entry));
-        } catch {
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(entry));
-          } catch {}
-        }
+        safeSetStorageItem(cacheKey, JSON.stringify(entry), { prefix: 'tmdb_', maxItems: 30, ttlMs: CACHE_TTL_MS });
       }
     } catch {
       // background silent failure is non-blocking
@@ -57,7 +72,7 @@ async function fetchFromTmdb<T = any>(endpoint: string, params: Record<string, s
 
   // 2. Check persistent storage (localStorage fallback to sessionStorage)
   try {
-    const raw = localStorage.getItem(cacheKey) || sessionStorage.getItem(cacheKey);
+    const raw = safeGetStorageItem(cacheKey);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.data) {
@@ -87,13 +102,7 @@ async function fetchFromTmdb<T = any>(endpoint: string, params: Record<string, s
         const data = await res.json();
         const entry = { timestamp: Date.now(), data };
         cache.set(url, entry);
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(entry));
-        } catch {
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(entry));
-          } catch {}
-        }
+        safeSetStorageItem(cacheKey, JSON.stringify(entry), { prefix: 'tmdb_', maxItems: 30, ttlMs: CACHE_TTL_MS });
         return data as T;
       } catch (error) {
         console.error(`TMDB fetch failed for ${endpoint}:`, error);

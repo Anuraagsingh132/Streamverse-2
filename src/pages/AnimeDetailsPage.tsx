@@ -10,8 +10,7 @@ import {
   GalleryHorizontal,
   X,
   Bookmark,
-  Share2,
-  ArrowLeft
+  Share2
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { fetchAniListAnimeDetails, FullAniListAnimeDetails } from '../services/anilist';
@@ -19,6 +18,7 @@ import { fetchAnimeLogo, getCachedAnimeLogo } from '../services/animeLogo';
 import { resolveAnimeToTmdb } from '../services/animeResolver';
 import { SEOHead } from '../components/SEOHead';
 import { GlassBackButton } from '../components/details/GlassBackButton';
+import { purgeMediaItemCache } from '../utils/cacheManager';
 
 interface AnimeDetailsPageProps {
   item: MediaItem;
@@ -43,23 +43,20 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'horizontal'>('horizontal');
   const [trailerOpen, setTrailerOpen] = useState<boolean>(false);
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
-  const [heroLogo, setHeroLogo] = useState<string | null>(
-    initialItem.title_logo || initialItem.logo_path || getCachedAnimeLogo(initialItem.id)
-  );
+  const [heroLogo, setHeroLogo] = useState<string | null>(() => {
+    return initialItem.title_logo || initialItem.logo_path || getCachedAnimeLogo(initialItem.id) || null;
+  });
 
   useEffect(() => {
     let isMounted = true;
     const currentCached = initialItem.title_logo || initialItem.logo_path || getCachedAnimeLogo(initialItem.id);
-    if (currentCached) {
-      setHeroLogo(currentCached);
-      return;
+    if (!currentCached) {
+      fetchAnimeLogo(initialItem.id).then((logo) => {
+        if (isMounted && logo) {
+          setHeroLogo(logo);
+        }
+      });
     }
-
-    fetchAnimeLogo(initialItem.id).then((logo) => {
-      if (isMounted && logo) {
-        setHeroLogo(logo);
-      }
-    });
 
     return () => { isMounted = false; };
   }, [initialItem.id, initialItem.title_logo, initialItem.logo_path]);
@@ -72,7 +69,6 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
     fetchAniListAnimeDetails(initialItem.id).then((data) => {
       if (isMounted) {
@@ -90,12 +86,14 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
         }
         setLoading(false);
       }
+    }).catch(() => {
+      if (isMounted) setLoading(false);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [initialItem.id]);
+  }, [initialItem]);
 
   const scrollRail = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
     if (ref.current) {
@@ -126,6 +124,11 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
       </div>
     );
   }
+
+  const handleBackClick = () => {
+    purgeMediaItemCache(initialItem);
+    onBack();
+  };
 
   const d = animeData || {
     id: initialItem.id,
@@ -271,12 +274,10 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
         {/* Content Container aligned to bottom */}
         <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
-          {onBack && (
-            <GlassBackButton
-              onClick={onBack}
-              className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
-            />
-          )}
+          <GlassBackButton
+            onClick={handleBackClick}
+            className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
+          />
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column (Meta & Synopsis) */}
             <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">

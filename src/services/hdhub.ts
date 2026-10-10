@@ -36,8 +36,17 @@ export interface HDHubResolutionResult {
 const streamCache = new Map<string, { timestamp: number; result: HDHubResolutionResult }>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-export function clearHDHubCache(): void {
-  streamCache.clear();
+export function clearHDHubCache(targetId?: string | number): void {
+  if (targetId !== undefined && targetId !== null) {
+    const idStr = String(targetId);
+    for (const key of Array.from(streamCache.keys())) {
+      if (key.includes(idStr)) {
+        streamCache.delete(key);
+      }
+    }
+  } else {
+    streamCache.clear();
+  }
 }
 
 registerPixelDrainCacheInvalidator(() => {
@@ -246,7 +255,8 @@ export async function fetchHDHubStreams(
   mediaType: MediaType,
   providedImdbId?: string,
   season: number = 1,
-  episode: number = 1
+  episode: number = 1,
+  forceFresh: boolean = false
 ): Promise<HDHubResolutionResult> {
   const isTV = mediaType === 'tv' || mediaType === 'anime';
 
@@ -267,17 +277,24 @@ export async function fetchHDHubStreams(
   // Cache key
   const cacheKey = isTV ? `${imdbId}:s${season}e${episode}` : `${imdbId}:movie`;
   const cached = streamCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+  if (!forceFresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.result;
   }
 
-  // 2. Query HDHub resolver endpoint
-  const targetUrl = isTV
+  // 2. Query HDHub resolver endpoint with cache busting to guarantee live fresh stream URLs (bypasses browser disk cache)
+  const baseTargetUrl = isTV
     ? `${HDHUB_BASE_RESOLVER}/series/${imdbId}:${season}:${episode}.json`
     : `${HDHUB_BASE_RESOLVER}/movie/${imdbId}.json`;
+  const targetUrl = `${baseTargetUrl}?_t=${Date.now()}`;
 
   try {
-    const res = await fetch(targetUrl);
+    const res = await fetch(targetUrl, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    });
     if (!res.ok) {
       throw new Error(`HDHub resolver responded with HTTP status ${res.status}`);
     }
@@ -356,9 +373,30 @@ export async function fetchHDHubStreams(
       };
     });
 
-    // 4. Sort: Web-compatible audio first, then Cloudflare R2 (zero compute), then PixelDrain. Within each, 1080p > 720p > 2160p
-    const sorted = mapped.sort((a, b) => {
-      // Prioritize Cloudflare R2 (direct zero-compute CDN streaming) over PixelDrain
+    // 4. Temporarily disable PixelDrain and HubCloud servers (commented out as requested)
+    const activeStreams = mapped.filter((s) => {
+      /*
+      // To re-enable PixelDrain / HubCloud, uncomment the lines below:
+      if (s.provider === 'PixelDrain' || s.provider === 'HubCloud') {
+        return true;
+      }
+      */
+      return s.provider !== 'PixelDrain' && s.provider !== 'HubCloud';
+    });
+
+    if (activeStreams.length === 0) {
+      const result: HDHubResolutionResult = {
+        imdbId,
+        streams: [],
+        error: 'No active direct streams found on HDHub for this title (PixelDrain & HubCloud are temporarily disabled).'
+      };
+      streamCache.set(cacheKey, { timestamp: Date.now(), result });
+      return result;
+    }
+
+    // 5. Sort: Web-compatible audio first, then Cloudflare R2 (zero compute). Within each, 1080p > 720p > 2160p
+    const sorted = activeStreams.sort((a, b) => {
+      // Prioritize Cloudflare R2 (direct zero-compute CDN streaming) over other providers
       const providerScore = (p: HDHubStream['provider']) => {
         if (p === 'Cloudflare R2') return 4;
         if (p === 'PixelDrain') return 2;

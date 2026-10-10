@@ -1,9 +1,8 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { Play, Star } from 'lucide-react';
 import { MediaItem } from '../types/media';
 
-import { optimizeTmdbImage } from '../utils/imageUtils';
+import { optimizeTmdbImage, FALLBACK_POSTER } from '../utils/imageUtils';
 
 interface PosterCardProps {
   item: MediaItem;
@@ -32,7 +31,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
   };
 
   return (
-    <motion.div
+    <div
       role="button"
       tabIndex={0}
       aria-label={`View details for ${item.title}`}
@@ -45,10 +44,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
           import('../pages/DetailsPage');
         }
       }}
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] will-change-transform rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] transition-transform duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
     >
       <div className="card-3d relative rounded-xl">
         <div className="relative isolate aspect-[2/3] overflow-hidden rounded-xl bg-white/5 shadow-xl shadow-black/40">
@@ -58,6 +54,12 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
             decoding="async"
             className="h-full w-full object-cover transition duration-300 lg:group-hover/card:brightness-50"
             src={optimizedPosterSrc}
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (target.src !== FALLBACK_POSTER) {
+                target.src = FALLBACK_POSTER;
+              }
+            }}
           />
 
           {/* Top Left Rating Badge */}
@@ -73,21 +75,20 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
 
           {/* Center Hover Action Overlay */}
           <div className="absolute inset-0 hidden translate-y-4 flex-col items-center justify-center p-4 opacity-0 transition duration-300 group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:flex">
-            <motion.button
+            <button
               type="button"
               aria-label={`Play ${item.title}`}
               title={`Play ${item.title}`}
-              whileTap={{ scale: 0.92 }}
               onClick={(e) => {
                 if (onPlay) {
                   e.stopPropagation();
                   onPlay(item);
                 }
               }}
-              className="mb-3 rounded-full bg-white p-3 text-black shadow-lg shadow-white/20 transition-transform group-hover/card:scale-110 hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="mb-3 rounded-full bg-white p-3 text-black shadow-lg shadow-white/20 transition-transform group-hover/card:scale-110 hover:bg-white/90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             >
               <Play className="h-5 w-5 fill-current" />
-            </motion.button>
+            </button>
             <h3 className="line-clamp-2 text-center text-sm font-bold leading-tight text-white drop-shadow-md">
               {item.title}
             </h3>
@@ -113,7 +114,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
           {year} · {typeLabel}
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clapperboard } from 'lucide-react';
+import { getRouteHref } from '../utils/routeUtils';
 
 interface FooterProps {
   onNavigate: (route: string) => void;
@@ -25,26 +26,34 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       <div className="px-5 py-6 sm:px-8 lg:px-10">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           {/* Brand Logo */}
-          <button 
-            onClick={() => onNavigate('home')} 
+          <a 
+            href={getRouteHref('home')}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('home');
+            }} 
             className="inline-flex items-center gap-2.5 text-left"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/10">
               <Clapperboard className="lucide lucide-clapperboard h-4 w-4 text-primary" />
             </span>
             <span className="text-base font-black tracking-tight text-white">Streamverse</span>
-          </button>
+          </a>
 
           {/* Links */}
           <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">
             {links.map((link) => (
-              <button
+              <a
                 key={link.label}
-                onClick={() => onNavigate(link.route)}
+                href={getRouteHref(link.route)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onNavigate(link.route);
+                }}
                 className="text-sm text-white/60 transition hover:text-white"
               >
                 {link.label}
-              </button>
+              </a>
             ))}
           </nav>
         </div>

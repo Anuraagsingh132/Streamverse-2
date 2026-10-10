@@ -2,9 +2,24 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { MediaItem } from '../types/media';
 import { HeroBanner } from '../components/HeroBanner';
 import { ArrowUpRight, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import animeInitialData from '../data/animeInitialData.json';
 import animeHeroSlides from '../data/animeHeroSlides.json';
 import { fetchAniListRail } from '../services/anilist';
+
+let fallbackAnimeDataPromise: Promise<Record<string, any[]>> | null = null;
+function getFallbackAnimeData(): Promise<Record<string, any[]>> {
+  if (!fallbackAnimeDataPromise) {
+    fallbackAnimeDataPromise = fetch('/data/animeInitialData.json')
+      .then((res) => {
+        if (!res.ok) throw new Error('Static fetch failed');
+        return res.json();
+      })
+      .catch(async () => {
+        const mod = await import('../data/animeInitialData.json');
+        return (mod.default || mod) as Record<string, any[]>;
+      });
+  }
+  return fallbackAnimeDataPromise;
+}
 import { getCachedAnimeLogo } from '../services/animeLogo';
 import { SEOHead } from '../components/SEOHead';
 
@@ -72,7 +87,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
   const [genreResults, setGenreResults] = useState<any[]>([]);
   const [isLoadingGenre, setIsLoadingGenre] = useState<boolean>(false);
-  const [railsData, setRailsData] = useState<Record<string, any[]>>(animeInitialData);
+  const [railsData, setRailsData] = useState<Record<string, any[]>>({});
   const [heroSlides] = useState<any[]>(animeHeroSlides);
   const hasLoadedRef = useRef(false);
 
@@ -82,6 +97,13 @@ export const AnimePage: React.FC<AnimePageProps> = ({
     hasLoadedRef.current = true;
 
     let isMounted = true;
+
+    // Load fallback anime data asynchronously in background
+    getFallbackAnimeData().then((data) => {
+      if (isMounted) {
+        setRailsData((prev) => (Object.keys(prev).length === 0 ? data : { ...data, ...prev }));
+      }
+    }).catch(() => {});
 
     async function loadRailsProgressively() {
       const railDefinitions = [
@@ -177,7 +199,8 @@ export const AnimePage: React.FC<AnimePageProps> = ({
         const media = data?.data?.Page?.media || [];
         setGenreResults(media);
       } else {
-        const allLists = Object.values(animeInitialData).flat();
+        const fallback = await getFallbackAnimeData();
+        const allLists = Object.values(fallback).flat();
         const localMatches = allLists.filter((item: any) => 
           item.genres?.some((g: string) => g.toLowerCase() === genre.toLowerCase())
         );
@@ -185,11 +208,14 @@ export const AnimePage: React.FC<AnimePageProps> = ({
       }
     } catch (err) {
       console.warn('Genre load error, falling back to local matches:', err);
-      const allLists = Object.values(animeInitialData).flat();
-      const localMatches = allLists.filter((item: any) => 
-        item.genres?.some((g: string) => g.toLowerCase() === genre.toLowerCase())
-      );
-      setGenreResults(localMatches);
+      try {
+        const fallback = await getFallbackAnimeData();
+        const allLists = Object.values(fallback).flat();
+        const localMatches = allLists.filter((item: any) => 
+          item.genres?.some((g: string) => g.toLowerCase() === genre.toLowerCase())
+        );
+        setGenreResults(localMatches);
+      } catch {}
     } finally {
       setIsLoadingGenre(false);
     }
@@ -300,7 +326,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
           {selectedGenre === 'All' && (
             <div className="flex w-full flex-col gap-4 pt-6 lg:gap-6">
               {RAILS.map((rail) => {
-                const railData = (railsData as any)[rail.key] || (animeInitialData as any)[rail.key] || [];
+                const railData = (railsData as any)[rail.key] || [];
                 const displayItems = rail.ranked ? railData.slice(0, 10) : railData;
 
                 return (
@@ -419,7 +445,15 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
             WebkitMaskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)'
           }}
         >
-          {displayItems.map((item: any, idx: number) => {
+          {displayItems.length === 0 ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-[70vw] sm:w-[280px] lg:w-[310px] 2xl:w-[340px] shrink-0 aspect-[16/9] rounded-xl bg-white/[0.04] border border-white/5 animate-pulse"
+              />
+            ))
+          ) : (
+            displayItems.map((item: any, idx: number) => {
             if (rail.ranked) {
               return (
                 <div
@@ -454,7 +488,8 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
                 <AnimeCard item={item} onClick={() => onCardClick(item)} />
               </div>
             );
-          })}
+          })
+        )}
         </div>
       </div>
     </div>

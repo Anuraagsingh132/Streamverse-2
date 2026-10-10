@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../utils/pixeldrain';
 
-export type VideoServerId = 'hdhub' | 'pengu' | 'cinemaos' | 'vidsrc' | 'autoembed' | 'smashystream';
+export type VideoServerId = 'hdhub' | 'pengu' | 'cinemaos' | 'vidsrc' | 'autoembed';
 export type VideoQuality = '1080p' | '720p' | '4k' | 'auto';
 export type SubtitleSize = 'small' | 'medium' | 'large';
 
@@ -33,10 +33,23 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   subtitleSize: 'medium',
 };
 
+export function clampSubtitleOffset(raw: number | string | null | undefined): number {
+  if (raw === null || raw === undefined) return 0.0;
+  const parsed = typeof raw === 'number' ? raw : parseFloat(raw);
+  return Number.isFinite(parsed) ? Math.max(-5.0, Math.min(5.0, parsed)) : 0.0;
+}
+
+export function validateSubtitleSize(raw: string | null | undefined): SubtitleSize {
+  const validSubSizes: SubtitleSize[] = ['small', 'medium', 'large'];
+  return (raw && validSubSizes.includes(raw as SubtitleSize))
+    ? (raw as SubtitleSize)
+    : DEFAULT_USER_SETTINGS.subtitleSize;
+}
+
 export function getStoredUserSettings(): UserSettings {
   try {
     const rawServer = localStorage.getItem(STORAGE_KEYS.defaultServer);
-    const validServers: VideoServerId[] = ['hdhub', 'pengu', 'cinemaos', 'vidsrc', 'autoembed', 'smashystream'];
+    const validServers: VideoServerId[] = ['hdhub', 'pengu', 'cinemaos', 'vidsrc', 'autoembed'];
     const defaultServer = (rawServer && validServers.includes(rawServer as VideoServerId))
       ? (rawServer as VideoServerId)
       : DEFAULT_USER_SETTINGS.defaultServer;
@@ -53,14 +66,10 @@ export function getStoredUserSettings(): UserSettings {
     const pixelDrainRoute = getPixelDrainRoute();
 
     const rawOffset = localStorage.getItem(STORAGE_KEYS.subtitleOffset);
-    const parsedOffset = rawOffset !== null ? parseFloat(rawOffset) : 0.0;
-    const subtitleOffset = Number.isFinite(parsedOffset) ? Math.max(-5.0, Math.min(5.0, parsedOffset)) : 0.0;
+    const subtitleOffset = clampSubtitleOffset(rawOffset);
 
     const rawSubSize = localStorage.getItem(STORAGE_KEYS.subtitleSize);
-    const validSubSizes: SubtitleSize[] = ['small', 'medium', 'large'];
-    const subtitleSize = (rawSubSize && validSubSizes.includes(rawSubSize as SubtitleSize))
-      ? (rawSubSize as SubtitleSize)
-      : DEFAULT_USER_SETTINGS.subtitleSize;
+    const subtitleSize = validateSubtitleSize(rawSubSize);
 
     return {
       defaultServer,

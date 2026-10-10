@@ -102,10 +102,29 @@ export function extractPixelDrainId(url?: string | null, fullText?: string): str
  * - 'normal': /api/pixeldrain/:id (proxies pixeldrain.dev)
  * - 'cdn': /api/pixeldrain-cdn/:id (proxies cdn.pixeldrain.eu.cc with failover)
  */
+export const CLOUDFLARE_WORKER_PROXY_URL = 'https://lively-bar-b4aa.anuraagsingh10a.workers.dev';
+
+/**
+ * Formats a PixelDrain file ID into the desired playback URL based on the route.
+ * Defaults to our high-speed Cloudflare Worker proxy (or VITE_WORKER_PROXY_URL),
+ * routing Range requests smoothly with automatic CDN mirror failover.
+ * - 'normal': /api/pixeldrain/:id
+ * - 'cdn': /api/pixeldrain-cdn/:id?mode=cdn
+ */
 export function formatPixelDrainUrl(
   id: string,
   route: PixelDrainRoute = getPixelDrainRoute()
 ): string {
+  const customProxy =
+    typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined;
+
+  if (customProxy) {
+    const base = customProxy.replace(/\/$/, '');
+    if (route === 'cdn') {
+      return `${base}/api/pixeldrain-cdn/${id}?mode=cdn`;
+    }
+    return `${base}/api/pixeldrain/${id}`;
+  }
   if (route === 'cdn') {
     return `/api/pixeldrain-cdn/${id}`;
   }

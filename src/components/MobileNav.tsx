@@ -9,6 +9,7 @@ import {
   Search, 
   LayoutGrid 
 } from 'lucide-react';
+import { getRouteHref } from '../utils/routeUtils';
 
 interface MobileNavProps {
   currentRoute: string;
@@ -66,22 +67,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = currentRoute === item.route;
-          return (
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              key={item.label}
-              data-slot={item.slot}
-              aria-label={item.label}
-              onTouchStart={() => prefetchMobileRoute(item.route)}
-              onClick={() => {
-                if (item.action) {
-                  item.action();
-                } else {
-                  onNavigate(item.route);
-                }
-              }}
-              className="relative flex flex-1 h-full items-center justify-center active:opacity-50 transition-opacity duration-100"
-            >
+          const content = (
+            <>
               <span className="relative z-20 flex h-full w-full items-center justify-center">
                 <Icon 
                   className={`transition duration-200 ${
@@ -105,7 +92,41 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                   <div className="absolute inset-x-3 top-1 h-px rounded-full bg-foreground/20" />
                 </motion.div>
               )}
-            </motion.button>
+            </>
+          );
+
+          if (item.action) {
+            return (
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.92 }}
+                key={item.label}
+                data-slot={item.slot}
+                aria-label={item.label}
+                onClick={item.action}
+                className="relative flex flex-1 h-full items-center justify-center active:opacity-50 transition-opacity duration-100 cursor-pointer"
+              >
+                {content}
+              </motion.button>
+            );
+          }
+
+          return (
+            <motion.a
+              href={getRouteHref(item.route)}
+              whileTap={{ scale: 0.92 }}
+              key={item.label}
+              data-slot={item.slot}
+              aria-label={item.label}
+              onTouchStart={() => prefetchMobileRoute(item.route)}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate(item.route);
+              }}
+              className="relative flex flex-1 h-full items-center justify-center active:opacity-50 transition-opacity duration-100 cursor-pointer"
+            >
+              {content}
+            </motion.a>
           );
         })}
       </nav>

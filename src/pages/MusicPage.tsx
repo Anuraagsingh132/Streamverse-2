@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Music, Play, Pause, Volume2 } from 'lucide-react';
 import { musicTracksData } from '../data/mediaData';
 import { MusicTrack } from '../types/media';
+import { SEOHead } from '../components/SEOHead';
 
 export const MusicPage: React.FC = () => {
   const [currentTrack, setCurrentTrack] = useState<MusicTrack>(musicTracksData[0]);
@@ -18,6 +19,10 @@ export const MusicPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-8">
+      <SEOHead
+        title="Cinema Soundscapes & OSTs"
+        description="Listen to iconic film soundtracks, anime opening themes, and orchestral motion picture scores on Streamverse."
+      />
       {/* Header */}
       <div className="border-b border-white/10 pb-6">
         <div className="flex items-center gap-2 text-rose-500 font-bold">
@@ -115,7 +120,12 @@ export const MusicPage: React.FC = () => {
 
                 <div className="flex items-center gap-4 text-xs text-zinc-500">
                   <span>{track.duration}</span>
-                  <button className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-white opacity-0 group-hover:opacity-100 hover:bg-rose-600 transition">
+                  <button
+                    type="button"
+                    aria-label={isThisPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                    title={isThisPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-white opacity-0 group-hover:opacity-100 hover:bg-rose-600 transition cursor-pointer"
+                  >
                     {isThisPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 fill-white ml-0.5" />}
                   </button>
                 </div>

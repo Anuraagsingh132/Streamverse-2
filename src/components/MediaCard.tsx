@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { Play, Star, Plus, Check } from 'lucide-react';
 import { MediaItem } from '../types/media';
 
@@ -20,7 +19,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
   isWatchlist = false,
   onToggleWatchlist
 }) => {
-  const imageSrc = optimizeTmdbImage(item.backdrop_path || item.poster_path, 'backdrop');
+  const imageSrc = optimizeTmdbImage(item.backdrop_path || item.poster_path, 'card');
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -30,7 +29,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
   };
 
   return (
-    <motion.div 
+    <div 
       role="button"
       tabIndex={0}
       aria-label={`View details for ${item.title}`}
@@ -43,10 +42,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
           import('../pages/DetailsPage');
         }
       }}
-      whileHover={{ y: -3 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="group block cursor-pointer will-change-transform rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      className="group block cursor-pointer transition-transform duration-200 ease-out hover:-translate-y-1 active:scale-[0.98] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
     >
       <div className="card-3d relative rounded-xl">
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
@@ -124,7 +120,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
           </span>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

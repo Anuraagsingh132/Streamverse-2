@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Radio, Users, Trophy, Play } from 'lucide-react';
 import { liveSportsData } from '../data/mediaData';
 import { LiveSport } from '../types/media';
+import { SEOHead } from '../components/SEOHead';
 
 export const LiveSportsPage: React.FC = () => {
   const [selectedSport, setSelectedSport] = useState<LiveSport | null>(null);
@@ -15,6 +16,10 @@ export const LiveSportsPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-8">
+      <SEOHead
+        title="Live Sports & Broadcasts"
+        description="Stream live football matches, NBA games, Formula 1 Grand Prix races, and combat sports events on Streamverse."
+      />
       {/* Header */}
       <div className="border-b border-white/10 pb-6">
         <div className="flex items-center gap-2 text-rose-500 font-bold">

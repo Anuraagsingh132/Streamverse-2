@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { motion, AnimatePresence } from 'motion/react';
@@ -20,11 +20,9 @@ const AnimeDetailsPage = React.lazy(() => import('./pages/AnimeDetailsPage').the
 const CinemaOSPlayer = React.lazy(() => import('./components/CinemaOSPlayer').then(m => ({ default: m.CinemaOSPlayer })));
 const SearchModal = React.lazy(() => import('./components/SearchModal').then(m => ({ default: m.SearchModal })));
 import { MediaItem } from './types/media';
-import { allMedia } from './data/mediaData';
-import { diggerCuratedDetails, lanternsCuratedDetails } from './data/cinemaosLiveMatch';
 import { getMediaDetails } from './services/tmdb';
 import { useWatchlistStore } from './store/useWatchlistStore';
-import { resolveAnimeToTmdb } from './services/animeResolver';
+import { purgeMediaItemCache } from './utils/cacheManager';
 
 export const App: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState<string>('home');
@@ -35,6 +33,15 @@ export const App: React.FC = () => {
   const [playingSeason, setPlayingSeason] = useState<number>(1);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const lenisRef = useRef<Lenis | null>(null);
+  const lastActiveMediaRef = useRef<MediaItem | null>(null);
+
+  useEffect(() => {
+    if (playingItem) {
+      lastActiveMediaRef.current = playingItem;
+    } else if (selectedItem) {
+      lastActiveMediaRef.current = selectedItem;
+    }
+  }, [playingItem, selectedItem]);
 
   // Initialize Lenis smooth natural scroll
   useEffect(() => {
@@ -82,129 +89,127 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Dynamic loader for route-based media resolution (avoids bundling large static datasets into root bundle)
+  const resolveRouteMedia = useCallback(async (id: string, type: 'movie' | 'tv' | 'anime'): Promise<MediaItem | null> => {
+    if (type === 'movie' && id === '1248832') {
+      const { diggerCuratedDetails } = await import('./data/cinemaosLiveMatch');
+      return diggerCuratedDetails;
+    }
+    if (type === 'tv' && id === '95350') {
+      const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
+      return lanternsCuratedDetails;
+    }
+    try {
+      const { allMedia } = await import('./data/mediaData');
+      const match = allMedia.find((m) => m.id === id);
+      if (match) return match;
+    } catch {
+      // Fall through to TMDB or fallback
+    }
+    if (type === 'anime') {
+      return {
+        id,
+        title: 'Anime',
+        overview: '',
+        media_type: 'anime',
+        poster_path: '',
+        backdrop_path: '',
+        vote_average: 8.5,
+      };
+    }
+    try {
+      return await getMediaDetails(id, type);
+    } catch {
+      if (type === 'movie') {
+        const { diggerCuratedDetails } = await import('./data/cinemaosLiveMatch');
+        return diggerCuratedDetails;
+      }
+      const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
+      return lanternsCuratedDetails;
+    }
+  }, []);
+
   // Sync route and media details with window.location.pathname
   useEffect(() => {
     const parseUrl = () => {
       const path = window.location.pathname;
+      const isMediaRoute =
+        path.startsWith('/movie/') ||
+        path.startsWith('/tv/') ||
+        path.startsWith('/anime/') ||
+        path.startsWith('/watch/');
+
+      // If user navigated back away from a media route, clear its disk & memory cache
+      if (!isMediaRoute && lastActiveMediaRef.current) {
+        purgeMediaItemCache(lastActiveMediaRef.current);
+        lastActiveMediaRef.current = null;
+      }
+
       if (path.startsWith('/movie/')) {
         const id = path.replace('/movie/', '').replace(/\/$/, '');
-        if (id === '1248832') {
-          setSelectedItem(diggerCuratedDetails);
+        resolveRouteMedia(id, 'movie').then((m) => {
+          if (m) setSelectedItem(m);
           setCurrentRoute('details');
-        } else {
-          const match = allMedia.find((m) => m.id === id);
-          if (match) {
-            setSelectedItem(match);
-            setCurrentRoute('details');
-          } else {
-            getMediaDetails(id, 'movie').then((m) => {
-              setSelectedItem(m);
-              setCurrentRoute('details');
-            }).catch(() => {
-              setSelectedItem(diggerCuratedDetails);
-              setCurrentRoute('details');
-            });
-          }
-        }
+        });
       } else if (path.startsWith('/tv/')) {
         const id = path.replace('/tv/', '').replace(/\/$/, '');
-        if (id === '95350') {
-          setSelectedItem(lanternsCuratedDetails);
+        resolveRouteMedia(id, 'tv').then((m) => {
+          if (m) setSelectedItem(m);
           setCurrentRoute('details');
-        } else {
-          const match = allMedia.find((m) => m.id === id);
-          if (match) {
-            setSelectedItem(match);
-            setCurrentRoute('details');
-          } else {
-            getMediaDetails(id, 'tv').then((m) => {
-              setSelectedItem(m);
-              setCurrentRoute('details');
-            }).catch(() => {
-              setSelectedItem(lanternsCuratedDetails);
-              setCurrentRoute('details');
-            });
-          }
-        }
+        });
       } else if (path.startsWith('/anime/browse') || path === '/anime/browse') {
         setCurrentRoute('anime');
       } else if (path.startsWith('/anime/')) {
         const id = path.replace('/anime/', '').replace(/\/$/, '');
-        const match = allMedia.find((m) => m.id === id);
-        if (match) {
-          setSelectedItem(match);
-        } else {
-          setSelectedItem({
-            id,
-            title: 'Anime',
-            overview: '',
-            media_type: 'anime',
-            poster_path: '',
-            backdrop_path: '',
-            vote_average: 8.5
-          });
-        }
-        setCurrentRoute('anime-details');
+        resolveRouteMedia(id, 'anime').then((m) => {
+          if (m) setSelectedItem(m);
+          setCurrentRoute('anime-details');
+        });
       } else if (path.startsWith('/watch/movie/')) {
         const id = path.replace('/watch/movie/', '').replace(/\/$/, '');
-        const match = allMedia.find((m) => m.id === id);
-        if (match) {
-          setPlayingItem(match);
-          setPlayingEpisode(1);
-          setPlayingSeason(1);
-          setCurrentRoute('watch');
-        } else {
-          getMediaDetails(id, 'movie').then((m) => {
+        resolveRouteMedia(id, 'movie').then((m) => {
+          if (m) {
             setPlayingItem(m);
             setPlayingEpisode(1);
             setPlayingSeason(1);
             setCurrentRoute('watch');
-          }).catch(() => {
+          } else {
             setCurrentRoute('home');
-          });
-        }
+          }
+        });
       } else if (path.startsWith('/watch/tv/')) {
         const urlObj = new URL(window.location.href);
         const sParam = Number(urlObj.searchParams.get('season')) || 1;
         const epParam = Number(urlObj.searchParams.get('episode')) || 1;
         const id = path.replace('/watch/tv/', '').split('?')[0].replace(/\/$/, '');
-        const match = allMedia.find((m) => m.id === id);
-        if (match) {
-          setPlayingItem(match);
-          setPlayingSeason(sParam);
-          setPlayingEpisode(epParam);
-          setCurrentRoute('watch');
-        } else {
-          getMediaDetails(id, 'tv').then((m) => {
+        resolveRouteMedia(id, 'tv').then((m) => {
+          if (m) {
             setPlayingItem(m);
             setPlayingSeason(sParam);
             setPlayingEpisode(epParam);
             setCurrentRoute('watch');
-          }).catch(() => {
+          } else {
             setCurrentRoute('home');
-          });
-        }
+          }
+        });
       } else if (path.startsWith('/watch/anime/')) {
         const parts = path.replace('/watch/anime/', '').split('/');
         const id = parts[0];
         const epParam = Number(parts[1]) || 1;
-        const match = allMedia.find((m) => m.id === id);
-        if (match) {
-          setPlayingItem(match);
-        } else {
-          setPlayingItem({
+        resolveRouteMedia(id, 'anime').then((m) => {
+          setPlayingItem(m || {
             id,
             title: 'Anime',
             overview: '',
             media_type: 'anime',
             poster_path: '',
             backdrop_path: '',
-            vote_average: 8.5
+            vote_average: 8.5,
           });
-        }
-        setPlayingSeason(1);
-        setPlayingEpisode(epParam);
-        setCurrentRoute('watch');
+          setPlayingSeason(1);
+          setPlayingEpisode(epParam);
+          setCurrentRoute('watch');
+        });
       } else if (path === '/movies' || path === '/movie') {
         setCurrentRoute('movie');
       } else if (path === '/tv' || path === '/tv-shows') {
@@ -231,9 +236,18 @@ export const App: React.FC = () => {
     parseUrl();
     window.addEventListener('popstate', parseUrl);
     return () => window.removeEventListener('popstate', parseUrl);
-  }, []);
+  }, [resolveRouteMedia]);
 
   const handleNavigate = useCallback((route: string) => {
+    // When navigating away from a movie or player, clear its disk and memory cache
+    if (selectedItem) {
+      purgeMediaItemCache(selectedItem);
+    }
+    if (playingItem) {
+      purgeMediaItemCache(playingItem);
+    }
+    lastActiveMediaRef.current = null;
+
     let normalizedRoute = route;
     let targetUrl = `/${route}`;
 
@@ -270,9 +284,12 @@ export const App: React.FC = () => {
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, []);
+  }, [selectedItem, playingItem]);
 
   const handleOpenDetails = useCallback((item: MediaItem) => {
+    if (selectedItem && selectedItem.id !== item.id) {
+      purgeMediaItemCache(selectedItem);
+    }
     setSelectedItem(item);
     if (item.media_type === 'anime') {
       setCurrentRoute('anime-details');
@@ -297,7 +314,7 @@ export const App: React.FC = () => {
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, []);
+  }, [selectedItem]);
 
   const handlePlay = useCallback((item: MediaItem, episode: number = 1, season: number = 1) => {
     setPlayingSeason(season || 1);
@@ -322,6 +339,9 @@ export const App: React.FC = () => {
   }, [currentRoute]);
 
   const handleClosePlayer = useCallback(() => {
+    if (playingItem) {
+      purgeMediaItemCache(playingItem);
+    }
     setPlayingItem(null);
     if (selectedItem) {
       if (selectedItem.media_type === 'anime') {
@@ -347,7 +367,7 @@ export const App: React.FC = () => {
         window.history.pushState({}, '', targetUrl);
       }
     }
-  }, [selectedItem, previousRoute]);
+  }, [selectedItem, previousRoute, playingItem]);
 
   return (
     <div className="relative flex min-h-screen flex-col font-sans bg-transparent text-foreground">
@@ -471,7 +491,10 @@ export const App: React.FC = () => {
               {currentRoute === 'anime-details' && selectedItem && (
                 <AnimeDetailsPage
                   item={selectedItem}
-                  onBack={() => handleNavigate('anime')}
+                  onBack={() => {
+                    purgeMediaItemCache(selectedItem);
+                    handleNavigate('anime');
+                  }}
                   onPlay={(item, ep) => handlePlay(item, ep || 1, 1)}
                   onOpenDetails={handleOpenDetails}
                   watchlist={watchlist}
@@ -482,7 +505,10 @@ export const App: React.FC = () => {
               {currentRoute === 'details' && selectedItem && (
                 <DetailsPage
                   item={selectedItem}
-                  onBack={() => handleNavigate('home')}
+                  onBack={() => {
+                    purgeMediaItemCache(selectedItem);
+                    handleNavigate('home');
+                  }}
                   onPlay={(item, ep, season) => handlePlay(item, ep || 1, season || 1)}
                   onOpenDetails={handleOpenDetails}
                   watchlist={watchlist}
@@ -515,7 +541,6 @@ export const App: React.FC = () => {
             <SearchModal
               isOpen={isSearchOpen}
               onClose={() => setIsSearchOpen(false)}
-              items={allMedia}
               onPlay={handlePlay}
               onOpenDetails={handleOpenDetails}
               onNavigate={handleNavigate}

@@ -14,6 +14,9 @@ import { MediaItem, EpisodeItem } from '../types/media';
 import { HDHubPlayer } from './HDHubPlayer';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useUserSettings } from '../hooks/useUserSettings';
+import { getSeasonEpisodes } from '../services/tmdb';
+import { resolveAnimeToTmdb } from '../services/animeResolver';
+import { purgeMediaItemCache } from '../utils/cacheManager';
 
 interface ServerOption {
   id: string;
@@ -24,7 +27,7 @@ interface ServerOption {
 }
 
 // Anime-specific streaming servers (MegaPlay Sub & Dub powered by AniList ID + Episode)
-export const ANIME_SERVERS: ServerOption[] = [
+const ANIME_SERVERS: ServerOption[] = [
   {
     id: 'megaplay-sub',
     name: 'MegaPlay (Sub)',
@@ -68,7 +71,7 @@ export const ANIME_SERVERS: ServerOption[] = [
 ];
 
 // Configurable video streaming servers list for Movies and TV Shows
-export const MOVIE_TV_SERVERS: ServerOption[] = [
+const MOVIE_TV_SERVERS: ServerOption[] = [
   {
     id: 'hdhub',
     name: 'HDHub',
@@ -121,8 +124,6 @@ export const MOVIE_TV_SERVERS: ServerOption[] = [
   }
 ];
 
-const SERVERS = MOVIE_TV_SERVERS;
-
 class HDHubErrorBoundary extends React.Component<
   { children: React.ReactNode; onFallback: () => void },
   { hasError: boolean; error: string | null }
@@ -166,6 +167,8 @@ class HDHubErrorBoundary extends React.Component<
   }
 }
 
+const EMPTY_EPISODES: EpisodeItem[] = [];
+
 export interface CinemaOSPlayerProps {
   item: MediaItem | null;
   initialSeason?: number;
@@ -179,7 +182,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   item,
   initialSeason = 1,
   initialEpisode = 1,
-  episodesList = [],
+  episodesList = EMPTY_EPISODES,
   onClose,
   onEpisodeChange
 }) => {
@@ -193,13 +196,16 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     return settings.defaultServer || 'hdhub';
   });
 
-  useEffect(() => {
+  const [prevItemIdForServer, setPrevItemIdForServer] = useState(item?.id);
+  if (item?.id !== prevItemIdForServer) {
+    setPrevItemIdForServer(item?.id);
     if (item?.media_type === 'anime') {
       setSelectedServerId((prev) => (prev === 'megaplay-dub' ? 'megaplay-dub' : 'megaplay-sub'));
     } else {
       setSelectedServerId(settings.defaultServer || 'hdhub');
     }
-  }, [item?.id, item?.media_type, settings.defaultServer]);
+  }
+
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState<boolean>(false);
   const [isEpisodeDrawerOpen, setIsEpisodeDrawerOpen] = useState<boolean>(false);
   const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState<boolean>(false);
@@ -224,15 +230,15 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     }
   }, [isEpisodeDrawerOpen, isServerDropdownOpen]);
 
-  // Start hide timer on mount & when menus state change
+  // Start hide timer when menus state change
   useEffect(() => {
-    resetHideTimer();
-    return () => {
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-    };
-  }, [resetHideTimer]);
+    if (!isEpisodeDrawerOpen && !isServerDropdownOpen) {
+      const timer = setTimeout(() => {
+        setShowControls(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEpisodeDrawerOpen, isServerDropdownOpen]);
 
   // Auto-scroll to selected episode when drawer opens
   useEffect(() => {
@@ -281,11 +287,13 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     return () => window.removeEventListener('blur', handleBlur);
   }, [isEpisodeDrawerOpen, isServerDropdownOpen]);
 
-  // Sync initial props
-  useEffect(() => {
+  // Sync initial props when switching to a different media item
+  const [prevItemId, setPrevItemId] = useState(item?.id);
+  if (item?.id !== prevItemId) {
+    setPrevItemId(item?.id);
     if (initialSeason) setSeason(initialSeason);
     if (initialEpisode) setEpisode(initialEpisode);
-  }, [initialSeason, initialEpisode, item?.id]);
+  }
 
   // Lock body scroll while player is mounted
   useEffect(() => {
@@ -305,6 +313,18 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     }
   }, []);
 
+  const handleExit = useCallback(() => {
+    purgeMediaItemCache(item);
+    onClose();
+  }, [item, onClose]);
+
+  // Purge disk & in-memory media cache on player unmount
+  useEffect(() => {
+    return () => {
+      purgeMediaItemCache(item);
+    };
+  }, [item]);
+
   // Keyboard navigation & controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -318,7 +338,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
         } else if (isEpisodeDrawerOpen) {
           setIsEpisodeDrawerOpen(false);
         } else {
-          onClose();
+          handleExit();
         }
       } else if (e.key.toLowerCase() === 'f') {
         toggleFullscreen();
@@ -326,18 +346,89 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEpisodeDrawerOpen, isServerDropdownOpen, onClose, toggleFullscreen]);
+  }, [isEpisodeDrawerOpen, isServerDropdownOpen, handleExit, toggleFullscreen]);
 
   const isAnime = item?.media_type === 'anime';
   const isTV = item?.media_type === 'tv' || isAnime;
   const tmdbId = item?.tmdbId || item?.id || '';
 
-  const activeServers = useMemo(() => (isAnime ? ANIME_SERVERS : MOVIE_TV_SERVERS), [isAnime]);
+  // Dynamic TMDB resolution for anime items (BIZ-01)
+  const [resolvedAnimeTmdbId, setResolvedAnimeTmdbId] = useState<string | null>(() => {
+    if (item?.tmdbId && /^\d+$/.test(String(item.tmdbId))) {
+      return String(item.tmdbId);
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (!isAnime || !item) return;
+    if (item.tmdbId && /^\d+$/.test(String(item.tmdbId))) return;
+
+    let isMounted = true;
+    resolveAnimeToTmdb(item)
+      .then((resolved) => {
+        if (isMounted && resolved?.tmdbId) {
+          setResolvedAnimeTmdbId(resolved.tmdbId);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAnime, item]);
+
+  // Anime servers: show CinemaOS/HDHub only when TMDB ID is resolved to avoid crashes (BIZ-01)
+  const activeServers = useMemo(() => {
+    if (!isAnime) return MOVIE_TV_SERVERS;
+    if (resolvedAnimeTmdbId) {
+      return ANIME_SERVERS;
+    }
+    return ANIME_SERVERS.filter((s) => s.id === 'megaplay-sub' || s.id === 'megaplay-dub');
+  }, [isAnime, resolvedAnimeTmdbId]);
+
+  // Fallback if current selectedServerId is unavailable in activeServers
+  const effectiveServerId = useMemo(() => {
+    if (activeServers.some((s) => s.id === selectedServerId)) {
+      return selectedServerId;
+    }
+    return activeServers[0]?.id || selectedServerId;
+  }, [activeServers, selectedServerId]);
 
   // Current active server configuration
   const currentServer = useMemo(() => {
-    return activeServers.find((s) => s.id === selectedServerId) || activeServers[0];
-  }, [activeServers, selectedServerId]);
+    return activeServers.find((s) => s.id === effectiveServerId) || activeServers[0];
+  }, [activeServers, effectiveServerId]);
+
+  // Dynamic TV season episodes fetching (BIZ-05)
+  const [fetchedSeasonEpisodes, setFetchedSeasonEpisodes] = useState<EpisodeItem[]>(EMPTY_EPISODES);
+
+  useEffect(() => {
+    if (!isTV || isAnime) return;
+    const targetId = tmdbId || item?.id;
+    if (!targetId) return;
+
+    let isMounted = true;
+    getSeasonEpisodes(targetId, season)
+      .then((eps) => {
+        if (isMounted && eps && eps.length > 0) {
+          setFetchedSeasonEpisodes(eps);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isTV, isAnime, tmdbId, item?.id, season]);
+
+  // Derived effective episodes list: dynamically fetched season episodes, or static episodesList prop
+  const currentEpisodes = useMemo(() => {
+    if (fetchedSeasonEpisodes.length > 0) {
+      return fetchedSeasonEpisodes;
+    }
+    return episodesList || EMPTY_EPISODES;
+  }, [fetchedSeasonEpisodes, episodesList]);
 
   // Available seasons (including Season 0 / Specials if present in seasons_list)
   const availableSeasons = useMemo<{ seasonNumber: number; label: string; episodeCount?: number }[]>(() => {
@@ -360,12 +451,12 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
 
   const totalEpisodesForSeason = useMemo(() => {
     if (!item) return 12;
-    if (episodesList.length > 0) return episodesList.length;
+    if (currentEpisodes.length > 0) return currentEpisodes.length;
     const currentSeasonObj = availableSeasons.find((s) => s.seasonNumber === season);
     if (currentSeasonObj?.episodeCount) return currentSeasonObj.episodeCount;
     if (item.episodes) return item.episodes;
     return 24;
-  }, [item, episodesList, availableSeasons, season]);
+  }, [item, currentEpisodes, availableSeasons, season]);
 
   const handleSelectSeason = (sNum: number) => {
     setSeason(sNum);
@@ -398,16 +489,18 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   };
 
   // Construct iframe embed URL based on selected server configuration
-  const isDirectPlayer = selectedServerId === 'hdhub' || selectedServerId === 'pengu';
+  const isDirectPlayer = effectiveServerId === 'hdhub' || effectiveServerId === 'pengu';
+  const effectiveTmdbId = isAnime ? (resolvedAnimeTmdbId || '') : tmdbId;
+
   const embedUrl = useMemo(() => {
     if (!item || isDirectPlayer) return '';
     // MegaPlay for anime takes item.id (AniList ID) directly
-    if (isAnime && (selectedServerId === 'megaplay-sub' || selectedServerId === 'megaplay-dub')) {
+    if (isAnime && (effectiveServerId === 'megaplay-sub' || effectiveServerId === 'megaplay-dub')) {
       return currentServer.getUrl(item.id, isTV, season, episode);
     }
-    if (!tmdbId) return '';
-    return currentServer.getUrl(tmdbId, isTV, season, episode);
-  }, [item, isAnime, selectedServerId, currentServer, isTV, season, episode, isDirectPlayer, tmdbId]);
+    if (!effectiveTmdbId) return '';
+    return currentServer.getUrl(effectiveTmdbId, isTV, season, episode);
+  }, [item, isAnime, effectiveServerId, currentServer, isTV, season, episode, isDirectPlayer, effectiveTmdbId]);
 
   if (!item) return null;
 
@@ -428,12 +521,12 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
         {isDirectPlayer ? (
           <HDHubErrorBoundary onFallback={() => setSelectedServerId('cinemaos')}>
             <HDHubPlayer
-              item={item}
+              item={isAnime && resolvedAnimeTmdbId ? { ...item, tmdbId: resolvedAnimeTmdbId } : item}
               season={season}
               episode={episode}
               totalEpisodes={totalEpisodesForSeason}
               totalSeasons={totalSeasons}
-              onClose={onClose}
+              onClose={handleExit}
               onPrevEpisode={handlePrevEpisode}
               onNextEpisode={handleNextEpisode}
               onOpenEpisodeDrawer={() => setIsEpisodeDrawerOpen(true)}
@@ -479,7 +572,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
           {/* Top-Left Exit Button */}
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleExit}
             className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-white/10 bg-[#0a0c14]/75 text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition hover:bg-white/15 hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             title="Exit Player (Esc)"
             aria-label="Exit Player"
@@ -776,8 +869,8 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
               touchAction: 'pan-y'
             }}
           >
-            {episodesList.length > 0 ? (
-              episodesList.map((ep) => {
+            {currentEpisodes.length > 0 ? (
+              currentEpisodes.map((ep) => {
                 const isSelected = ep.episode_number === episode;
                 const isStarted = ep.episode_number <= episode;
                 const progressPercent = ep.episode_number < episode ? 100 : ep.episode_number === episode ? 35 : 0;

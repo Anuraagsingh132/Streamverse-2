@@ -44,6 +44,17 @@ export class LRUCache<K, V> {
     return this.cache.delete(key);
   }
 
+  deleteWhere(predicate: (key: K, value: V) => boolean): number {
+    let count = 0;
+    for (const [key, value] of Array.from(this.cache.entries())) {
+      if (predicate(key, value)) {
+        this.cache.delete(key);
+        count++;
+      }
+    }
+    return count;
+  }
+
   clear(): void {
     this.cache.clear();
   }

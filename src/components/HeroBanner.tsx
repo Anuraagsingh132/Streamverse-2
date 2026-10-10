@@ -46,10 +46,11 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
   }, [items.length, isPaused]);
 
   const currentId = items && items.length > 0 ? (items[currentIndex]?.id || items[0]?.id) : undefined;
-
-  useEffect(() => {
+  const [prevSlideId, setPrevSlideId] = useState(currentId);
+  if (currentId !== prevSlideId) {
+    setPrevSlideId(currentId);
     setLogoError(false);
-  }, [currentIndex, currentId]);
+  }
 
   if (!items || items.length === 0) return null;
 
@@ -244,7 +245,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                     <Star className="lucide lucide-star h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                     <Star className="lucide lucide-star h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                     <Star className="lucide lucide-star h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                    <Star className="lucide lucide-star h-3.5 w-3.5 fill-transparent text-gray-400/60 dark:text-white/30" />
+                    <Star className="lucide lucide-star h-3.5 w-3.5 fill-transparent text-gray-400/60 dark:text-white/45" />
                   </span>
                   <span className="font-semibold">{Math.round((current.vote_average || 8.3) * 10)}%</span>
                 </span>

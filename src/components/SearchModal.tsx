@@ -40,7 +40,7 @@ interface RecentSearch {
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  items: MediaItem[];
+  items?: MediaItem[];
   onPlay: (item: MediaItem) => void;
   onOpenDetails: (item: MediaItem) => void;
   onNavigate?: (route: string) => void;
@@ -104,23 +104,22 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const [activeCategory, setActiveCategory] = useState<SearchCategory>('all');
   const [isLoading, setIsLoading] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
-  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
-  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
-  const listRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const modalContainerRef = useFocusTrap<HTMLDivElement>(isOpen);
-
-  // Load recent searches from localStorage
-  useEffect(() => {
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>(() => {
     try {
       const stored = localStorage.getItem('recentSearches');
       if (stored) {
-        setRecentSearches(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {
       // ignore
     }
-  }, []);
+    return [];
+  });
+  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const modalContainerRef = useFocusTrap<HTMLDivElement>(isOpen);
 
   const saveRecentSearch = useCallback((term: string, category: string) => {
     if (!term.trim()) return;
@@ -151,18 +150,35 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     }
   }, []);
 
-  // Reset focus when modal opens
-  useEffect(() => {
+  // Reset focus when modal opens (React official render-time pattern)
+  const [prevIsOpen, setPrevIsOpen] = useState<boolean>(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setFocusedIndex(-1);
-      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  // Reset focusedIndex when results or category change
-  useEffect(() => {
+  // Reset search results when query is empty or category changes (React official render-time pattern)
+  const [prevQueryCat, setPrevQueryCat] = useState({ query, activeCategory });
+  if (
+    prevQueryCat.query !== query ||
+    prevQueryCat.activeCategory !== activeCategory
+  ) {
+    setPrevQueryCat({ query, activeCategory });
     setFocusedIndex(-1);
-  }, [searchResults, activeCategory]);
+    if (!query.trim() || activeCategory === 'recent') {
+      setSearchResults([]);
+      setIsLoading(false);
+    }
+  }
 
   // Scroll active item into view
   useEffect(() => {
@@ -177,13 +193,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   // Live search execution with debounce
   useEffect(() => {
     if (!query.trim() || activeCategory === 'recent') {
-      setSearchResults([]);
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
     const timeout = setTimeout(async () => {
+      setIsLoading(true);
       try {
         const q = query.trim();
         if (activeCategory === 'manga') {
@@ -384,7 +398,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholderText}
-            className="min-w-0 flex-1 bg-transparent text-lg text-white outline-none placeholder:text-white/30"
+            className="min-w-0 flex-1 bg-transparent text-lg text-white outline-none placeholder:text-white/50"
           />
           <div className="flex items-center gap-1.5">
             {query && (
@@ -613,7 +627,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                           setQuery(rec.term);
                         }}
                       >
-                        <Clock className="h-3.5 w-3.5 shrink-0 text-white/30" />
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-white/50" />
                         <span className="flex-1 truncate text-sm font-medium text-white">
                           {rec.term}
                         </span>
@@ -624,7 +638,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       <button
                         aria-label={`Remove ${rec.term}`}
                         onClick={() => removeRecentSearch(i)}
-                        className="mr-2 flex h-6 w-6 items-center justify-center rounded-full text-white/30 hover:bg-white/15 hover:text-white"
+                        className="mr-2 flex h-6 w-6 items-center justify-center rounded-full text-white/60 hover:bg-white/15 hover:text-white"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>

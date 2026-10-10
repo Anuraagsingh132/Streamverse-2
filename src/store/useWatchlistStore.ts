@@ -1,26 +1,45 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MediaItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
 
 export const WATCHLIST_CHANGE_EVENT = 'streamverse_watchlist_change';
 
-const STORAGE_KEYS = {
-  items: 'streamverse_watchlist_items',
-  ids: 'streamverse_watchlist',
-} as const;
+const CANONICAL_STORAGE_KEY = 'streamverse_watchlist';
+const LEGACY_ITEMS_KEY = 'streamverse_watchlist_items';
 
 function getInitialWatchlistItems(): MediaItem[] {
   try {
-    const rawItems = localStorage.getItem(STORAGE_KEYS.items);
-    if (rawItems) {
-      const parsed = JSON.parse(rawItems);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    const raw = localStorage.getItem(CANONICAL_STORAGE_KEY);
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        if (parsed.length === 0) return [];
+        if (typeof parsed[0] === 'object' && parsed[0] !== null) {
+          return parsed as MediaItem[];
+        }
+        // Legacy raw IDs fallback
+        return allMedia.filter((m) => parsed.includes(m.id));
+      }
     }
-    const rawIds = localStorage.getItem(STORAGE_KEYS.ids);
-    const savedIds: string[] = rawIds ? JSON.parse(rawIds) : ['258165', '977942', '94605'];
-    return allMedia.filter((m) => savedIds.includes(m.id));
+
+    // Check legacy separate items key
+    const rawLegacy = localStorage.getItem(LEGACY_ITEMS_KEY);
+    if (rawLegacy !== null) {
+      const parsedLegacy = JSON.parse(rawLegacy);
+      if (Array.isArray(parsedLegacy)) {
+        try {
+          localStorage.removeItem(LEGACY_ITEMS_KEY);
+          localStorage.setItem(CANONICAL_STORAGE_KEY, JSON.stringify(parsedLegacy));
+        } catch {}
+        return parsedLegacy;
+      }
+    }
+
+    // First-time visitor default preview items
+    const defaultIds = ['258165', '977942', '94605'];
+    return allMedia.filter((m) => defaultIds.includes(m.id));
   } catch {
-    return allMedia.slice(0, 3);
+    return [];
   }
 }
 
@@ -28,8 +47,8 @@ let globalWatchlistItems: MediaItem[] = getInitialWatchlistItems();
 
 function emitWatchlistChange() {
   try {
-    localStorage.setItem(STORAGE_KEYS.items, JSON.stringify(globalWatchlistItems));
-    localStorage.setItem(STORAGE_KEYS.ids, JSON.stringify(globalWatchlistItems.map((i) => i.id)));
+    localStorage.setItem(CANONICAL_STORAGE_KEY, JSON.stringify(globalWatchlistItems));
+    localStorage.removeItem(LEGACY_ITEMS_KEY);
   } catch (err) {
     console.warn('Failed to persist watchlist to localStorage', err);
   }
@@ -48,6 +67,21 @@ export function useWatchlistStore() {
 
   useEffect(() => {
     const handleSync = (e: Event) => {
+      if (e instanceof StorageEvent) {
+        if (e.key === CANONICAL_STORAGE_KEY && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (Array.isArray(parsed)) {
+              globalWatchlistItems = parsed;
+              setItems(parsed);
+              return;
+            }
+          } catch {
+            // Ignore malformed external storage updates
+          }
+        }
+        return;
+      }
       const customEvent = e as CustomEvent<MediaItem[]>;
       if (customEvent.detail) {
         setItems(customEvent.detail);
@@ -108,9 +142,11 @@ export function useWatchlistStore() {
     emitWatchlistChange();
   }, []);
 
+  const watchlistIds = useMemo(() => items.map((i) => i.id), [items]);
+
   return {
     items,
-    watchlistIds: items.map((i) => i.id),
+    watchlistIds,
     count: items.length,
     isInWatchlist,
     addToWatchlist,

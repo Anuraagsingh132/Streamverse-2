@@ -14,16 +14,40 @@ const HOP_BY_HOP_HEADERS = new Set([
   'upgrade',
 ]);
 
+function getAuthorizedOrigin(req) {
+  const origin = req.headers.get('origin') || req.headers.get('referer');
+  if (!origin) {
+    // Direct media playback requests (<video src="...">, audio, VLC, curl) don't send Origin
+    return '*';
+  }
+  try {
+    const originHost = new URL(origin).hostname.toLowerCase();
+    const allowed = ['localhost', '127.0.0.1', 'streamverse.app'];
+    if (
+      allowed.some((host) => originHost === host || originHost.endsWith('.' + host)) ||
+      originHost.endsWith('vercel.app')
+    ) {
+      return origin;
+    }
+  } catch {
+    // Malformed origin URL
+  }
+  return 'https://streamverse.app';
+}
+
 export default async function handler(req) {
+  const allowedOrigin = getAuthorizedOrigin(req);
+
   // 1. Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
         'Access-Control-Allow-Headers': 'Range, Content-Type, Accept, Origin',
         'Access-Control-Max-Age': '86400',
+        Vary: 'Origin',
       }
     });
   }
@@ -34,7 +58,8 @@ export default async function handler(req) {
       status: 405,
       headers: {
         'Allow': 'GET, HEAD, OPTIONS',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': allowedOrigin,
+        Vary: 'Origin',
         'Content-Type': 'text/plain; charset=utf-8'
       }
     });
@@ -51,7 +76,7 @@ export default async function handler(req) {
   } catch {
     return new Response('Malformed URI parameter', {
       status: 400,
-      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/plain; charset=utf-8' }
+      headers: { 'Access-Control-Allow-Origin': allowedOrigin, Vary: 'Origin', 'Content-Type': 'text/plain; charset=utf-8' }
     });
   }
 
@@ -65,15 +90,19 @@ export default async function handler(req) {
   ) {
     return new Response('Invalid or missing file ID', {
       status: 400,
-      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/plain; charset=utf-8' }
+      headers: { 'Access-Control-Allow-Origin': allowedOrigin, Vary: 'Origin', 'Content-Type': 'text/plain; charset=utf-8' }
     });
   }
 
   const isCdn = url.searchParams.get('mode') === 'cdn' || url.pathname.includes('pixeldrain-cdn');
   const range = req.headers.get('range');
 
+  const clientUa = req.headers.get('user-agent');
   const upstreamHeaders = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'Accept': '*/*',
+    'User-Agent': (clientUa && !clientUa.includes('Chrome/120.0.0.0'))
+      ? clientUa
+      : 'Streamverse/2.0 (Video Player)'
   };
   if (range) {
     upstreamHeaders['Range'] = range;
@@ -88,20 +117,21 @@ export default async function handler(req) {
       ]
     : [
         `https://pixeldrain.dev/api/file/${id}`,
+        `https://cdn.pixeldrain.eu.cc/${id}`,
         `https://pixeldrain.com/api/file/${id}`
       ];
 
   let upstreamRes = null;
-  let lastError = null;
+  const errors = [];
 
   for (const targetUrl of candidateUrls) {
     try {
-      // 4. AbortSignal.timeout(12000) prevents hanging requests on slow/dead upstream servers (T3-09)
+      // 4. AbortSignal.timeout(10000) prevents hanging requests on slow/dead upstream servers (T3-09)
       const res = await fetch(targetUrl, {
         method: req.method === 'HEAD' ? 'HEAD' : 'GET',
         headers: upstreamHeaders,
         redirect: 'follow',
-        signal: AbortSignal.timeout(12000)
+        signal: AbortSignal.timeout(10000)
       });
 
       // Valid streaming responses include 200 (OK), 206 (Partial Content), and 416 (Range Not Satisfiable)
@@ -109,23 +139,24 @@ export default async function handler(req) {
         upstreamRes = res;
         break;
       } else {
-        lastError = new Error(`Upstream ${targetUrl} returned status ${res.status}`);
+        errors.push(`${targetUrl} -> ${res.status}`);
       }
     } catch (err) {
-      lastError = err;
+      errors.push(`${targetUrl} -> ${err?.message || 'timeout/network error'}`);
     }
   }
 
   if (!upstreamRes) {
-    return new Response(lastError?.message || 'Upstream fetch failed or timed out', {
+    return new Response(`All upstream PixelDrain mirrors failed: ${errors.join(' | ')}`, {
       status: 502,
-      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/plain; charset=utf-8' }
+      headers: { 'Access-Control-Allow-Origin': allowedOrigin, Vary: 'Origin', 'Content-Type': 'text/plain; charset=utf-8' }
     });
   }
 
   // 5. Sanitize and forward response headers
   const responseHeaders = new Headers();
-  responseHeaders.set('Access-Control-Allow-Origin', '*');
+  responseHeaders.set('Access-Control-Allow-Origin', allowedOrigin);
+  responseHeaders.set('Vary', 'Origin');
   responseHeaders.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges, Content-Type');
   responseHeaders.set('Accept-Ranges', 'bytes');
   responseHeaders.set('Content-Disposition', 'inline');

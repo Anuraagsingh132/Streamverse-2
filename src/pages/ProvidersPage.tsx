@@ -3,6 +3,7 @@ import { popularProviders, allMedia } from '../data/mediaData';
 import { MediaCard } from '../components/MediaCard';
 import { MediaItem } from '../types/media';
 import { Film, Tv, TrendingUp, ArrowDownAZ } from 'lucide-react';
+import { SEOHead } from '../components/SEOHead';
 
 interface ProvidersPageProps {
   onPlay: (item: MediaItem) => void;
@@ -62,6 +63,10 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
 
   return (
     <div className="relative min-h-screen pt-28 pb-16">
+      <SEOHead
+        title="Streaming Providers - Watch by Platform"
+        description="Browse films, television series, and anime by popular streaming networks and studios including Netflix, Disney+, Apple TV+, and more."
+      />
       {/* Header matching providers.html */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 mb-8">
         <div className="flex items-center gap-2">

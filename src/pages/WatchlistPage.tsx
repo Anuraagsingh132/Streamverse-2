@@ -5,6 +5,7 @@ import { allMedia } from '../data/mediaData';
 import { MediaCard } from '../components/MediaCard';
 import { useWatchlistStore } from '../store/useWatchlistStore';
 import { SEOHead } from '../components/SEOHead';
+import { ContinueWatchingRail } from '../components/ContinueWatchingRail';
 
 interface WatchlistPageProps {
   watchlist: string[];
@@ -99,6 +100,9 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
           </button>
         )}
       </div>
+
+      {/* Continue Watching Section */}
+      <ContinueWatchingRail onPlay={onPlay} onOpenDetails={onOpenDetails} />
 
       {/* Category Filter Tabs */}
       {allSavedItems.length > 0 && (

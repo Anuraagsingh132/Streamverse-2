@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { parseAudioCodec, parseAudioLanguages, parseStreamBitrate } from '../src/services/hdhub';
 import { parsePenguAudio } from '../src/services/pengu';
-import { getLanguageName, convertSrtToVtt } from '../src/services/subtitles';
+import { getLanguageName, convertSrtToVtt, sanitizeVtt } from '../src/services/subtitles';
 import { getTmdbImageUrl, formatTmdbItem } from '../src/services/tmdb';
 import { mergeValidMediaWithFallback } from '../src/utils/mediaFilters';
 import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../src/utils/imageUtils';
@@ -11,6 +11,8 @@ import { extractPixelDrainId, formatPixelDrainUrl, resolvePixelDrainStreamUrl } 
 import { LRUCache, deduplicateInFlight } from '../src/utils/lruCache';
 import { MediaItem } from '../src/types/media';
 import { normalizeAnimeTitle } from '../src/services/animeResolver';
+import { computeScrubPosition } from '../src/components/player/useScrubberDrag';
+import { clampSubtitleOffset, validateSubtitleSize } from '../src/hooks/useUserSettings';
 
 test('HDHub: parseAudioCodec correctly categorizes web compatibility', () => {
   // AAC / Web audio
@@ -107,6 +109,17 @@ test('Subtitles: convertSrtToVtt converts SRT timestamps and adds WEBVTT header'
   assert.ok(!vttOutput.includes('\r'));
 });
 
+test('Subtitles: sanitizeVtt strips dangerous tags, attributes and javascript handlers', () => {
+  const dirtyVtt = `WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nHello <img src="x" onerror="alert(1)"><i>World</i> <a href="javascript:alert(2)">Click</a>`;
+  const sanitized = sanitizeVtt(dirtyVtt);
+  assert.ok(sanitized.startsWith('WEBVTT\n\n'));
+  assert.ok(!sanitized.includes('<img'));
+  assert.ok(!sanitized.includes('onerror'));
+  assert.ok(!sanitized.includes('<a'));
+  assert.ok(!sanitized.includes('javascript:'));
+  assert.ok(sanitized.includes('<i>World</i>'));
+});
+
 test('TMDB: getTmdbImageUrl generates correct image dimensions and fallbacks', () => {
   const relative = getTmdbImageUrl('/sample-path.jpg', 'w780');
   assert.strictEqual(relative, 'https://image.tmdb.org/t/p/w780/sample-path.jpg');
@@ -175,6 +188,7 @@ test('ImageUtils: optimizeTmdbImage adjusts dimensions according to aspect ratio
   const posterUrl = 'https://image.tmdb.org/t/p/original/test.jpg';
   assert.strictEqual(optimizeTmdbImage(posterUrl, 'poster'), 'https://image.tmdb.org/t/p/w500/test.jpg');
   assert.strictEqual(optimizeTmdbImage(posterUrl, 'backdrop'), 'https://image.tmdb.org/t/p/w780/test.jpg');
+  assert.strictEqual(optimizeTmdbImage(posterUrl, 'card'), 'https://image.tmdb.org/t/p/w500/test.jpg');
 
   // Fallback on null/undefined
   assert.strictEqual(optimizeTmdbImage(null), FALLBACK_BACKDROP);
@@ -300,50 +314,192 @@ test('AnimeResolver: normalizeAnimeTitle strips season patterns and extracts sea
 });
 
 test('Scrubber: clamp calculation boundaries prevent NaN or negative seek', () => {
-  const calculateScrubTime = (rawX: number, width: number, duration: number) => {
-    const clampedX = Math.max(0, Math.min(width, rawX));
-    const percent = width > 0 ? (clampedX / width) * 100 : 0;
-    const validDur = Number.isFinite(duration) && duration > 0 ? duration : 100;
-    const time = Math.max(0, Math.min(validDur, (percent / 100) * validDur));
-    return { percent, time };
-  };
-
   // Middle position
-  const mid = calculateScrubTime(50, 100, 120);
+  const mid = computeScrubPosition(50, { left: 0, width: 100 }, 120);
   assert.strictEqual(mid.percent, 50);
   assert.strictEqual(mid.time, 60);
 
   // Left boundary overflow (negative clientX)
-  const left = calculateScrubTime(-20, 100, 120);
+  const left = computeScrubPosition(-20, { left: 0, width: 100 }, 120);
   assert.strictEqual(left.percent, 0);
   assert.strictEqual(left.time, 0);
 
   // Right boundary overflow (clientX > width)
-  const right = calculateScrubTime(150, 100, 120);
+  const right = computeScrubPosition(150, { left: 0, width: 100 }, 120);
   assert.strictEqual(right.percent, 100);
   assert.strictEqual(right.time, 120);
 
   // 0 duration edge case doesn't crash or return NaN
-  const zeroDur = calculateScrubTime(50, 100, 0);
+  const zeroDur = computeScrubPosition(50, { left: 0, width: 100 }, 0);
   assert.ok(Number.isFinite(zeroDur.time));
 });
 
 test('UserSettings: subtitleOffset and subtitleSize bounds validation', () => {
-  const validateOffset = (raw: number) => {
-    return Number.isFinite(raw) ? Math.max(-5.0, Math.min(5.0, raw)) : 0.0;
-  };
+  assert.strictEqual(clampSubtitleOffset(2.5), 2.5);
+  assert.strictEqual(clampSubtitleOffset(-3.0), -3.0);
+  assert.strictEqual(clampSubtitleOffset(12.0), 5.0); // clamped to max
+  assert.strictEqual(clampSubtitleOffset(-10.0), -5.0); // clamped to min
+  assert.strictEqual(clampSubtitleOffset(NaN), 0.0); // NaN falls back to 0
+  assert.strictEqual(clampSubtitleOffset('2.5'), 2.5); // string parsing
 
-  assert.strictEqual(validateOffset(2.5), 2.5);
-  assert.strictEqual(validateOffset(-3.0), -3.0);
-  assert.strictEqual(validateOffset(12.0), 5.0); // clamped to max
-  assert.strictEqual(validateOffset(-10.0), -5.0); // clamped to min
-  assert.strictEqual(validateOffset(NaN), 0.0); // NaN falls back to 0
-
-  const validSizes = ['small', 'medium', 'large'];
-  const validateSize = (size: string) => validSizes.includes(size) ? size : 'medium';
-  assert.strictEqual(validateSize('small'), 'small');
-  assert.strictEqual(validateSize('large'), 'large');
-  assert.strictEqual(validateSize('invalid'), 'medium');
+  assert.strictEqual(validateSubtitleSize('small'), 'small');
+  assert.strictEqual(validateSubtitleSize('large'), 'large');
+  assert.strictEqual(validateSubtitleSize('invalid'), 'medium');
+  assert.strictEqual(validateSubtitleSize(null), 'medium');
 });
 
+test('StorageManager: sweepStorage purges expired keys and enforces LRU limit', async () => {
+  const { sweepStorage, safeSetStorageItem } = await import('../src/utils/storageManager');
+  
+  const store = new Map<string, string>();
+  const mockLocalStorage = {
+    getItem: (k: string) => store.get(k) || null,
+    setItem: (k: string, v: string) => store.set(k, v),
+    removeItem: (k: string) => store.delete(k),
+    key: (i: number) => Array.from(store.keys())[i] || null,
+    get length() { return store.size; }
+  };
+
+  (globalThis as any).window = { localStorage: mockLocalStorage };
+
+  // Set 5 items with prefix 'test_'
+  // Items 0 and 1 are older than 15 mins (expired)
+  const now = Date.now();
+  store.set('test_1', JSON.stringify({ timestamp: now - 20 * 60 * 1000, data: 'expired1' }));
+  store.set('test_2', JSON.stringify({ timestamp: now - 16 * 60 * 1000, data: 'expired2' }));
+  store.set('test_3', JSON.stringify({ timestamp: now - 5 * 60 * 1000, data: 'fresh1' }));
+  store.set('test_4', JSON.stringify({ timestamp: now - 2 * 60 * 1000, data: 'fresh2' }));
+  store.set('test_5', JSON.stringify({ timestamp: now, data: 'fresh3' }));
+
+  // Sweep with maxItems 5 and ttl 15 min -> should delete test_1 and test_2
+  sweepStorage('test_', 5, 15 * 60 * 1000);
+  assert.strictEqual(store.has('test_1'), false);
+  assert.strictEqual(store.has('test_2'), false);
+  assert.strictEqual(store.has('test_3'), true);
+  assert.strictEqual(store.has('test_4'), true);
+  assert.strictEqual(store.has('test_5'), true);
+
+  // Now test quota capping: cap at 2 items -> test_3 (oldest) should be evicted
+  sweepStorage('test_', 2, 60 * 60 * 1000);
+  assert.strictEqual(store.has('test_3'), false);
+  assert.strictEqual(store.has('test_4'), false); // evicted to leave room for 1 item (size < 2)
+  assert.strictEqual(store.has('test_5'), true);
+
+  // Safe write
+  safeSetStorageItem('test_6', JSON.stringify({ timestamp: Date.now(), data: 'new' }), { prefix: 'test_', maxItems: 3 });
+  assert.strictEqual(store.has('test_6'), true);
+});
+
+test('PlaybackHistory: savePlaybackRecord consolidates progress and caps history', async () => {
+  const { 
+    savePlaybackRecord, 
+    removePlaybackRecord, 
+    getPlaybackRecord 
+  } = await import('../src/store/useContinueWatchingStore');
+
+  const store = new Map<string, string>();
+  (globalThis as any).window = {
+    localStorage: {
+      getItem: (k: string) => store.get(k) || null,
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k),
+      key: (i: number) => Array.from(store.keys())[i] || null,
+      get length() { return store.size; }
+    },
+    dispatchEvent: () => true
+  };
+
+  // 1. Save movie progress
+  savePlaybackRecord(
+    { id: '123', title: 'Test Movie', media_type: 'movie' },
+    { currentTime: 120, duration: 3600 }
+  );
+
+  const movieRecord = getPlaybackRecord('123');
+  assert.ok(movieRecord);
+  assert.strictEqual(movieRecord?.title, 'Test Movie');
+  assert.strictEqual(movieRecord?.currentTime, 120);
+  assert.strictEqual(movieRecord?.progressPercent, 3); // 120 / 3600 * 100
+
+  // 2. Save series episode progress
+  savePlaybackRecord(
+    { id: '456', title: 'Test Series', media_type: 'tv' },
+    { season: 1, episode: 3, currentTime: 500, duration: 1500 }
+  );
+
+  const epRecord = getPlaybackRecord('456', 1, 3);
+  assert.ok(epRecord);
+  assert.strictEqual(epRecord?.season, 1);
+  assert.strictEqual(epRecord?.episode, 3);
+  assert.strictEqual(epRecord?.progressPercent, 33);
+
+  // 3. Completing video removes from continue watching
+  savePlaybackRecord(
+    { id: '123', title: 'Test Movie', media_type: 'movie' },
+    { currentTime: 3590, duration: 3600 } // within last 15s
+  );
+  assert.strictEqual(getPlaybackRecord('123'), undefined);
+
+  // 4. Remove explicitly
+  removePlaybackRecord('456', 1, 3);
+  assert.strictEqual(getPlaybackRecord('456', 1, 3), undefined);
+});
+
+test('RouteUtils: getRouteHref maps internal route tokens to canonical SEO paths', async () => {
+  const { getRouteHref } = await import('../src/utils/routeUtils');
+
+  assert.strictEqual(getRouteHref('home'), '/');
+  assert.strictEqual(getRouteHref('movie'), '/movies');
+  assert.strictEqual(getRouteHref('movies'), '/movies');
+  assert.strictEqual(getRouteHref('tv'), '/tv');
+  assert.strictEqual(getRouteHref('anime'), '/anime');
+  assert.strictEqual(getRouteHref('livesports'), '/sports');
+  assert.strictEqual(getRouteHref('sports'), '/sports');
+  assert.strictEqual(getRouteHref('discover'), '/ai');
+  assert.strictEqual(getRouteHref('ai'), '/ai');
+  assert.strictEqual(getRouteHref('music'), '/music');
+  assert.strictEqual(getRouteHref('providers'), '/providers');
+  assert.strictEqual(getRouteHref('watchlist'), '/watchlist');
+  assert.strictEqual(getRouteHref('settings'), '/settings');
+  assert.strictEqual(getRouteHref('custom/path'), '/custom/path');
+});
+
+test('CacheManager: purgeMediaItemCache clears disk & memory cache while protecting user preferences', async () => {
+  const { purgeMediaItemCache } = await import('../src/utils/cacheManager');
+  const { clearMediaDiskCache } = await import('../src/utils/storageManager');
+
+  if (typeof window !== 'undefined' && window.localStorage) {
+    // Seed media and user preference records in localStorage
+    window.localStorage.setItem('tmdb_https://api.themoviedb.org/3/movie/789?api_key=xyz', JSON.stringify({ data: { title: 'Movie 789' } }));
+    window.localStorage.setItem('tmdb_https://api.themoviedb.org/3/movie/789/credits?api_key=xyz', JSON.stringify({ data: { cast: [] } }));
+    window.localStorage.setItem('anilist_details_555', JSON.stringify({ title: 'Anime 555' }));
+    window.localStorage.setItem('anime_logo_555', JSON.stringify('https://artworks.com/logo555.png'));
+    window.localStorage.setItem('streamverse_watchlist', JSON.stringify(['789', '555']));
+    window.localStorage.setItem('streamverse_settings', JSON.stringify({ defaultServer: 'hdhub' }));
+    window.localStorage.setItem('streamverse_theme', 'dark');
+
+    // 1. Purge Movie 789
+    purgeMediaItemCache({ id: '789', media_type: 'movie' });
+
+    assert.strictEqual(window.localStorage.getItem('tmdb_https://api.themoviedb.org/3/movie/789?api_key=xyz'), null);
+    assert.strictEqual(window.localStorage.getItem('tmdb_https://api.themoviedb.org/3/movie/789/credits?api_key=xyz'), null);
+    assert.ok(window.localStorage.getItem('anilist_details_555') !== null, 'Anime 555 should not be cleared by 789 purge');
+    assert.ok(window.localStorage.getItem('streamverse_watchlist') !== null, 'Watchlist must be preserved');
+    assert.ok(window.localStorage.getItem('streamverse_settings') !== null, 'Settings must be preserved');
+    assert.strictEqual(window.localStorage.getItem('streamverse_theme'), 'dark', 'Theme must be preserved');
+
+    // 2. Purge Anime 555
+    purgeMediaItemCache('555');
+
+    assert.strictEqual(window.localStorage.getItem('anilist_details_555'), null);
+    assert.strictEqual(window.localStorage.getItem('anime_logo_555'), null);
+    assert.ok(window.localStorage.getItem('streamverse_watchlist') !== null, 'Watchlist must still be preserved');
+
+    // 3. Direct clearMediaDiskCache safety test
+    window.localStorage.setItem('tmdb_dummy', '123');
+    clearMediaDiskCache();
+    assert.strictEqual(window.localStorage.getItem('tmdb_dummy'), null);
+    assert.ok(window.localStorage.getItem('streamverse_watchlist') !== null, 'Watchlist must survive global cache clear');
+  }
+});
 

@@ -27,6 +27,14 @@
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://image.tmdb.org https://images.unsplash.com https://*.anilist.co https://cinemaos.tech; media-src 'self' data: blob: https://* http://localhost:*; connect-src 'self' https://api.themoviedb.org https://graphql.anilist.co https://cinemaos.tech https://pengu.lol https://*.workers.dev https://pixeldrain.dev https://pixeldrain.com https://*.pixeldrain.eu.cc blob:; frame-src 'self' https://megaplay.buzz https://cinemaos.tech https://vidsrc.to https://player.autoembed.cc https://www.youtube.com https://youtube.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self';"
         }
       ]
     }
@@ -34,11 +42,7 @@
   "rewrites": [
     {
       "source": "/api/pixeldrain-cdn/:id",
-      "destination": "https://lively-bar-b4aa.anuraagsingh10a.workers.dev/api/pixeldrain-cdn/:id?mode=cdn"
-    },
-    {
-      "source": "/api/pixeldrain/:id",
-      "destination": "https://lively-bar-b4aa.anuraagsingh10a.workers.dev/api/pixeldrain/:id"
+      "destination": "/api/pixeldrain/:id?mode=cdn"
     },
     {
       "source": "/api/anime/logo",

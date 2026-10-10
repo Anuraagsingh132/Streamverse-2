@@ -76,10 +76,50 @@ export function getLanguageName(code?: string): string {
 }
 
 /**
+ * Sanitizes subtitle cue text according to strict WebVTT allowed formatting tags:
+ * Allowed: <b>, <i>, <u>, <c>, <v>, <lang> and their closing equivalents.
+ * Disallows: all other tags (<script>, <iframe>, <img>, <svg>, <object>, <a>, etc.)
+ * Strips all inline event handlers (on*), style attributes, and javascript: URIs.
+ */
+export function sanitizeSubtitleText(text: string): string {
+  if (!text) return '';
+
+  // 1. Strip all HTML comments
+  let sanitized = text.replace(/<!--[\s\S]*?-->/g, '');
+
+  // 2. Strip SSA / ASS style overrides like {\an8}, {\pos(x,y)}, {\c&H...&}
+  sanitized = sanitized.replace(/\{[\\/][^}]*\}/g, '');
+
+  // 3. Strip all tags except strict WebVTT allowed tags: b, i, u, c, v, lang
+  sanitized = sanitized.replace(/<\/?([a-zA-Z0-9]+)([^>]*)>/gi, (match, tagName, attrs) => {
+    const lowerTag = tagName.toLowerCase();
+    const allowedTags = ['b', 'i', 'u', 'c', 'v', 'lang'];
+    if (!allowedTags.includes(lowerTag)) {
+      return ''; // Strip forbidden tag completely
+    }
+    if (lowerTag === 'v') {
+      const cleanVoice = attrs.replace(/[<>"'=;]/g, '').trim();
+      return `<v ${cleanVoice}>`;
+    }
+    if (lowerTag === 'c') {
+      const classMatch = attrs.match(/\.([a-zA-Z0-9_-]+)/);
+      return classMatch ? `<c.${classMatch[1]}>` : '<c>';
+    }
+    return match.startsWith('</') ? `</${lowerTag}>` : `<${lowerTag}>`;
+  });
+
+  // 4. Strip any dangling javascript: or event attributes
+  sanitized = sanitized.replace(/javascript\s*:/gi, '');
+  sanitized = sanitized.replace(/on\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, '');
+
+  return sanitized;
+}
+
+/**
  * Converts SubRip (.srt) subtitles to WebVTT (.vtt) format for HTML5 video <track>
  * - Strips UTF-8 Byte Order Mark (BOM)
  * - Removes SSA / ASS style override tags ({\an8}, {\c&H...&}, {\pos(...)})
- * - Sanitizes dangerous HTML tags while preserving text formatting
+ * - Sanitizes dangerous HTML tags using strict whitelist
  * - Converts comma timestamps to dot timestamps with 2-digit hour padding
  */
 export function convertSrtToVtt(srtContent: string): string {
@@ -91,14 +131,10 @@ export function convertSrtToVtt(srtContent: string): string {
   // 2. Normalize line endings
   clean = clean.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-  // 3. Remove SSA / ASS override tags like {\an8}, {\pos(x,y)}, {\c&H...&}, {\b1}
-  clean = clean.replace(/\{[\\/][^}]*\}/g, '');
+  // 3. Sanitize content using whitelist
+  clean = sanitizeSubtitleText(clean);
 
-  // 4. Sanitize dangerous HTML tags (<script>, <iframe>, <object>, <embed>, <applet>, style attributes, inline handlers)
-  clean = clean.replace(/<\/?(script|iframe|object|embed|applet|meta|link|style)[^>]*>/gi, '');
-  clean = clean.replace(/on\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, '');
-
-  // 5. Convert comma in SRT timestamps (00:00:16,225 or 0:00:16,225) to dot in VTT (00:00:16.225)
+  // 4. Convert comma in SRT timestamps (00:00:16,225 or 0:00:16,225) to dot in VTT (00:00:16.225)
   const vttBody = clean.replace(/(\d{1,2}:\d{2}:\d{2}),(\d{3})/g, (_match, time, ms) => {
     const parts = time.split(':');
     if (parts[0].length === 1) parts[0] = '0' + parts[0];
@@ -106,6 +142,18 @@ export function convertSrtToVtt(srtContent: string): string {
   });
 
   return `WEBVTT\n\n${vttBody.trim()}\n`;
+}
+
+/**
+ * Sanitizes existing WebVTT content (e.g. from user file uploads)
+ */
+export function sanitizeVtt(vttContent: string): string {
+  if (!vttContent) return 'WEBVTT\n\n';
+  let clean = vttContent.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  if (!clean.startsWith('WEBVTT')) {
+    clean = 'WEBVTT\n\n' + clean;
+  }
+  return sanitizeSubtitleText(clean);
 }
 
 /**
