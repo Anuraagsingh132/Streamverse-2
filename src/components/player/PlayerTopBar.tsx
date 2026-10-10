@@ -74,12 +74,13 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
 }) => {
   return (
     <div
-      className={`absolute top-4 inset-x-4 sm:top-5 sm:inset-x-6 z-40 flex items-center justify-between transition-all duration-300 ease-out ${
-        showControls ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+      className={`absolute top-4 inset-x-0 sm:top-5 z-40 flex items-center justify-center px-4 transition-all duration-300 ease-out pointer-events-none ${
+        showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
       }`}
     >
-      {/* Top-Left Group: Back Button + Server Switcher + Quality Pill */}
-      <div className="flex items-center gap-2 sm:gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5 pointer-events-auto">
+        {/* Top-Left Group: Back Button + Server Switcher + Quality Pill */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
         {/* Back Button matching glass circle style */}
         <button
           type="button"
@@ -336,6 +337,7 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 };

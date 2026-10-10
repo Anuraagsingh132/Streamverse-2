@@ -555,7 +555,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
         )}
       </div>
 
-      {/* Floating Top Controls (Exit button + Server Switcher + Episode Nav if Series) (Auto-hides after 4s) - Only for iframe servers */}
+      {/* Floating Top Controls (Exit button + Server Switcher + Show Title + Episode Nav) (Auto-hides after 4s) - Only for iframe servers */}
       {!isDirectPlayer && (
         <div
           onMouseEnter={() => {
@@ -563,25 +563,114 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
           }}
           onMouseLeave={resetHideTimer}
-          className={`absolute top-4 inset-x-4 sm:top-5 sm:inset-x-6 z-50 flex items-center justify-between transition-all duration-300 ease-out ${
+          className={`absolute top-4 inset-x-0 sm:top-5 z-50 flex items-center justify-center px-4 transition-all duration-300 ease-out pointer-events-none ${
             showControls || isEpisodeDrawerOpen || isServerDropdownOpen
-              ? 'opacity-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 -translate-y-2 pointer-events-none'
+              ? 'opacity-100 translate-y-0'
+              : 'opacity-0 -translate-y-2'
           }`}
         >
-          {/* Top-Left Exit Button */}
-          <button
-            type="button"
-            onClick={handleExit}
-            className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-white/10 bg-[#0a0c14]/75 text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition hover:bg-white/15 hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            title="Exit Player (Esc)"
-            aria-label="Exit Player"
-          >
-            <ChevronLeft className="h-5 w-5" strokeWidth={2} />
-          </button>
+          <div className="flex items-center gap-2 sm:gap-2.5 pointer-events-auto">
+            {/* Top-Left Exit Button */}
+            <button
+              type="button"
+              onClick={handleExit}
+              className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-white/10 bg-[#0a0c14]/75 text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition hover:bg-white/15 hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              title="Exit Player (Esc)"
+              aria-label="Exit Player"
+            >
+              <ChevronLeft className="h-5 w-5" strokeWidth={2} />
+            </button>
 
-          {/* Top-Right: Server Switcher & Series Navigation */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Server Switcher Pill & Dropdown */}
+            <div className="relative" ref={serverDropdownRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsServerDropdownOpen((prev) => !prev);
+                  if (isEpisodeDrawerOpen) setIsEpisodeDrawerOpen(false);
+                }}
+                className={`flex h-10 sm:h-11 items-center gap-1.5 sm:gap-2 rounded-full border px-3 sm:px-3.5 text-xs font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                  isServerDropdownOpen
+                    ? 'bg-white/20 border-white/25 text-white ring-1 ring-white/20'
+                    : 'border-white/10 bg-[#0a0c14]/75 text-white/90 hover:bg-white/15 hover:text-white'
+                }`}
+                title="Change Video Server"
+                aria-label="Change Video Server"
+              >
+                <Server className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" strokeWidth={1.8} />
+                <span className="leading-none whitespace-nowrap">{currentServer.name}</span>
+                <ChevronDown
+                  className={`h-3 w-3 sm:h-3.5 sm:w-3.5 text-white/60 transition-transform duration-200 ${
+                    isServerDropdownOpen ? 'rotate-180 text-white' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Server Dropdown Popover */}
+              {isServerDropdownOpen && (
+                <div
+                  data-lenis-prevent
+                  className="absolute left-0 top-full mt-2 z-50 w-60 sm:w-64 rounded-2xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
+                >
+                  <div className="flex items-center justify-between px-3 py-1.5 mb-1 border-b border-white/10">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                      Select Server
+                    </span>
+                    <span className="text-[10px] text-primary font-semibold">
+                      {activeServers.length} Available
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {activeServers.map((srv) => {
+                      const isSelected = srv.id === selectedServerId;
+                      return (
+                        <button
+                          key={srv.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedServerId(srv.id);
+                            setIsServerDropdownOpen(false);
+                            resetHideTimer();
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 text-left ${
+                            isSelected
+                              ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
+                              : 'text-white/70 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-white">{srv.name}</span>
+                              {srv.badge && (
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
+                                    isSelected
+                                      ? 'bg-primary/25 text-primary border border-primary/35'
+                                      : 'bg-white/10 text-white/60 border border-white/10'
+                                  }`}
+                                >
+                                  {srv.badge}
+                                </span>
+                              )}
+                            </div>
+                            {srv.description && (
+                              <span className="text-[10px] text-white/40 truncate mt-0.5">
+                                {srv.description}
+                              </span>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Quick SUB / DUB toggle for Anime */}
             {isAnime && (
               <div className="flex items-center rounded-full border border-white/10 bg-[#0a0c14]/75 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
@@ -612,145 +701,72 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
               </div>
             )}
 
-            {/* Server Switcher Pill & Dropdown */}
-            <div className="relative" ref={serverDropdownRef}>
-          <button
-            type="button"
-            onClick={() => {
-              setIsServerDropdownOpen((prev) => !prev);
-              if (isEpisodeDrawerOpen) setIsEpisodeDrawerOpen(false);
-            }}
-            className={`flex h-10 sm:h-11 items-center gap-1.5 sm:gap-2 rounded-full border px-3 sm:px-3.5 text-xs font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black/50 ${
-              isServerDropdownOpen
-                ? 'bg-[#0a0c14]/90 border-white/25 text-white ring-1 ring-white/20'
-                : 'bg-[#0a0c14]/65 border-white/10 text-white/90 hover:bg-[#0a0c14]/85 hover:text-white hover:border-white/20'
-            }`}
-            title="Switch Video Server"
-            aria-label="Switch Video Server"
-          >
-            <Server className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" strokeWidth={1.8} />
-            <span className="leading-none whitespace-nowrap">{currentServer.name}</span>
-            <ChevronDown
-              className={`h-3 w-3 sm:h-3.5 sm:w-3.5 text-white/60 transition-transform duration-200 ${
-                isServerDropdownOpen ? 'rotate-180 text-white' : ''
-              }`}
-            />
-          </button>
-
-          {/* Server Dropdown Popover */}
-          {isServerDropdownOpen && (
-            <div
-              data-lenis-prevent
-              className="absolute right-0 top-full mt-2 z-50 w-60 sm:w-64 rounded-2xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
-            >
-              <div className="flex items-center justify-between px-3 py-1.5 mb-1 border-b border-white/10">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-                  Select Server
-                </span>
-                <span className="text-[10px] text-primary font-semibold">
-                  {activeServers.length} Available
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                {activeServers.map((srv) => {
-                  const isSelected = srv.id === selectedServerId;
-                  return (
-                    <button
-                      key={srv.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedServerId(srv.id);
-                        setIsServerDropdownOpen(false);
-                        resetHideTimer();
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 text-left ${
-                        isSelected
-                          ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
-                          : 'text-white/70 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <div className="flex flex-col min-w-0 pr-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-white">{srv.name}</span>
-                          {srv.badge && (
-                            <span
-                              className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                                isSelected
-                                  ? 'bg-primary/25 text-primary border border-primary/35'
-                                  : 'bg-white/10 text-white/60 border border-white/10'
-                              }`}
-                            >
-                              {srv.badge}
-                            </span>
-                          )}
-                        </div>
-                        {srv.description && (
-                          <span className="text-[10px] text-white/40 truncate mt-0.5">
-                            {srv.description}
-                          </span>
-                        )}
-                      </div>
-                      {isSelected && (
-                        <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
-                      )}
-                    </button>
-                  );
-                })}
+            {/* Top-Center Show Name & Context Pill */}
+            <div className="hidden md:flex items-center">
+              <div className="flex h-10 sm:h-11 items-center gap-2 rounded-full border border-white/10 bg-[#0a0c14]/75 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150">
+                <h2 className="text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-xs lg:max-w-md">
+                  {item.title}
+                </h2>
+                {isTV && (
+                  <>
+                    <span className="text-white/30">•</span>
+                    <span className="text-xs font-semibold text-primary/90 whitespace-nowrap">
+                      S{season} · E{episode}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
-          )}
+
+            {/* Floating Series / Episode Navigation Pill */}
+            {isTV && (
+              <div className="flex h-10 sm:h-11 items-center gap-1 rounded-full border border-white/10 bg-[#0a0c14]/75 px-1.5 sm:px-2 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150">
+                {/* Previous Episode Arrow Button */}
+                <button
+                  type="button"
+                  onClick={handlePrevEpisode}
+                  disabled={episode <= 1}
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-20 disabled:pointer-events-none"
+                  title="Previous Episode"
+                  aria-label="Previous Episode"
+                >
+                  <ChevronLeft className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
+                </button>
+
+                {/* S1 E1 Drawer Trigger */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEpisodeDrawerOpen(!isEpisodeDrawerOpen);
+                    if (isServerDropdownOpen) setIsServerDropdownOpen(false);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                    isEpisodeDrawerOpen 
+                      ? 'bg-white/20 text-white border border-white/20 ring-1 ring-white/20 shadow-sm' 
+                      : 'bg-white/[0.08] text-white/90 border border-white/10 hover:bg-white/15 hover:text-white shadow-sm'
+                  }`}
+                  title="Select Season & Episode"
+                  aria-label="Select Season & Episode"
+                >
+                  <ListVideo className="h-3.5 w-3.5 shrink-0 text-white/80" strokeWidth={1.8} />
+                  <span className="leading-none">S{season} E{episode}</span>
+                </button>
+
+                {/* Next Episode Arrow Button */}
+                <button
+                  type="button"
+                  onClick={handleNextEpisode}
+                  disabled={episode >= totalEpisodesForSeason}
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-20 disabled:pointer-events-none"
+                  title="Next Episode"
+                  aria-label="Next Episode"
+                >
+                  <ChevronRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Floating Series / Episode Navigation Pill on Top of Player (Auto-hides after 4s) */}
-        {isTV && (
-          <div className="flex h-10 sm:h-11 items-center gap-1 rounded-full border border-white/10 bg-[#0a0c14]/65 px-1.5 sm:px-2 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150">
-            {/* Previous Episode Arrow Button */}
-            <button
-              type="button"
-              onClick={handlePrevEpisode}
-              disabled={episode <= 1}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black/50 disabled:opacity-20 disabled:pointer-events-none disabled:cursor-not-allowed"
-              title="Previous Episode"
-              aria-label="Previous Episode"
-            >
-              <ChevronLeft className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
-            </button>
-
-            {/* Center "S1 E1" in lighter inner pill */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsEpisodeDrawerOpen(!isEpisodeDrawerOpen);
-                if (isServerDropdownOpen) setIsServerDropdownOpen(false);
-              }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black/50 ${
-                isEpisodeDrawerOpen 
-                  ? 'bg-white/20 text-white border border-white/20 ring-1 ring-white/20 shadow-sm' 
-                  : 'bg-white/[0.08] text-white/90 border border-white/10 hover:bg-white/15 hover:text-white shadow-sm'
-              }`}
-              title="Select Season & Episode"
-              aria-label="Select Season & Episode"
-            >
-              <ListVideo className="h-3.5 w-3.5 shrink-0 text-white/80" strokeWidth={1.8} />
-              <span className="leading-none">S{season} E{episode}</span>
-            </button>
-
-            {/* Next Episode Arrow Button */}
-            <button
-              type="button"
-              onClick={handleNextEpisode}
-              disabled={episode >= totalEpisodesForSeason}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black/50 disabled:opacity-20 disabled:pointer-events-none disabled:cursor-not-allowed"
-              title="Next Episode"
-              aria-label="Next Episode"
-            >
-              <ChevronRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
-            </button>
-            </div>
-          )}
-        </div>
-      </div>
       )}
 
       {/* Dimmed backdrop covering the player to hide episode drawer and server dropdown when clicking inside player */}
