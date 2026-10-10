@@ -166,10 +166,12 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     failoverAttemptedRef.current = false;
   }, [item.id, season, episode, selectedStreamIndex]);
 
+  const videoInstanceRef = useRef<HTMLVideoElement | null>(null);
+
   // Cleanup & save on unmount
   useEffect(() => {
-    const video = videoRef.current;
     return () => {
+      const video = videoInstanceRef.current;
       if (video && video.currentTime > 5) {
         saveProgress(video.currentTime, video.duration);
       }
@@ -234,6 +236,8 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     onSkip: handleSkip
   });
 
+  const handleResetBuffered = useCallback(() => setBufferedPercent(0), []);
+
   // HLS Playback hook (ARCH-05)
   const {
     hlsRef,
@@ -244,7 +248,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   } = useHlsPlayback({
     videoRef,
     selectedStream,
-    onResetBuffered: () => setBufferedPercent(0)
+    onResetBuffered: handleResetBuffered
   });
 
   // Subtitle pipeline hook (ARCH-05)
@@ -755,7 +759,10 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       {/* 1. HTML5 Video Stream */}
       {selectedStream && (
         <video
-          ref={videoRef}
+          ref={(node) => {
+            videoRef.current = node;
+            if (node) videoInstanceRef.current = node;
+          }}
           key={selectedStream.url}
           playsInline
           {...({ referrerPolicy: 'no-referrer' } as any)}
