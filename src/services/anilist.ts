@@ -209,6 +209,60 @@ query ($id: Int) {
 }
 `;
 
+// Rate limiter queue & exponential backoff for AniList 90 req/min limit
+let requestTimestamps: number[] = [];
+const MAX_REQUESTS_PER_MINUTE = 85; // Safety margin under 90 req/min
+const WINDOW_MS = 60 * 1000;
+
+async function throttleAniList(): Promise<void> {
+  while (true) {
+    const now = Date.now();
+    requestTimestamps = requestTimestamps.filter((t) => now - t < WINDOW_MS);
+    if (requestTimestamps.length < MAX_REQUESTS_PER_MINUTE) {
+      requestTimestamps.push(Date.now());
+      return;
+    }
+    const oldest = requestTimestamps[0];
+    const waitTime = Math.max(100, WINDOW_MS - (now - oldest) + 50);
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+  }
+}
+
+async function executeAniListGraphQL(query: string, variables: Record<string, any>, retries = 3): Promise<any> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    await throttleAniList();
+    try {
+      const res = await fetch('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({ query, variables })
+      });
+
+      if (res.status === 429) {
+        const retryAfterHeader = res.headers.get('Retry-After');
+        const retrySeconds = retryAfterHeader ? Math.max(1, parseInt(retryAfterHeader, 10)) : Math.pow(2, attempt + 1);
+        console.warn(`[AniList] Rate limit (429) hit, backing off for ${retrySeconds}s...`);
+        await new Promise((resolve) => setTimeout(resolve, retrySeconds * 1000 + 200));
+        continue;
+      }
+
+      if (!res.ok) {
+        console.warn(`AniList API returned ${res.status}`);
+        return null;
+      }
+
+      return await res.json();
+    } catch (err) {
+      if (attempt === retries - 1) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
+  }
+  return null;
+}
+
 // Bounded LRU caches (capped at 100 entries) & in-flight deduplication (T3-06)
 const detailsCache = new LRUCache<number, FullAniListAnimeDetails>(100);
 const inFlightDetails = new Map<string, Promise<FullAniListAnimeDetails | null>>();
@@ -250,38 +304,21 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
     String(numericId),
     async () => {
       try {
-        const res = await fetch('https://graphql.anilist.co', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json'
-          },
-          body: JSON.stringify({
-            query: GRAPHQL_QUERY,
-            variables: { id: numericId }
-          })
-        });
+        const json = await executeAniListGraphQL(GRAPHQL_QUERY, { id: numericId });
+        const media = json?.data?.Media;
+        if (!media) return null;
 
-    if (!res.ok) {
-      console.warn(`AniList API returned ${res.status} for ID ${id}`);
-      return null;
-    }
+        // Formatting titles
+        const englishTitle = media.title?.english || media.title?.romaji || media.title?.userPreferred || 'Anime';
+        const nativeTitle = media.title?.native || '';
+        const romajiTitle = media.title?.romaji || '';
 
-    const json = await res.json();
-    const media = json?.data?.Media;
-    if (!media) return null;
-
-    // Formatting titles
-    const englishTitle = media.title?.english || media.title?.romaji || media.title?.userPreferred || 'Anime';
-    const nativeTitle = media.title?.native || '';
-    const romajiTitle = media.title?.romaji || '';
-
-    // Description: strip tags or format clean
-    let cleanDesc = (media.description || '')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<i>|<\/i>|<b>|<\/b>/gi, '')
-      .replace(/\n\n+/g, '\n\n')
-      .trim();
+        // Description: strip all HTML tags (<[^>]+>) and clean whitespace
+        let cleanDesc = (media.description || '')
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<[^>]+>/g, '')
+          .replace(/\n\n+/g, '\n\n')
+          .trim();
 
     // Studio
     const studioList = (media.studios?.edges || [])
@@ -345,8 +382,9 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
       episodes_list = (apothecaryModule.default || apothecaryModule) as unknown as AniListEpisode[];
     } else {
       const epCount = media.episodes || 12;
+      const cappedEpCount = Math.min(epCount, 250);
       const baseBackdrop = media.bannerImage || media.coverImage?.extraLarge || media.coverImage?.large;
-      for (let i = 1; i <= epCount; i++) {
+      for (let i = 1; i <= cappedEpCount; i++) {
         episodes_list.push({
           id: i,
           episode_number: i,
@@ -482,23 +520,12 @@ export async function fetchAniListRail(variables: {
     cacheKey,
     async () => {
       try {
-        const res = await fetch('https://graphql.anilist.co', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json'
-          },
-          body: JSON.stringify({
-            query: RAIL_GRAPHQL_QUERY,
-            variables: {
-              ...variables,
-              perPage: variables.perPage || 20
-            }
-          })
+        const json = await executeAniListGraphQL(RAIL_GRAPHQL_QUERY, {
+          ...variables,
+          perPage: variables.perPage || 20
         });
 
-        if (!res.ok) return [];
-        const json = await res.json();
+        if (!json) return [];
         const media = json?.data?.Page?.media || [];
         if (media.length > 0) {
           railCache.set(cacheKey, media);

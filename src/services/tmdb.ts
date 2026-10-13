@@ -437,38 +437,73 @@ export async function getTrending(
   timeWindow: 'day' | 'week' = 'day',
   page: number = 1
 ): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb(`/trending/${type}/${timeWindow}`, { page });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, type === 'all' ? undefined : type));
+  try {
+    const data = await fetchFromTmdb(`/trending/${type}/${timeWindow}`, { page });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, type === 'all' ? undefined : type));
+  } catch (err) {
+    console.warn(`TMDB getTrending failed (${type}/${timeWindow}):`, err);
+    return [];
+  }
 }
 
 export async function getTopRated(type: 'movie' | 'tv' = 'movie', page: number = 1): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb(`/${type}/top_rated`, { page });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  try {
+    const data = await fetchFromTmdb(`/${type}/top_rated`, { page });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  } catch (err) {
+    console.warn(`TMDB getTopRated failed (${type}):`, err);
+    return [];
+  }
 }
 
 export async function getPopular(type: 'movie' | 'tv' = 'movie', page: number = 1): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb(`/${type}/popular`, { page });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  try {
+    const data = await fetchFromTmdb(`/${type}/popular`, { page });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  } catch (err) {
+    console.warn(`TMDB getPopular failed (${type}):`, err);
+    return [];
+  }
 }
 
 export async function getUpcomingMovies(page: number = 1): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb('/movie/upcoming', { page });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, 'movie'));
+  try {
+    const data = await fetchFromTmdb('/movie/upcoming', { page });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, 'movie'));
+  } catch (err) {
+    console.warn('TMDB getUpcomingMovies failed:', err);
+    return [];
+  }
 }
 
 export async function getNowPlayingMovies(page: number = 1): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb('/movie/now_playing', { page });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, 'movie'));
+  try {
+    const data = await fetchFromTmdb('/movie/now_playing', { page });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, 'movie'));
+  } catch (err) {
+    console.warn('TMDB getNowPlayingMovies failed:', err);
+    return [];
+  }
 }
 
 export async function getOnTheAirTV(page: number = 1): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb('/tv/on_the_air', { page });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, 'tv'));
+  try {
+    const data = await fetchFromTmdb('/tv/on_the_air', { page });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, 'tv'));
+  } catch (err) {
+    console.warn('TMDB getOnTheAirTV failed:', err);
+    return [];
+  }
 }
 
 export async function getAiringTodayTV(page: number = 1): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb('/tv/airing_today', { page });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, 'tv'));
+  try {
+    const data = await fetchFromTmdb('/tv/airing_today', { page });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, 'tv'));
+  } catch (err) {
+    console.warn('TMDB getAiringTodayTV failed:', err);
+    return [];
+  }
 }
 
 export async function getByGenre(
@@ -476,12 +511,17 @@ export async function getByGenre(
   type: 'movie' | 'tv' = 'movie',
   page: number = 1
 ): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb(`/discover/${type}`, {
-    with_genres: genreId,
-    sort_by: 'popularity.desc',
-    page
-  });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  try {
+    const data = await fetchFromTmdb(`/discover/${type}`, {
+      with_genres: genreId,
+      sort_by: 'popularity.desc',
+      page
+    });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  } catch (err) {
+    console.warn(`TMDB getByGenre failed (${genreId}/${type}):`, err);
+    return [];
+  }
 }
 
 export async function getByProvider(
@@ -489,26 +529,36 @@ export async function getByProvider(
   type: 'movie' | 'tv' = 'movie',
   page: number = 1
 ): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb(`/discover/${type}`, {
-    with_watch_providers: providerId,
-    watch_region: 'US',
-    sort_by: 'popularity.desc',
-    page
-  });
-  return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  try {
+    const data = await fetchFromTmdb(`/discover/${type}`, {
+      with_watch_providers: providerId,
+      watch_region: 'US',
+      sort_by: 'popularity.desc',
+      page
+    });
+    return (data.results || []).map((item: any) => formatTmdbItem(item, type));
+  } catch (err) {
+    console.warn(`TMDB getByProvider failed (${providerId}/${type}):`, err);
+    return [];
+  }
 }
 
 export async function getAnime(page: number = 1): Promise<MediaItem[]> {
-  const data = await fetchFromTmdb('/discover/tv', {
-    with_genres: 16, // Animation
-    with_original_language: 'ja',
-    sort_by: 'popularity.desc',
-    page
-  });
-  return (data.results || []).map((item: any) => {
-    const formatted = formatTmdbItem(item, 'anime');
-    return formatted;
-  });
+  try {
+    const data = await fetchFromTmdb('/discover/tv', {
+      with_genres: 16, // Animation
+      with_original_language: 'ja',
+      sort_by: 'popularity.desc',
+      page
+    });
+    return (data.results || []).map((item: any) => {
+      const formatted = formatTmdbItem(item, 'anime');
+      return formatted;
+    });
+  } catch (err) {
+    console.warn('TMDB getAnime failed:', err);
+    return [];
+  }
 }
 
 export async function getMediaDetails(id: string | number, type: 'movie' | 'tv' | 'anime' = 'movie'): Promise<MediaItem> {
@@ -546,15 +596,20 @@ export async function searchTmdb(
   page: number = 1
 ): Promise<MediaItem[]> {
   if (!query.trim()) return [];
-  const endpoint = type === 'multi' ? '/search/multi' : `/search/${type}`;
-  const data = await fetchFromTmdb(endpoint, { query: query.trim(), page });
-  
-  return (data.results || [])
-    .filter((item: any) => item.media_type !== 'person' && (item.poster_path || item.backdrop_path))
-    .map((item: any) => {
-      const explicitType = item.media_type === 'tv' ? 'tv' : item.media_type === 'movie' ? 'movie' : undefined;
-      return formatTmdbItem(item, explicitType);
-    });
+  try {
+    const endpoint = type === 'multi' ? '/search/multi' : `/search/${type}`;
+    const data = await fetchFromTmdb(endpoint, { query: query.trim(), page });
+    
+    return (data.results || [])
+      .filter((item: any) => item.media_type !== 'person' && (item.poster_path || item.backdrop_path))
+      .map((item: any) => {
+        const explicitType = item.media_type === 'tv' ? 'tv' : item.media_type === 'movie' ? 'movie' : undefined;
+        return formatTmdbItem(item, explicitType);
+      });
+  } catch (err) {
+    console.warn('TMDB searchTmdb failed:', err);
+    return [];
+  }
 }
 
 export async function getImdbId(id: string | number, mediaType: 'movie' | 'tv' | 'anime' = 'movie'): Promise<string | null> {

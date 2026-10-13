@@ -15,7 +15,7 @@ interface MediaRailProps {
   posterAspect?: boolean; // false = 16:9 backdrop, true = 2:3 poster
 }
 
-import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../utils/imageUtils';
+import { optimizeTmdbImage, FALLBACK_BACKDROP, FALLBACK_POSTER } from '../utils/imageUtils';
 
 export const MediaRail: React.FC<MediaRailProps> = ({
   title,
@@ -55,7 +55,7 @@ export const MediaRail: React.FC<MediaRailProps> = ({
           <div>
             <div className="flex items-center gap-2.5">
               <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
                 {subtitle}
               </p>
             </div>
@@ -101,8 +101,8 @@ export const MediaRail: React.FC<MediaRailProps> = ({
           ref={scrollRef}
           className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
           style={{
-            maskImage: 'linear-gradient(to right, black 0%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 0%, black 100%)'
+            maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
           }}
         >
           {items.map((item, idx) => {
@@ -155,10 +155,11 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                         )}
                         onError={(e) => {
                           const target = e.currentTarget;
+                          const fallback = posterAspect ? FALLBACK_POSTER : FALLBACK_BACKDROP;
                           if (item.poster_path && target.src !== item.poster_path) {
                             target.src = item.poster_path;
-                          } else if (target.src !== FALLBACK_BACKDROP) {
-                            target.src = FALLBACK_BACKDROP;
+                          } else if (target.src !== fallback) {
+                            target.src = fallback;
                           }
                         }}
                       />

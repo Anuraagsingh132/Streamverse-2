@@ -25,7 +25,8 @@ function getAuthorizedOrigin(req) {
     const allowed = ['localhost', '127.0.0.1', 'streamverse.app'];
     if (
       allowed.some((host) => originHost === host || originHost.endsWith('.' + host)) ||
-      originHost.endsWith('vercel.app')
+      originHost === 'streamverse.vercel.app' ||
+      originHost.endsWith('.streamverse.vercel.app')
     ) {
       return origin;
     }
@@ -125,31 +126,43 @@ export default async function handler(req) {
   const errors = [];
 
   for (const targetUrl of candidateUrls) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
-      // 4. AbortSignal.timeout(10000) prevents hanging requests on slow/dead upstream servers (T3-09)
+      // 4. Decouple TTFB timeout from response body streaming (T3-09)
       const res = await fetch(targetUrl, {
         method: req.method === 'HEAD' ? 'HEAD' : 'GET',
         headers: upstreamHeaders,
         redirect: 'follow',
-        signal: AbortSignal.timeout(10000)
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       // Valid streaming responses include 200 (OK), 206 (Partial Content), and 416 (Range Not Satisfiable)
-      if (res.ok || res.status === 206 || res.status === 416 || res.status === 404) {
+      // Only break on valid streaming responses; do not break early on 404
+      if (res.ok || res.status === 206 || res.status === 416) {
         upstreamRes = res;
         break;
       } else {
         errors.push(`${targetUrl} -> ${res.status}`);
       }
     } catch (err) {
+      clearTimeout(timeoutId);
       errors.push(`${targetUrl} -> ${err?.message || 'timeout/network error'}`);
     }
   }
 
   if (!upstreamRes) {
+    const is404 = errors.length > 0 && errors.every((e) => e.includes('-> 404'));
     return new Response(`All upstream PixelDrain mirrors failed: ${errors.join(' | ')}`, {
-      status: 502,
-      headers: { 'Access-Control-Allow-Origin': allowedOrigin, Vary: 'Origin', 'Content-Type': 'text/plain; charset=utf-8' }
+      status: is404 ? 404 : 502,
+      headers: {
+        'Access-Control-Allow-Origin': allowedOrigin,
+        Vary: 'Origin',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store',
+        'Content-Security-Policy': "default-src 'none'; sandbox"
+      }
     });
   }
 
@@ -159,11 +172,32 @@ export default async function handler(req) {
   responseHeaders.set('Vary', 'Origin');
   responseHeaders.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges, Content-Type');
   responseHeaders.set('Accept-Ranges', 'bytes');
-  responseHeaders.set('Content-Disposition', 'inline');
   responseHeaders.set('X-Content-Type-Options', 'nosniff');
-  responseHeaders.set('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400');
+  responseHeaders.set('Content-Security-Policy', "default-src 'none'; sandbox");
 
-  const forwardableHeaders = ['content-type', 'content-length', 'content-range', 'last-modified', 'etag'];
+  // Cache-Control: do not cache 404 for 24h
+  if (upstreamRes.status === 404) {
+    responseHeaders.set('Cache-Control', 'no-cache, no-store');
+  } else {
+    responseHeaders.set('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400');
+  }
+
+  // MIME whitelist: force application/octet-stream and attachment if non-media
+  const rawContentType = (upstreamRes.headers.get('content-type') || '').toLowerCase().trim();
+  const isAllowedMime =
+    rawContentType.startsWith('video/') ||
+    rawContentType.startsWith('audio/') ||
+    rawContentType.startsWith('application/octet-stream');
+
+  if (isAllowedMime) {
+    responseHeaders.set('Content-Type', upstreamRes.headers.get('content-type') || 'application/octet-stream');
+    responseHeaders.set('Content-Disposition', 'inline');
+  } else {
+    responseHeaders.set('Content-Type', 'application/octet-stream');
+    responseHeaders.set('Content-Disposition', 'attachment');
+  }
+
+  const forwardableHeaders = ['content-length', 'content-range', 'last-modified', 'etag'];
   for (const h of forwardableHeaders) {
     const v = upstreamRes.headers.get(h);
     if (v && !HOP_BY_HOP_HEADERS.has(h.toLowerCase())) {

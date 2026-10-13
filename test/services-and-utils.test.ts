@@ -454,12 +454,12 @@ test('RouteUtils: getRouteHref maps internal route tokens to canonical SEO paths
   assert.strictEqual(getRouteHref('tv'), '/tv');
   assert.strictEqual(getRouteHref('anime'), '/anime');
   assert.strictEqual(getRouteHref('livesports'), '/sports');
-  assert.strictEqual(getRouteHref('sports'), '/sports');
-  assert.strictEqual(getRouteHref('discover'), '/ai');
+  assert.strictEqual(getRouteHref('discover'), '/discover');
   assert.strictEqual(getRouteHref('ai'), '/ai');
   assert.strictEqual(getRouteHref('music'), '/music');
   assert.strictEqual(getRouteHref('providers'), '/providers');
   assert.strictEqual(getRouteHref('watchlist'), '/watchlist');
+  assert.strictEqual(getRouteHref('continue-watching'), '/continue-watching');
   assert.strictEqual(getRouteHref('settings'), '/settings');
   assert.strictEqual(getRouteHref('custom/path'), '/custom/path');
 });

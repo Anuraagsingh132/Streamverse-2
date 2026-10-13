@@ -13,7 +13,7 @@ export const tvHeroItems: MediaItem[] = [
     logo_path: 'https://image.tmdb.org/t/p/w500/fyyER6VUZ7XbQG78S5cLnDgH3nH.png',
     backdrop_path: 'https://image.tmdb.org/t/p/w1280/mGFtH5pUXDd4hSXUfl8HnHlRWJV.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/f4R4YGeMQrXEu6jm3oAbSPeGC3M.jpg',
-    overview: 'In the haunted heart of New Orleans, follow three teenage witches and their dangerously charming warlock peers at an elite magic boarding school where power is currency, secrets are lethal and attraction is a...',
+    overview: 'In the haunted heart of New Orleans, follow three teenage witches and their dangerously charming warlock peers at an elite magic boarding school where power is currency, secrets are lethal, and survival is the ultimate test.',
     genres: ['Mystery', 'Drama', 'Comedy']
   },
   {

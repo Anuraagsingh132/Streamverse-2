@@ -75,8 +75,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: 'Movies', route: 'movie', icon: Film },
     { label: 'TV Shows', route: 'tv', icon: Tv },
     { label: 'Anime', route: 'anime', icon: Cat },
-    { label: 'AI Search', route: 'ai', icon: Sparkles },
-    { label: 'Music', route: 'music', icon: Music },
+    { label: 'AI Search', route: 'ai', icon: Sparkles, badge: 'Soon' },
+    { label: 'Music', route: 'music', icon: Music, badge: 'Soon' },
   ];
 
   const browseItems = [
@@ -104,19 +104,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         import('../pages/AnimePage');
         break;
       case 'ai':
-        import('../pages/AISearchPage');
-        break;
+      case 'discover':
       case 'music':
-        import('../pages/MusicPage');
-        break;
       case 'livesports':
-        import('../pages/LiveSportsPage');
-        break;
       case 'providers':
-        import('../pages/ProvidersPage');
-        break;
       case 'watchlist':
-        import('../pages/WatchlistPage');
+      case 'continue-watching':
+        import('../pages/ComingSoonPage');
         break;
       case 'settings':
         import('../pages/SettingsPage');
@@ -125,7 +119,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="fixed left-1/2 top-3 sm:top-4 z-[100] -translate-x-1/2 rounded-full border border-white/10 bg-[#060812]/92 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-2xl backdrop-saturate-150 transition-all duration-200">
+    <header 
+      className="fixed left-1/2 top-3 sm:top-4 z-[100] -translate-x-1/2 rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-200"
+      style={{
+        backgroundColor: 'rgba(10, 12, 20, 0.60)',
+        backdropFilter: 'blur(20px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+      }}
+    >
       <div className="flex h-14 items-center px-2.5 sm:px-3 gap-1">
         {/* Brand Logo Link */}
         <motion.a
@@ -139,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           onFocus={() => prefetchRoute('home')}
           aria-label="Streamverse Home"
           title="Streamverse Home"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/75 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-rose-500 hover:text-rose-400 hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
         >
           <Clapperboard className="h-[18px] w-[18px]" strokeWidth={1.5} />
         </motion.a>
@@ -170,6 +171,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-white' : 'text-white/65'}`} strokeWidth={1.5} />
                 <span>{item.label}</span>
+                {item.badge && (
+                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/70 border border-white/15">
+                    {item.badge}
+                  </span>
+                )}
               </a>
             );
           })}
@@ -274,13 +280,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             target="_blank" 
             rel="noopener noreferrer" 
             href="https://discord.gg/38yFnFCJnA"
-            aria-label="Join Discord"
-            title="Join Discord"
+            aria-label="Join Community on Discord"
+            title="Join Community on Discord"
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-full"
           >
             <motion.button
               whileTap={{ scale: 0.92 }}
               type="button"
+              aria-label="Join Community on Discord"
+              title="Join Community on Discord"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer"
             >
               <svg 
@@ -305,8 +313,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         <motion.button
           whileTap={{ scale: 0.92 }}
           type="button"
-          aria-label="Profile"
-          title="Profile Settings"
+          aria-label="Account & Settings"
+          title="Account & Settings"
           onClick={() => onNavigate('settings')}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
         >

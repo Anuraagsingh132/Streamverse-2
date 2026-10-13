@@ -17,6 +17,7 @@ import { useUserSettings } from '../hooks/useUserSettings';
 import { getSeasonEpisodes } from '../services/tmdb';
 import { resolveAnimeToTmdb } from '../services/animeResolver';
 import { purgeMediaItemCache } from '../utils/cacheManager';
+import { useContinueWatchingStore, savePlaybackRecord, getPlaybackRecord } from '../store/useContinueWatchingStore';
 
 interface ServerOption {
   id: string;
@@ -33,14 +34,16 @@ const ANIME_SERVERS: ServerOption[] = [
     name: 'MegaPlay (Sub)',
     badge: 'Anime · Subbed',
     description: 'Fast HD Japanese audio with subtitles (Default)',
-    getUrl: (id, _isTV, _season, episode) => `https://megaplay.buzz/stream/ani/${id}/${episode}/sub`
+    getUrl: (id, _isTV, _season, episode) =>
+      `https://megaplay.buzz/stream/ani/${encodeURIComponent(id)}/${encodeURIComponent(episode)}/sub`
   },
   {
     id: 'megaplay-dub',
     name: 'MegaPlay (Dub)',
     badge: 'Anime · English Dub',
     description: 'English dubbed anime stream',
-    getUrl: (id, _isTV, _season, episode) => `https://megaplay.buzz/stream/ani/${id}/${episode}/dub`
+    getUrl: (id, _isTV, _season, episode) =>
+      `https://megaplay.buzz/stream/ani/${encodeURIComponent(id)}/${encodeURIComponent(episode)}/dub`
   },
   {
     id: 'cinemaos',
@@ -48,10 +51,11 @@ const ANIME_SERVERS: ServerOption[] = [
     badge: 'Mirror 1 · HD',
     description: 'CinemaOS official embed player',
     getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
-        return `https://cinemaos.tech/player/${tmdbId}?theme=ffffff`;
+        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
       }
-      return `https://cinemaos.tech/player/${tmdbId}/${season}/${episode}?theme=ffffff`;
+      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
     }
   },
   {
@@ -92,34 +96,115 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
     badge: 'Server 1 · HD',
     description: 'CinemaOS official embed player',
     getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
-        return `https://cinemaos.tech/player/${tmdbId}?theme=ffffff`;
+        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
       }
-      return `https://cinemaos.tech/player/${tmdbId}/${season}/${episode}?theme=ffffff`;
+      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
     }
   },
   {
-    id: 'vidsrc',
-    name: 'VidSrc',
-    badge: 'Mirror 1',
-    description: 'Alternative fast streaming mirror',
+    id: 'vidsrc-sh',
+    name: 'VidSrc (SH)',
+    badge: 'Mirror 1 · HD',
+    description: 'VidSrc.sh high-speed multi-audio streaming embed',
     getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
-        return `https://vidsrc.to/embed/movie/${tmdbId}`;
+        return `https://vidsrc.sh/embed/movie/${cleanId}`;
       }
-      return `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
+      return `https://vidsrc.sh/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
     }
   },
   {
-    id: 'autoembed',
-    name: 'AutoEmbed',
-    badge: 'Mirror 2',
-    description: 'Multi-source reliable backup server',
+    id: 'videasy',
+    name: 'Videasy',
+    badge: 'Mirror 2 · Fast',
+    description: 'Videasy multi-quality streaming player',
     getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
-        return `https://player.autoembed.cc/embed/movie/${tmdbId}`;
+        return `https://player.videasy.to/movie/${cleanId}`;
       }
-      return `https://player.autoembed.cc/embed/tv/${tmdbId}/${season}/${episode}`;
+      return `https://player.videasy.to/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
+    id: 'vidfast',
+    name: 'VidFast',
+    badge: 'Mirror 3 · 1080p',
+    description: 'Fast CDN streaming mirror with adaptive bitrate',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://vidfast.vc/movie/${cleanId}`;
+      }
+      return `https://vidfast.vc/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
+    id: 'vidlux',
+    name: 'VidLux',
+    badge: 'Mirror 4',
+    description: 'VidLux high-availability embed player',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://vidlux.xyz/embed/movie/${cleanId}`;
+      }
+      return `https://vidlux.xyz/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
+    id: 'vidlove',
+    name: 'VidLove',
+    badge: 'Mirror 5',
+    description: 'VidLove reliable stream host',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://player.vidlove.cc/embed/movie/${cleanId}`;
+      }
+      return `https://player.vidlove.cc/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
+    id: 'vidrock',
+    name: 'VidRock',
+    badge: 'Mirror 6 · Backup',
+    description: 'VidRock multi-source backup server',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://vidrock.net/api/movie/${cleanId}`;
+      }
+      return `https://vidrock.net/api/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
+    id: 'mappletv',
+    name: 'MappleTV',
+    badge: 'Mirror 7 · HD',
+    description: 'MappleTV fast cloud mirror',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://mappletv.uk/embed/movie/${cleanId}`;
+      }
+      return `https://mappletv.uk/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
+    id: 'vixsrc',
+    name: 'VixSrc',
+    badge: 'Mirror 8 · Direct',
+    description: 'VixSrc high-speed streaming server',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://vixsrc.to/movie/${cleanId}`;
+      }
+      return `https://vixsrc.to/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
     }
   }
 ];
@@ -187,6 +272,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   onEpisodeChange
 }) => {
   const { settings } = useUserSettings();
+  const { getRecord } = useContinueWatchingStore();
   const [season, setSeason] = useState<number>(initialSeason || 1);
   const [episode, setEpisode] = useState<number>(initialEpisode || 1);
   const [selectedServerId, setSelectedServerId] = useState<string>(() => {
@@ -502,6 +588,44 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     return currentServer.getUrl(effectiveTmdbId, isTV, season, episode);
   }, [item, isAnime, effectiveServerId, currentServer, isTV, season, episode, isDirectPlayer, effectiveTmdbId]);
 
+  // Record initial playback state and listen to messages when an iframe player mounts so Continue Watching is saved for anime and fallback mirrors
+  useEffect(() => {
+    if (!isDirectPlayer && embedUrl && item) {
+      const existing = getPlaybackRecord(item.id, isTV ? season : undefined, isTV ? episode : undefined);
+      savePlaybackRecord(item, {
+        season: isTV ? season : undefined,
+        episode: isTV ? episode : undefined,
+        currentTime: existing?.currentTime && existing.currentTime >= 5 ? existing.currentTime : 5,
+        duration: existing?.duration && existing.duration > 0 ? existing.duration : 100
+      });
+
+      const handleMessage = (e: MessageEvent) => {
+        try {
+          const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+          if (data && typeof data === 'object') {
+            const currentTime = data.currentTime ?? data.time ?? data.progress;
+            const duration = data.duration ?? data.total;
+            if (typeof currentTime === 'number' && currentTime >= 5) {
+              savePlaybackRecord(item, {
+                season: isTV ? season : undefined,
+                episode: isTV ? episode : undefined,
+                currentTime,
+                duration: typeof duration === 'number' ? duration : 100
+              });
+            }
+          }
+        } catch {
+          // ignore non-json messages
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+      return () => {
+        window.removeEventListener('message', handleMessage);
+      };
+    }
+  }, [isDirectPlayer, embedUrl, item, isTV, season, episode]);
+
   if (!item) return null;
 
   return (
@@ -555,7 +679,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
         )}
       </div>
 
-      {/* Floating Top Controls (Exit button + Server Switcher + Show Title + Episode Nav) (Auto-hides after 4s) - Only for iframe servers */}
+      {/* Floating Top Controls (Auto-hides after 4s) - Only for iframe servers */}
       {!isDirectPlayer && (
         <div
           onMouseEnter={() => {
@@ -563,208 +687,234 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
           }}
           onMouseLeave={resetHideTimer}
-          className={`absolute top-4 inset-x-0 sm:top-5 z-50 flex items-center justify-center px-4 transition-all duration-300 ease-out pointer-events-none ${
+          className={`absolute top-0 inset-x-0 z-50 transition-all duration-300 ease-out ${
             showControls || isEpisodeDrawerOpen || isServerDropdownOpen
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-0 -translate-y-2'
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 -translate-y-2 pointer-events-none'
           }`}
         >
-          <div className="flex items-center gap-2 sm:gap-2.5 pointer-events-auto">
-            {/* Top-Left Exit Button */}
-            <button
-              type="button"
-              onClick={handleExit}
-              className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-white/10 bg-[#0a0c14]/75 text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition hover:bg-white/15 hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-              title="Exit Player (Esc)"
-              aria-label="Exit Player"
-            >
-              <ChevronLeft className="h-5 w-5" strokeWidth={2} />
-            </button>
+          {/* Top 120px Gradient: 80% black fading to transparent */}
+          <div className="absolute inset-x-0 top-0 h-28 sm:h-32 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-            {/* Server Switcher Pill & Dropdown */}
-            <div className="relative" ref={serverDropdownRef}>
+          {/* Main Bar: 43px side margin alignment */}
+          <div className="relative flex items-center justify-between px-4 sm:px-6 md:px-8 lg:px-[43px] pt-4 sm:pt-5 pb-6">
+            {/* Left Section: Back Button + Title & Context */}
+            <div className="flex items-center gap-4 min-w-0 flex-1 mr-4">
               <button
                 type="button"
-                onClick={() => {
-                  setIsServerDropdownOpen((prev) => !prev);
-                  if (isEpisodeDrawerOpen) setIsEpisodeDrawerOpen(false);
-                }}
-                className={`flex h-10 sm:h-11 items-center gap-1.5 sm:gap-2 rounded-full border px-3 sm:px-3.5 text-xs font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
-                  isServerDropdownOpen
-                    ? 'bg-white/20 border-white/25 text-white ring-1 ring-white/20'
-                    : 'border-white/10 bg-[#0a0c14]/75 text-white/90 hover:bg-white/15 hover:text-white'
-                }`}
-                title="Change Video Server"
-                aria-label="Change Video Server"
+                onClick={handleExit}
+                className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl transition hover:bg-white/20 hover:text-white active:bg-white/25 active:scale-95 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black cursor-pointer"
+                title="Back (Esc)"
+                aria-label="Back"
               >
-                <Server className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" strokeWidth={1.8} />
-                <span className="leading-none whitespace-nowrap">{currentServer.name}</span>
-                <ChevronDown
-                  className={`h-3 w-3 sm:h-3.5 sm:w-3.5 text-white/60 transition-transform duration-200 ${
-                    isServerDropdownOpen ? 'rotate-180 text-white' : ''
-                  }`}
-                />
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.2} />
               </button>
 
-              {/* Server Dropdown Popover */}
-              {isServerDropdownOpen && (
-                <div
-                  data-lenis-prevent
-                  className="absolute left-0 top-full mt-2 z-50 w-60 sm:w-64 rounded-2xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
+              <div className="flex flex-col min-w-0 select-none">
+                <h1
+                  className="text-base sm:text-lg lg:text-xl font-bold text-white tracking-tight truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                  title={item.title}
                 >
-                  <div className="flex items-center justify-between px-3 py-1.5 mb-1 border-b border-white/10">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-                      Select Server
-                    </span>
-                    <span className="text-[10px] text-primary font-semibold">
-                      {activeServers.length} Available
-                    </span>
-                  </div>
+                  {item.title}
+                </h1>
+                <div className="hidden sm:flex items-center gap-2 text-xs sm:text-[13px] font-medium text-white/75 tracking-wide truncate mt-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                  {isTV ? (
+                    <>
+                      <span className="text-primary font-semibold">S{season} · E{episode}</span>
+                      {totalEpisodesForSeason > 0 && <span>(of {totalEpisodesForSeason} eps)</span>}
+                    </>
+                  ) : (
+                    <>
+                      {(item.release_date || item.first_air_date) && (
+                        <span>{(item.release_date || item.first_air_date)?.slice(0, 4)}</span>
+                      )}
+                      {(item.release_date || item.first_air_date) && item.vote_average ? <span>•</span> : null}
+                      {item.vote_average ? <span>★ {item.vote_average.toFixed(1)}</span> : null}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
 
-                  <div className="space-y-1">
-                    {activeServers.map((srv) => {
-                      const isSelected = srv.id === selectedServerId;
-                      return (
-                        <button
-                          key={srv.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedServerId(srv.id);
-                            setIsServerDropdownOpen(false);
-                            resetHideTimer();
-                          }}
-                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 text-left ${
-                            isSelected
-                              ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
-                              : 'text-white/70 hover:text-white hover:bg-white/10'
-                          }`}
-                        >
-                          <div className="flex flex-col min-w-0 pr-2">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-semibold text-white">{srv.name}</span>
-                              {srv.badge && (
-                                <span
-                                  className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                                    isSelected
-                                      ? 'bg-primary/25 text-primary border border-primary/35'
-                                      : 'bg-white/10 text-white/60 border border-white/10'
-                                  }`}
-                                >
-                                  {srv.badge}
-                                </span>
-                              )}
-                            </div>
-                            {srv.description && (
-                              <span className="text-[10px] text-white/40 truncate mt-0.5">
-                                {srv.description}
-                              </span>
-                            )}
-                          </div>
-                          {isSelected && (
-                            <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+            {/* Right Section: SUB/DUB (if anime) + Episode switcher (if TV) + Server Selector Pill */}
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Quick SUB / DUB toggle for Anime */}
+              {isAnime && (
+                <div className="flex items-center rounded-full border border-white/[0.12] bg-[#0a0c14]/75 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedServerId('megaplay-sub')}
+                    className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-150 ${
+                      selectedServerId === 'megaplay-sub'
+                        ? 'bg-rose-600 text-white shadow-sm'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                    title="Switch to Subbed Audio"
+                  >
+                    SUB
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedServerId('megaplay-dub')}
+                    className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-150 ${
+                      selectedServerId === 'megaplay-dub'
+                        ? 'bg-rose-600 text-white shadow-sm'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                    title="Switch to English Dubbed Audio"
+                  >
+                    DUB
+                  </button>
                 </div>
               )}
-            </div>
 
-            {/* Quick SUB / DUB toggle for Anime */}
-            {isAnime && (
-              <div className="flex items-center rounded-full border border-white/10 bg-[#0a0c14]/75 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-                <button
-                  type="button"
-                  onClick={() => setSelectedServerId('megaplay-sub')}
-                  className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-150 ${
-                    selectedServerId === 'megaplay-sub'
-                      ? 'bg-rose-600 text-white shadow-sm'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                  title="Switch to Subbed Audio"
-                >
-                  SUB
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedServerId('megaplay-dub')}
-                  className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-150 ${
-                    selectedServerId === 'megaplay-dub'
-                      ? 'bg-rose-600 text-white shadow-sm'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                  title="Switch to English Dubbed Audio"
-                >
-                  DUB
-                </button>
-              </div>
-            )}
+              {/* Series / Episode Navigation Pill for TV */}
+              {isTV && (
+                <div className="flex h-10 items-center gap-1 rounded-full border border-white/[0.12] bg-[#0a0c14]/75 px-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                  <button
+                    type="button"
+                    onClick={handlePrevEpisode}
+                    disabled={episode <= 1}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-20 disabled:pointer-events-none"
+                    title="Previous Episode"
+                    aria-label="Previous Episode"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEpisodeDrawerOpen(!isEpisodeDrawerOpen);
+                      if (isServerDropdownOpen) setIsServerDropdownOpen(false);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                      isEpisodeDrawerOpen 
+                        ? 'bg-white/20 text-white ring-1 ring-white/20 shadow-sm' 
+                        : 'text-white/90 hover:bg-white/10 hover:text-white shadow-sm'
+                    }`}
+                    title="Select Season & Episode"
+                    aria-label="Select Season & Episode"
+                  >
+                    <ListVideo className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={1.8} />
+                    <span className="leading-none">S{season} E{episode}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextEpisode}
+                    disabled={episode >= totalEpisodesForSeason}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-20 disabled:pointer-events-none"
+                    title="Next Episode"
+                    aria-label="Next Episode"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
+                  </button>
+                </div>
+              )}
 
-            {/* Top-Center Show Name & Context Pill */}
-            <div className="hidden md:flex items-center">
-              <div className="flex h-10 sm:h-11 items-center gap-2 rounded-full border border-white/10 bg-[#0a0c14]/75 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150">
-                <h2 className="text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-xs lg:max-w-md">
-                  {item.title}
-                </h2>
-                {isTV && (
-                  <>
-                    <span className="text-white/30">•</span>
-                    <span className="text-xs font-semibold text-primary/90 whitespace-nowrap">
-                      S{season} · E{episode}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Floating Series / Episode Navigation Pill */}
-            {isTV && (
-              <div className="flex h-10 sm:h-11 items-center gap-1 rounded-full border border-white/10 bg-[#0a0c14]/75 px-1.5 sm:px-2 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150">
-                {/* Previous Episode Arrow Button */}
-                <button
-                  type="button"
-                  onClick={handlePrevEpisode}
-                  disabled={episode <= 1}
-                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-20 disabled:pointer-events-none"
-                  title="Previous Episode"
-                  aria-label="Previous Episode"
-                >
-                  <ChevronLeft className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
-                </button>
-
-                {/* S1 E1 Drawer Trigger */}
+              {/* Server Switcher Pill & Dropdown (Right-aligned!) */}
+              <div className="relative" ref={serverDropdownRef}>
                 <button
                   type="button"
                   onClick={() => {
-                    setIsEpisodeDrawerOpen(!isEpisodeDrawerOpen);
-                    if (isServerDropdownOpen) setIsServerDropdownOpen(false);
+                    setIsServerDropdownOpen((prev) => !prev);
+                    if (isEpisodeDrawerOpen) setIsEpisodeDrawerOpen(false);
                   }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
-                    isEpisodeDrawerOpen 
-                      ? 'bg-white/20 text-white border border-white/20 ring-1 ring-white/20 shadow-sm' 
-                      : 'bg-white/[0.08] text-white/90 border border-white/10 hover:bg-white/15 hover:text-white shadow-sm'
+                  className={`flex h-10 items-center gap-2 rounded-full border px-3.5 sm:px-4 text-sm font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                    isServerDropdownOpen
+                      ? 'bg-white/20 border-white/30 text-white ring-1 ring-white/25'
+                      : 'border-white/[0.12] bg-[#0a0c14]/75 text-white/90 hover:bg-white/15 hover:text-white'
                   }`}
-                  title="Select Season & Episode"
-                  aria-label="Select Season & Episode"
+                  title="Change Video Server"
+                  aria-label="Change Video Server"
                 >
-                  <ListVideo className="h-3.5 w-3.5 shrink-0 text-white/80" strokeWidth={1.8} />
-                  <span className="leading-none">S{season} E{episode}</span>
+                  <Server className="h-4 w-4 text-primary shrink-0" strokeWidth={1.8} />
+                  <span className="leading-none whitespace-nowrap">{currentServer.name}</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 text-white/60 transition-transform duration-200 ${
+                      isServerDropdownOpen ? 'rotate-180 text-white' : ''
+                    }`}
+                  />
                 </button>
 
-                {/* Next Episode Arrow Button */}
-                <button
-                  type="button"
-                  onClick={handleNextEpisode}
-                  disabled={episode >= totalEpisodesForSeason}
-                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white active:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-20 disabled:pointer-events-none"
-                  title="Next Episode"
-                  aria-label="Next Episode"
-                >
-                  <ChevronRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
-                </button>
+                {/* Server Dropdown Popover (Right-aligned!) */}
+                {isServerDropdownOpen && (
+                  <div
+                    data-lenis-prevent
+                    className="absolute right-0 top-full mt-2 z-50 w-64 sm:w-72 rounded-2xl border border-white/15 bg-[#111115]/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
+                  >
+                    <div className="flex items-center justify-between px-3 py-2 mb-1 border-b border-white/10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                        Select Server
+                      </span>
+                      <span className="text-[10px] text-primary font-semibold">
+                        {activeServers.length} Available
+                      </span>
+                    </div>
+
+                    <div
+                      style={{ maxHeight: '236px', overflowY: 'auto' }}
+                      className="max-h-60 overflow-y-auto space-y-1 pr-1 drawer-scroll overscroll-contain server-dropdown-scroll"
+                    >
+                      {activeServers.map((srv) => {
+                        const isSelected = srv.id === selectedServerId;
+                        const isDirect = srv.id === 'hdhub' || srv.id === 'pengu' || srv.id === 'cinemaos';
+                        return (
+                          <button
+                            key={srv.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedServerId(srv.id);
+                              setIsServerDropdownOpen(false);
+                              resetHideTimer();
+                            }}
+                            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 text-left ${
+                              isSelected
+                                ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
+                                : 'text-white/70 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <span
+                                className={`h-2 w-2 rounded-full shrink-0 ${
+                                  isDirect
+                                    ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'
+                                    : 'bg-amber-400/90 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                                }`}
+                                title={isDirect ? 'Direct Stream' : 'Fast Mirror'}
+                              />
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-white truncate">{srv.name}</span>
+                                  {srv.badge && (
+                                    <span
+                                      className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
+                                        isSelected
+                                          ? 'bg-primary/25 text-primary border border-primary/35'
+                                          : 'bg-white/10 text-white/60 border border-white/10'
+                                      }`}
+                                    >
+                                      {srv.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                {srv.description && (
+                                  <span className="text-[10px] text-white/40 truncate mt-0.5">
+                                    {srv.description}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -888,8 +1038,13 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             {currentEpisodes.length > 0 ? (
               currentEpisodes.map((ep) => {
                 const isSelected = ep.episode_number === episode;
-                const isStarted = ep.episode_number <= episode;
-                const progressPercent = ep.episode_number < episode ? 100 : ep.episode_number === episode ? 35 : 0;
+                const epRecord = getRecord(item.id, season, ep.episode_number);
+                const progressPercent = epRecord
+                  ? epRecord.progressPercent
+                  : ep.episode_number < episode
+                  ? 100
+                  : 0;
+                const isStarted = progressPercent > 0;
 
                 return (
                   <button

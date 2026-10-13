@@ -1,43 +1,55 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MediaItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
+import { safeSetStorageItem, safeGetStorageItem } from '../utils/storageManager';
 
 export const WATCHLIST_CHANGE_EVENT = 'streamverse_watchlist_change';
 
 const CANONICAL_STORAGE_KEY = 'streamverse_watchlist';
 const LEGACY_ITEMS_KEY = 'streamverse_watchlist_items';
 
+function normalizeMediaItem(item: any): MediaItem {
+  return {
+    ...item,
+    id: String(item.id),
+    tmdbId: item.tmdbId ? String(item.tmdbId) : undefined
+  };
+}
+
 function getInitialWatchlistItems(): MediaItem[] {
   try {
-    const raw = localStorage.getItem(CANONICAL_STORAGE_KEY);
+    const raw = safeGetStorageItem(CANONICAL_STORAGE_KEY);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         if (parsed.length === 0) return [];
         if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          return parsed as MediaItem[];
+          return parsed.map(normalizeMediaItem);
         }
         // Legacy raw IDs fallback
-        return allMedia.filter((m) => parsed.includes(m.id));
+        return allMedia.filter((m) => parsed.map(String).includes(String(m.id))).map(normalizeMediaItem);
       }
     }
 
     // Check legacy separate items key
-    const rawLegacy = localStorage.getItem(LEGACY_ITEMS_KEY);
+    const rawLegacy = safeGetStorageItem(LEGACY_ITEMS_KEY);
     if (rawLegacy !== null) {
       const parsedLegacy = JSON.parse(rawLegacy);
       if (Array.isArray(parsedLegacy)) {
+        const normalized = parsedLegacy.map(normalizeMediaItem);
         try {
-          localStorage.removeItem(LEGACY_ITEMS_KEY);
-          localStorage.setItem(CANONICAL_STORAGE_KEY, JSON.stringify(parsedLegacy));
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(LEGACY_ITEMS_KEY);
+          }
+          safeSetStorageItem(CANONICAL_STORAGE_KEY, JSON.stringify(normalized));
         } catch {}
-        return parsedLegacy;
+        return normalized;
       }
     }
 
     // First-time visitor default preview items
     const defaultIds = ['258165', '977942', '94605'];
-    return allMedia.filter((m) => defaultIds.includes(m.id));
+    return allMedia.filter((m) => defaultIds.includes(String(m.id))).map(normalizeMediaItem);
   } catch {
     return [];
   }
@@ -47,10 +59,12 @@ let globalWatchlistItems: MediaItem[] = getInitialWatchlistItems();
 
 function emitWatchlistChange() {
   try {
-    localStorage.setItem(CANONICAL_STORAGE_KEY, JSON.stringify(globalWatchlistItems));
-    localStorage.removeItem(LEGACY_ITEMS_KEY);
+    safeSetStorageItem(CANONICAL_STORAGE_KEY, JSON.stringify(globalWatchlistItems));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(LEGACY_ITEMS_KEY);
+    }
   } catch (err) {
-    console.warn('Failed to persist watchlist to localStorage', err);
+    console.warn('Failed to persist watchlist to storage', err);
   }
 
   if (typeof window !== 'undefined') {
@@ -60,7 +74,7 @@ function emitWatchlistChange() {
 
 /**
  * Global reactive hook for managing the Streamverse Watchlist state
- * with automatic cross-component synchronization and localStorage persistence.
+ * with automatic cross-component synchronization, string-standardized IDs, and safe storage persistence.
  */
 export function useWatchlistStore() {
   const [items, setItems] = useState<MediaItem[]>(globalWatchlistItems);
@@ -68,12 +82,19 @@ export function useWatchlistStore() {
   useEffect(() => {
     const handleSync = (e: Event) => {
       if (e instanceof StorageEvent) {
-        if (e.key === CANONICAL_STORAGE_KEY && e.newValue) {
+        if (e.key === CANONICAL_STORAGE_KEY) {
+          if (e.newValue === null) {
+            // Storage was cleared in another tab
+            globalWatchlistItems = [];
+            setItems([]);
+            return;
+          }
           try {
             const parsed = JSON.parse(e.newValue);
             if (Array.isArray(parsed)) {
-              globalWatchlistItems = parsed;
-              setItems(parsed);
+              const normalized = parsed.map(normalizeMediaItem);
+              globalWatchlistItems = normalized;
+              setItems(normalized);
               return;
             }
           } catch {
@@ -108,11 +129,14 @@ export function useWatchlistStore() {
 
   const addToWatchlist = useCallback((item: MediaItem) => {
     if (!item || !item.id) return;
+    const normalizedItem = normalizeMediaItem(item);
+    const targetId = String(item.id);
+    const targetTmdb = item.tmdbId ? String(item.tmdbId) : undefined;
     const exists = globalWatchlistItems.some(
-      (i) => String(i.id) === String(item.id) || (item.tmdbId && i.tmdbId === item.tmdbId)
+      (i) => String(i.id) === targetId || (targetTmdb && String(i.tmdbId) === targetTmdb)
     );
     if (!exists) {
-      globalWatchlistItems = [item, ...globalWatchlistItems];
+      globalWatchlistItems = [normalizedItem, ...globalWatchlistItems];
       emitWatchlistChange();
     }
   }, []);
@@ -120,7 +144,7 @@ export function useWatchlistStore() {
   const removeFromWatchlist = useCallback((id: string | number) => {
     const strId = String(id);
     globalWatchlistItems = globalWatchlistItems.filter(
-      (i) => String(i.id) !== strId && String(i.tmdbId) !== strId
+      (i) => String(i.id) !== strId && (!i.tmdbId || String(i.tmdbId) !== strId)
     );
     emitWatchlistChange();
   }, []);
@@ -142,7 +166,7 @@ export function useWatchlistStore() {
     emitWatchlistChange();
   }, []);
 
-  const watchlistIds = useMemo(() => items.map((i) => i.id), [items]);
+  const watchlistIds = useMemo(() => items.map((i) => String(i.id)), [items]);
 
   return {
     items,

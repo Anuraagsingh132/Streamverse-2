@@ -129,3 +129,12 @@ html { scroll-behavior: auto !important; }
 .drawer-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.35) !important;
 }
+
+/* Dedicated server dropdown scroll container */
+.server-dropdown-scroll {
+  max-height: 236px !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+

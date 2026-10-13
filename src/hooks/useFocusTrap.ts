@@ -22,11 +22,17 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(isActive: b
     // Delayed focus to let animations start and elements mount
     const timer = setTimeout(() => {
       if (!containerRef.current) return;
-      const focusableElements = containerRef.current.querySelectorAll<HTMLElement>(focusableSelectors);
-      if (focusableElements.length > 0) {
-        focusableElements[0].focus();
+      const focusableElements = Array.from(
+        containerRef.current.querySelectorAll<HTMLElement>(focusableSelectors)
+      ).filter(
+        (el) => !el.hasAttribute('disabled') && window.getComputedStyle(el).display !== 'none' && window.getComputedStyle(el).visibility !== 'hidden'
+      );
+      if (containerRef.current.getAttribute('tabindex') === '-1') {
+        containerRef.current.focus({ preventScroll: true });
+      } else if (focusableElements.length > 0) {
+        focusableElements[0].focus({ preventScroll: true });
       } else {
-        containerRef.current.focus();
+        containerRef.current.focus({ preventScroll: true });
       }
     }, 50);
 
@@ -36,7 +42,9 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(isActive: b
 
       const elements = Array.from(
         containerRef.current.querySelectorAll<HTMLElement>(focusableSelectors)
-      ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+      ).filter(
+        (el) => !el.hasAttribute('disabled') && window.getComputedStyle(el).display !== 'none' && window.getComputedStyle(el).visibility !== 'hidden'
+      );
 
       if (elements.length === 0) {
         e.preventDefault();

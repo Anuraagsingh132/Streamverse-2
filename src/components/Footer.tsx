@@ -59,7 +59,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         {/* Disclaimer & Copyright */}
-        <div className="mt-5 flex flex-col gap-2 border-t border-white/10 pt-4 text-[11px] leading-relaxed text-white/40 md:flex-row md:items-center md:justify-between md:gap-6">
+        <div className="mt-5 flex flex-col gap-2 border-t border-white/10 pt-4 text-xs leading-relaxed text-white/65 md:flex-row md:items-center md:justify-between md:gap-6">
           <p className="max-w-2xl">
             Streamverse doesn't host any files — all content comes from third-party providers. Direct DMCA requests to the respective providers.
           </p>
@@ -69,7 +69,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               href="https://www.themoviedb.org" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-white/60 hover:text-white"
+              className="text-white/80 hover:text-white underline underline-offset-2"
             >
               TMDB
             </a>{' '}
@@ -78,7 +78,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               href="https://anilist.co" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-white/60 hover:text-white"
+              className="text-white/80 hover:text-white underline underline-offset-2"
             >
               AniList
             </a>

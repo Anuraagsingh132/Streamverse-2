@@ -61,7 +61,8 @@ export function useHlsPlayback({
               const hls = new HlsClass({
                 enableWorker: true,
                 lowLatencyMode: false,
-                backBufferLength: 90
+                backBufferLength: 20,
+                maxBufferSize: 30 * 1024 * 1024
               });
 
               hls.loadSource(selectedStream.url);
@@ -148,6 +149,10 @@ export function useHlsPlayback({
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
+      }
+      if (video && !isHls) {
+        video.removeAttribute('src');
+        video.load();
       }
     };
   }, [selectedStream?.url, videoRef, onResetBuffered]);

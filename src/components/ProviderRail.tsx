@@ -104,67 +104,75 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
   };
 
   return (
-    <section className="py-6 cv-auto">
+    <section className="relative py-7 cv-auto overflow-hidden">
+      {/* Cinematic Dark Slate/Teal Atmospheric Ambient Backdrop */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background: 'radial-gradient(ellipse 75% 60% at 50% 10%, rgba(20, 38, 44, 0.45) 0%, rgba(10, 20, 24, 0.15) 55%, transparent 80%)'
+        }}
+        aria-hidden="true"
+      />
+
       {/* Section Header */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="h-3.5 w-[3px] rounded-full bg-rose-600" aria-hidden="true" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+              <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
                 Where to watch
               </p>
             </div>
-            <h2 className="mt-1.5 text-xl font-bold tracking-tight text-white md:text-2xl">
+            <h2 className="mt-1 text-2xl font-black tracking-tight text-white md:text-3xl">
               Streaming providers
             </h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {/* Movies / TV Shows Toggle */}
-            <div className="flex rounded-full border border-white/15 bg-white/10 p-1 backdrop-blur-md">
+            <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl">
               <button
                 type="button"
                 onClick={() => setFilterType('movie')}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   filterType === 'movie'
-                    ? 'bg-white text-black shadow'
+                    ? 'bg-white text-black shadow-md'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
                 <Film className="h-3.5 w-3.5" />
-                Movies
+                <span>Movies</span>
               </button>
               <button
                 type="button"
                 onClick={() => setFilterType('tv')}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   filterType === 'tv'
-                    ? 'bg-white text-black shadow'
+                    ? 'bg-white text-black shadow-md'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
                 <Tv className="h-3.5 w-3.5" />
-                TV Shows
+                <span>TV Shows</span>
               </button>
             </div>
 
             {/* View All Providers Link */}
-            {onNavigateAll && (
-              <button
-                type="button"
-                onClick={onNavigateAll}
-                className="hidden items-center gap-1 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:flex"
-              >
-                All <ArrowUpRight className="h-3.5 w-3.5" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onNavigateAll || (() => {})}
+              className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-white/90 backdrop-blur-xl transition hover:bg-white/15 hover:text-white cursor-pointer"
+            >
+              <span>All</span>
+              <ArrowUpRight className="h-3.5 w-3.5 stroke-[2]" />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Platform Switcher Buttons Rail */}
-      <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-4 pt-2 sm:gap-5 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+      <div className="scrollbar-hide flex gap-3.5 sm:gap-4.5 overflow-x-auto pb-4 pt-2 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
         {providers.map((p) => {
           const isSelected = selectedProvider === p.name;
           return (
@@ -172,32 +180,32 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
               key={p.name}
               type="button"
               onClick={() => setSelectedProvider(p.name)}
-              className="group flex w-16 shrink-0 flex-col items-center gap-2 sm:w-[72px]"
+              className="group flex w-[62px] sm:w-[72px] shrink-0 flex-col items-center gap-2 cursor-pointer focus-visible:outline-none"
               aria-pressed={isSelected}
             >
               <span
-                className={`relative h-14 w-14 overflow-hidden rounded-[18px] transition duration-300 sm:h-16 sm:w-16 bg-zinc-950 p-2 ${
+                className={`relative flex h-[58px] w-[58px] sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-[20px] sm:rounded-[22px] border transition-all duration-300 ${
                   isSelected
-                    ? 'scale-105 ring-2 ring-white ring-offset-2 ring-offset-transparent'
-                    : 'opacity-60 grayscale-[60%] group-hover:scale-105 group-hover:opacity-100 group-hover:grayscale-0'
+                    ? 'scale-105 border-white/20 bg-black opacity-100'
+                    : 'border-white/10 bg-black opacity-85 hover:scale-105 hover:opacity-100 hover:border-white/25'
                 }`}
                 style={{
                   boxShadow: isSelected
-                    ? `0 10px 30px -6px ${p.color}`
-                    : '0 8px 20px -10px rgba(0,0,0,0.7)'
+                    ? `0 14px 30px -4px ${p.color}`
+                    : '0 4px 14px rgba(0,0,0,0.45)'
                 }}
               >
                 <img
                   alt={p.name}
                   loading="lazy"
                   decoding="async"
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover"
                   src={p.logo}
                 />
               </span>
               <span
-                className={`w-full truncate text-center text-[11px] font-medium transition-colors ${
-                  isSelected ? 'text-white font-semibold' : 'text-zinc-400 group-hover:text-white'
+                className={`w-full truncate text-center text-xs transition-colors ${
+                  isSelected ? 'text-white font-semibold' : 'text-zinc-400 font-medium group-hover:text-white'
                 }`}
               >
                 {p.name}
@@ -207,37 +215,41 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
         })}
       </div>
 
-      {/* Active Provider Sub-Header Card (1:1 CinemaOS) */}
+      {/* Active Provider Sub-Header Card (1:1 with Image 1) */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 mt-4">
-        <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <span className="relative h-10 w-10 overflow-hidden rounded-xl bg-zinc-950 p-1.5 ring-1 ring-white/10">
+        <div
+          className="relative overflow-hidden flex items-center justify-between rounded-2xl border border-white/10 bg-[#0c1214]/90 sm:bg-white/[0.03] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300"
+          style={{
+            backgroundImage: `linear-gradient(90deg, ${currentProviderObj.color.replace('0.55', '0.2').replace('0.35', '0.15')} 0%, transparent 45%)`
+          }}
+        >
+          <div className="flex items-center gap-3.5">
+            <span className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black border border-white/10 shadow-inner">
               <img
                 alt={selectedProvider}
-                className="h-full w-full object-contain"
+                className="h-full w-full object-cover"
                 src={currentProviderObj.logo}
               />
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
-                Popular {filterType === 'tv' ? 'series' : 'movies'} on
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/50">
+                Popular {filterType === 'tv' ? 'shows' : 'movies'} on
               </p>
-              <h3 className="truncate text-lg font-bold text-white flex items-center gap-2">
+              <h3 className="truncate text-lg sm:text-xl font-extrabold text-white flex items-center gap-2 tracking-tight">
                 {selectedProvider}
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin text-rose-500" />}
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin text-white/60" />}
               </h3>
             </div>
           </div>
 
-          {onNavigateAll && (
-            <button
-              type="button"
-              onClick={onNavigateAll}
-              className="flex shrink-0 items-center gap-1 rounded-full bg-white px-4 py-2 text-xs font-bold text-black transition hover:bg-white/85"
-            >
-              View all <ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onNavigateAll || (() => {})}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/90 backdrop-blur-xl transition hover:bg-white/20 hover:text-white cursor-pointer"
+          >
+            <span>View all</span>
+            <ArrowUpRight className="h-3.5 w-3.5 stroke-[2]" />
+          </button>
         </div>
       </div>
 
@@ -265,8 +277,8 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
             ref={scrollRef}
             className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black 100%)'
+              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
             }}
           >
             {providerItems.map((item, idx) => {

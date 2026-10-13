@@ -10,6 +10,9 @@ export default defineConfig({
       output: {
         manualChunks(id: string) {
           if (id.includes('node_modules')) {
+            if (id.includes('@sentry')) {
+              return 'vendor-sentry';
+            }
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
             }

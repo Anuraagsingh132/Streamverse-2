@@ -47,7 +47,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         import('../pages/AnimePage');
         break;
       case 'livesports':
-        import('../pages/LiveSportsPage');
+        import('../pages/ComingSoonPage');
         break;
       case 'settings':
         import('../pages/SettingsPage');

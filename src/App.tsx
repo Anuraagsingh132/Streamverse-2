@@ -18,8 +18,8 @@ import { Footer } from './components/Footer';
 import { MediaItem } from './types/media';
 import { getMediaDetails } from './services/tmdb';
 import { useWatchlistStore } from './store/useWatchlistStore';
-import { purgeMediaItemCache } from './utils/cacheManager';
 import { getRouteHref } from './utils/routeUtils';
+import { ArrowLeft, Home, Compass } from 'lucide-react';
 
 // Lazy-loaded route views
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -36,6 +36,7 @@ const DetailsPage = React.lazy(() => import('./pages/DetailsPage'));
 const AnimeDetailsPage = React.lazy(() => import('./pages/AnimeDetailsPage').then(m => ({ default: m.AnimeDetailsPage })));
 const CinemaOSPlayer = React.lazy(() => import('./components/CinemaOSPlayer').then(m => ({ default: m.CinemaOSPlayer })));
 const SearchModal = React.lazy(() => import('./components/SearchModal').then(m => ({ default: m.SearchModal })));
+const ComingSoonPage = React.lazy(() => import('./pages/ComingSoonPage'));
 
 function getRouteKeyFromPath(pathname: string): string {
   if (pathname === '/' || pathname === '') return 'home';
@@ -48,12 +49,15 @@ function getRouteKeyFromPath(pathname: string): string {
   if (pathname === '/sports' || pathname === '/livesports') return 'livesports';
   if (pathname === '/music') return 'music';
   if (pathname === '/providers') return 'providers';
-  if (pathname === '/watchlist' || pathname === '/continue-watching') return 'watchlist';
+  if (pathname === '/watchlist') return 'watchlist';
+  if (pathname === '/continue-watching') return 'continue-watching';
   if (pathname === '/settings') return 'settings';
-  if (pathname.startsWith('/ai') || pathname.startsWith('/search') || pathname === '/discover') return 'ai';
+  if (pathname === '/discover') return 'discover';
+  if (pathname.startsWith('/ai') || pathname.startsWith('/search')) return 'ai';
   return 'home';
 }
 
+// Dynamic loader for route-based media resolution (avoids bundling large static datasets into root bundle)
 // Dynamic loader for route-based media resolution (avoids bundling large static datasets into root bundle)
 async function resolveRouteMedia(id: string, type: 'movie' | 'tv' | 'anime'): Promise<MediaItem | null> {
   if (type === 'movie' && id === '1248832') {
@@ -72,25 +76,23 @@ async function resolveRouteMedia(id: string, type: 'movie' | 'tv' | 'anime'): Pr
     // Fall through to TMDB or fallback
   }
   if (type === 'anime') {
-    return {
-      id,
-      title: 'Anime',
-      overview: '',
-      media_type: 'anime',
-      poster_path: '',
-      backdrop_path: '',
-      vote_average: 8.5,
-    };
+    try {
+      const { extractedAnime } = await import('./data/animeData');
+      const animeMatch = extractedAnime.find((m) => m.id === id);
+      if (animeMatch) return animeMatch;
+    } catch {
+      // Fall through to TMDB
+    }
+    try {
+      return await getMediaDetails(id, 'tv');
+    } catch {
+      return null;
+    }
   }
   try {
     return await getMediaDetails(id, type);
   } catch {
-    if (type === 'movie') {
-      const { diggerCuratedDetails } = await import('./data/cinemaosLiveMatch');
-      return diggerCuratedDetails;
-    }
-    const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
-    return lanternsCuratedDetails;
+    return null;
   }
 }
 
@@ -107,6 +109,43 @@ interface DetailsRouteProps {
   onBack: () => void;
 }
 
+const NotFoundState: React.FC<{
+  title: string;
+  description: string;
+  onBack: () => void;
+}> = ({ title, description, onBack }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="flex min-h-[75vh] pt-36 sm:pt-44 pb-20 flex-col items-center justify-center px-4 text-center relative z-10">
+      <div className="h-16 w-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/50 mb-5 shadow-2xl backdrop-blur-xl">
+        <Compass className="h-8 w-8 text-rose-500 animate-pulse" />
+      </div>
+      <h2 className="text-2xl font-bold text-white sm:text-3xl tracking-tight">{title}</h2>
+      <p className="mt-2.5 max-w-md text-sm text-white/65 leading-relaxed">
+        {description}
+      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-white/20 active:scale-95 cursor-pointer backdrop-blur-md"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Go Back</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-black transition hover:bg-white/90 active:scale-95 cursor-pointer shadow-lg shadow-white/10"
+        >
+          <Home className="h-4 w-4" />
+          <span>Go Home</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const DetailsRoute: React.FC<DetailsRouteProps> = ({
   type,
   selectedItem,
@@ -119,24 +158,54 @@ const DetailsRoute: React.FC<DetailsRouteProps> = ({
 }) => {
   const { id } = useParams<{ id: string }>();
   const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const activeItem = (selectedItem && selectedItem.id === id) ? selectedItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
 
   useEffect(() => {
-    if (!id || (selectedItem && selectedItem.id === id)) return;
+    if (!id) return;
+    if (selectedItem && selectedItem.id === id) {
+      setIsLoading(false);
+      return;
+    }
     let isMounted = true;
-    resolveRouteMedia(id, type).then((resolved) => {
-      if (isMounted && resolved) {
-        setResolvedItem(resolved);
-        setSelectedItem(resolved);
-      }
-    });
+    setIsLoading(true);
+    setNotFound(false);
+    resolveRouteMedia(id, type)
+      .then((resolved) => {
+        if (isMounted) {
+          if (resolved) {
+            setResolvedItem(resolved);
+            setSelectedItem(resolved);
+          } else {
+            setNotFound(true);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setNotFound(true);
+          setIsLoading(false);
+        }
+      });
     return () => {
       isMounted = false;
     };
   }, [id, type, selectedItem, setSelectedItem]);
 
-  if (!activeItem) {
+  if (notFound) {
+    return (
+      <NotFoundState
+        title="Title Not Found"
+        description={`The requested ${type === 'tv' ? 'TV show' : 'movie'} could not be found or is currently unavailable.`}
+        onBack={onBack}
+      />
+    );
+  }
+
+  if (isLoading || !activeItem) {
     return <div className="min-h-screen bg-transparent" />;
   }
 
@@ -178,24 +247,58 @@ const AnimeDetailsRoute: React.FC<AnimeDetailsRouteProps> = ({
 }) => {
   const { id } = useParams<{ id: string }>();
   const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const activeItem = (selectedItem && selectedItem.id === id) ? selectedItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
 
   useEffect(() => {
-    if (!id || (selectedItem && selectedItem.id === id)) return;
+    if (!id) {
+      setNotFound(true);
+      setIsLoading(false);
+      return;
+    }
+    if (selectedItem && selectedItem.id === id) {
+      setIsLoading(false);
+      return;
+    }
     let isMounted = true;
-    resolveRouteMedia(id, 'anime').then((resolved) => {
-      if (isMounted && resolved) {
-        setResolvedItem(resolved);
-        setSelectedItem(resolved);
-      }
-    });
+    setIsLoading(true);
+    setNotFound(false);
+    resolveRouteMedia(id, 'anime')
+      .then((resolved) => {
+        if (isMounted) {
+          if (resolved) {
+            setResolvedItem(resolved);
+            setSelectedItem(resolved);
+          } else {
+            setNotFound(true);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setNotFound(true);
+          setIsLoading(false);
+        }
+      });
     return () => {
       isMounted = false;
     };
   }, [id, selectedItem, setSelectedItem]);
 
-  if (!activeItem) {
+  if (notFound) {
+    return (
+      <NotFoundState
+        title="Anime Not Found"
+        description="The requested anime title could not be found or is currently unavailable."
+        onBack={onBack}
+      />
+    );
+  }
+
+  if (isLoading || !activeItem) {
     return <div className="min-h-screen bg-transparent" />;
   }
 
@@ -224,22 +327,64 @@ const WatchMovieRoute: React.FC<WatchMovieRouteProps> = ({
 }) => {
   const { id } = useParams<{ id: string }>();
   const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const activeItem = (playingItem && playingItem.id === id) ? playingItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
 
   useEffect(() => {
-    if (!id || (playingItem && playingItem.id === id)) return;
+    if (!id) {
+      setNotFound(true);
+      setIsLoading(false);
+      return;
+    }
+    if (playingItem && playingItem.id === id) {
+      setIsLoading(false);
+      return;
+    }
     let isMounted = true;
-    resolveRouteMedia(id, 'movie').then((resolved) => {
-      if (isMounted && resolved) {
-        setResolvedItem(resolved);
-        setPlayingItem(resolved);
-      }
-    });
+    setIsLoading(true);
+    setNotFound(false);
+    resolveRouteMedia(id, 'movie')
+      .then((resolved) => {
+        if (isMounted) {
+          if (resolved) {
+            setResolvedItem(resolved);
+            setPlayingItem(resolved);
+          } else {
+            setNotFound(true);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setNotFound(true);
+          setIsLoading(false);
+        }
+      });
     return () => { isMounted = false; };
   }, [id, playingItem, setPlayingItem]);
 
-  if (!activeItem) {
+  if (notFound) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">Video Unavailable</h2>
+        <p className="mt-2 text-sm text-white/60">
+          The requested movie could not be found or cannot be played.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90 cursor-pointer"
+        >
+          Close Player
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading || !activeItem) {
     return <div className="min-h-screen bg-black" />;
   }
 
@@ -270,22 +415,64 @@ const WatchTvRoute: React.FC<WatchTvRouteProps> = ({
   const season = Number(searchParams.get('season')) || 1;
   const episode = Number(searchParams.get('episode')) || 1;
   const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const activeItem = (playingItem && playingItem.id === id) ? playingItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
 
   useEffect(() => {
-    if (!id || (playingItem && playingItem.id === id)) return;
+    if (!id) {
+      setNotFound(true);
+      setIsLoading(false);
+      return;
+    }
+    if (playingItem && playingItem.id === id) {
+      setIsLoading(false);
+      return;
+    }
     let isMounted = true;
-    resolveRouteMedia(id, 'tv').then((resolved) => {
-      if (isMounted && resolved) {
-        setResolvedItem(resolved);
-        setPlayingItem(resolved);
-      }
-    });
+    setIsLoading(true);
+    setNotFound(false);
+    resolveRouteMedia(id, 'tv')
+      .then((resolved) => {
+        if (isMounted) {
+          if (resolved) {
+            setResolvedItem(resolved);
+            setPlayingItem(resolved);
+          } else {
+            setNotFound(true);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setNotFound(true);
+          setIsLoading(false);
+        }
+      });
     return () => { isMounted = false; };
   }, [id, playingItem, setPlayingItem]);
 
-  if (!activeItem) {
+  if (notFound) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">Video Unavailable</h2>
+        <p className="mt-2 text-sm text-white/60">
+          The requested TV show could not be found or cannot be played.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90 cursor-pointer"
+        >
+          Close Player
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading || !activeItem) {
     return <div className="min-h-screen bg-black" />;
   }
 
@@ -318,31 +505,64 @@ const WatchAnimeRoute: React.FC<WatchAnimeRouteProps> = ({
   const navigate = useNavigate();
   const episode = Number(epParam) || 1;
   const [resolvedItem, setResolvedItem] = useState<MediaItem | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const activeItem = (playingItem && playingItem.id === id) ? playingItem : (resolvedItem && resolvedItem.id === id) ? resolvedItem : null;
 
   useEffect(() => {
-    if (!id || (playingItem && playingItem.id === id)) return;
+    if (!id) {
+      setNotFound(true);
+      setIsLoading(false);
+      return;
+    }
+    if (playingItem && playingItem.id === id) {
+      setIsLoading(false);
+      return;
+    }
     let isMounted = true;
-    resolveRouteMedia(id, 'anime').then((resolved) => {
-      if (isMounted) {
-        const item = resolved || {
-          id,
-          title: 'Anime',
-          overview: '',
-          media_type: 'anime',
-          poster_path: '',
-          backdrop_path: '',
-          vote_average: 8.5,
-        };
-        setResolvedItem(item);
-        setPlayingItem(item);
-      }
-    });
+    setIsLoading(true);
+    setNotFound(false);
+    resolveRouteMedia(id, 'anime')
+      .then((resolved) => {
+        if (isMounted) {
+          if (resolved) {
+            setResolvedItem(resolved);
+            setPlayingItem(resolved);
+          } else {
+            setNotFound(true);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setNotFound(true);
+          setIsLoading(false);
+        }
+      });
     return () => { isMounted = false; };
   }, [id, playingItem, setPlayingItem]);
 
-  if (!activeItem) {
+  if (notFound) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">Video Unavailable</h2>
+        <p className="mt-2 text-sm text-white/60">
+          The requested anime could not be found or cannot be played.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90 cursor-pointer"
+        >
+          Close Player
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading || !activeItem) {
     return <div className="min-h-screen bg-black" />;
   }
 
@@ -371,35 +591,16 @@ const AppContent: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
 
   const lenisRef = useRef<Lenis | null>(null);
-  const lastActiveMediaRef = useRef<MediaItem | null>(null);
 
   const isWatchRoute = location.pathname.startsWith('/watch/');
   const currentRouteKey = getRouteKeyFromPath(location.pathname);
 
-  useEffect(() => {
-    if (playingItem) {
-      lastActiveMediaRef.current = playingItem;
-    } else if (selectedItem) {
-      lastActiveMediaRef.current = selectedItem;
-    }
-  }, [playingItem, selectedItem]);
-
-  // Purge disk/memory cache when navigating away from a media view
-  useEffect(() => {
-    const isMediaRoute =
-      location.pathname.startsWith('/movie/') ||
-      location.pathname.startsWith('/tv/') ||
-      location.pathname.startsWith('/anime/') ||
-      location.pathname.startsWith('/watch/');
-
-    if (!isMediaRoute && lastActiveMediaRef.current) {
-      purgeMediaItemCache(lastActiveMediaRef.current);
-      lastActiveMediaRef.current = null;
-    }
-  }, [location.pathname]);
-
   // Initialize Lenis smooth scroll
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
+      return;
+    }
+
     const lenis = new Lenis({
       autoRaf: true,
       duration: 1.1,
@@ -458,24 +659,14 @@ const AppContent: React.FC = () => {
   // Navigation handlers
   const handleNavigate = useCallback(
     (route: string) => {
-      if (selectedItem) {
-        purgeMediaItemCache(selectedItem);
-      }
-      if (playingItem) {
-        purgeMediaItemCache(playingItem);
-      }
-      lastActiveMediaRef.current = null;
       setSelectedItem(null);
       navigate(getRouteHref(route));
     },
-    [selectedItem, playingItem, navigate]
+    [navigate]
   );
 
   const handleOpenDetails = useCallback(
     (item: MediaItem) => {
-      if (selectedItem && selectedItem.id !== item.id) {
-        purgeMediaItemCache(selectedItem);
-      }
       setSelectedItem(item);
       if (item.media_type === 'anime') {
         navigate(`/anime/${item.id}`);
@@ -483,7 +674,7 @@ const AppContent: React.FC = () => {
         navigate(`/${item.media_type === 'tv' ? 'tv' : 'movie'}/${item.id}`);
       }
     },
-    [selectedItem, navigate]
+    [navigate]
   );
 
   const handlePlay = useCallback(
@@ -501,9 +692,6 @@ const AppContent: React.FC = () => {
   );
 
   const handleClosePlayer = useCallback(() => {
-    if (playingItem) {
-      purgeMediaItemCache(playingItem);
-    }
     setPlayingItem(null);
     if (selectedItem) {
       if (selectedItem.media_type === 'anime') {
@@ -514,7 +702,7 @@ const AppContent: React.FC = () => {
     } else {
       navigate(-1);
     }
-  }, [playingItem, selectedItem, navigate]);
+  }, [selectedItem, navigate]);
 
   return (
     <div className="relative flex min-h-screen flex-col font-sans bg-transparent text-foreground">
@@ -592,50 +780,17 @@ const AppContent: React.FC = () => {
                   }
                 />
                 <Route path="/anime/browse" element={<Navigate to="/anime" replace />} />
-                <Route path="/sports" element={<LiveSportsPage />} />
-                <Route path="/livesports" element={<Navigate to="/sports" replace />} />
-                <Route path="/music" element={<MusicPage />} />
-                <Route
-                  path="/providers"
-                  element={
-                    <ProvidersPage
-                      onPlay={handlePlay}
-                      onOpenDetails={handleOpenDetails}
-                      watchlist={watchlist}
-                      onToggleWatchlist={handleToggleWatchlist}
-                    />
-                  }
-                />
-                <Route
-                  path="/watchlist"
-                  element={
-                    <WatchlistPage
-                      watchlist={watchlist}
-                      savedItems={savedMediaItems}
-                      onPlay={handlePlay}
-                      onOpenDetails={handleOpenDetails}
-                      onToggleWatchlist={handleToggleWatchlist}
-                      onClearWatchlist={handleClearWatchlist}
-                      onNavigate={handleNavigate}
-                    />
-                  }
-                />
-                <Route path="/continue-watching" element={<Navigate to="/watchlist" replace />} />
+                <Route path="/sports" element={<ComingSoonPage feature="sports" onNavigate={handleNavigate} />} />
+                <Route path="/livesports" element={<ComingSoonPage feature="sports" onNavigate={handleNavigate} />} />
+                <Route path="/music" element={<ComingSoonPage feature="music" onNavigate={handleNavigate} />} />
+                <Route path="/providers" element={<ComingSoonPage feature="providers" onNavigate={handleNavigate} />} />
+                <Route path="/watchlist" element={<ComingSoonPage feature="watchlist" onNavigate={handleNavigate} />} />
+                <Route path="/continue-watching" element={<ComingSoonPage feature="continue-watching" onNavigate={handleNavigate} />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route
-                  path="/ai"
-                  element={
-                    <AISearchPage
-                      onPlay={handlePlay}
-                      onOpenDetails={handleOpenDetails}
-                      watchlist={watchlist}
-                      onToggleWatchlist={handleToggleWatchlist}
-                    />
-                  }
-                />
-                <Route path="/ai-search" element={<Navigate to="/ai" replace />} />
-                <Route path="/search" element={<Navigate to="/ai" replace />} />
-                <Route path="/discover" element={<Navigate to="/ai" replace />} />
+                <Route path="/ai" element={<ComingSoonPage feature="ai" onNavigate={handleNavigate} />} />
+                <Route path="/ai-search" element={<ComingSoonPage feature="ai" onNavigate={handleNavigate} />} />
+                <Route path="/search" element={<ComingSoonPage feature="ai" onNavigate={handleNavigate} />} />
+                <Route path="/discover" element={<ComingSoonPage feature="discover" onNavigate={handleNavigate} />} />
 
                 <Route path="/details/movie/:id" element={<DetailsRouteAlias type="movie" />} />
                 <Route path="/details/tv/:id" element={<DetailsRouteAlias type="tv" />} />
@@ -654,7 +809,6 @@ const AppContent: React.FC = () => {
                       watchlist={watchlist}
                       onToggleWatchlist={handleToggleWatchlist}
                       onBack={() => {
-                        if (selectedItem) purgeMediaItemCache(selectedItem);
                         handleNavigate('home');
                       }}
                     />
@@ -672,7 +826,6 @@ const AppContent: React.FC = () => {
                       watchlist={watchlist}
                       onToggleWatchlist={handleToggleWatchlist}
                       onBack={() => {
-                        if (selectedItem) purgeMediaItemCache(selectedItem);
                         handleNavigate('home');
                       }}
                     />
@@ -689,7 +842,6 @@ const AppContent: React.FC = () => {
                       watchlist={watchlist}
                       onToggleWatchlist={handleToggleWatchlist}
                       onBack={() => {
-                        if (selectedItem) purgeMediaItemCache(selectedItem);
                         handleNavigate('anime');
                       }}
                     />

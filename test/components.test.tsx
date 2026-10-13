@@ -1,11 +1,13 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { Navbar } from '../src/components/Navbar';
 import { PosterCard } from '../src/components/PosterCard';
 import { MediaCard } from '../src/components/MediaCard';
 import { MediaRail } from '../src/components/MediaRail';
 import { SearchModal } from '../src/components/SearchModal';
+import { ComingSoonPage } from '../src/pages/ComingSoonPage';
 import { MediaItem } from '../src/types/media';
 
 const mockMovie: MediaItem = {
@@ -108,7 +110,7 @@ describe('Component Testing Suite (TEST-02)', () => {
       expect(screen.getAllByText('8.8').length).toBeGreaterThan(0);
 
       // Click card to open details
-      const card = titles[0].closest('div[role="button"]');
+      const card = titles[0].closest('[tabIndex="0"]') || titles[0].closest('div');
       if (card) fireEvent.click(card);
       expect(onOpenDetails).toHaveBeenCalledWith(mockMovie);
 
@@ -202,4 +204,74 @@ describe('Component Testing Suite (TEST-02)', () => {
       });
     });
   });
+
+  describe('ComingSoonPage Component', () => {
+    it('renders feature-specific copy for Live Sports', () => {
+      render(
+        <MemoryRouter initialEntries={['/sports']}>
+          <ComingSoonPage feature="sports" />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Live Sports Broadcasts')).toBeInTheDocument();
+      expect(screen.getByText(/Live Stadium Feeds · Coming Soon/i)).toBeInTheDocument();
+      expect(screen.getByText('Ultra HD 60FPS Feeds')).toBeInTheDocument();
+    });
+
+    it('renders feature-specific copy for AI Search and Music', () => {
+      const { rerender } = render(
+        <MemoryRouter initialEntries={['/ai']}>
+          <ComingSoonPage feature="ai" />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('AI Natural Language Search')).toBeInTheDocument();
+      expect(screen.getByText(/Neural Discovery · Coming Soon/i)).toBeInTheDocument();
+
+      rerender(
+        <MemoryRouter initialEntries={['/music']}>
+          <ComingSoonPage feature="music" />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Soundtracks & OST Player')).toBeInTheDocument();
+      expect(screen.getByText(/Lossless Audio Engine · Coming Soon/i)).toBeInTheDocument();
+    });
+
+    it('toggles notify subscription and updates localStorage', () => {
+      localStorage.clear();
+
+      render(
+        <MemoryRouter initialEntries={['/discover']}>
+          <ComingSoonPage feature="discover" />
+        </MemoryRouter>
+      );
+
+      const notifyButton = screen.getByRole('button', { name: /Notify Me When Live/i });
+      fireEvent.click(notifyButton);
+
+      expect(screen.getByText(/On Early Access List/i)).toBeInTheDocument();
+      const stored = JSON.parse(localStorage.getItem('streamverse_coming_soon_alerts') || '[]');
+      expect(stored).toContain('discover');
+    });
+
+    it('triggers onNavigate callbacks when navigation buttons are clicked', () => {
+      const onNavigate = vi.fn();
+
+      render(
+        <MemoryRouter initialEntries={['/providers']}>
+          <ComingSoonPage feature="providers" onNavigate={onNavigate} />
+        </MemoryRouter>
+      );
+
+      const homeBtn = screen.getByRole('button', { name: /Back to Home/i });
+      fireEvent.click(homeBtn);
+      expect(onNavigate).toHaveBeenCalledWith('home');
+
+      const exploreBtn = screen.getByRole('button', { name: /Explore Trending Movies/i });
+      fireEvent.click(exploreBtn);
+      expect(onNavigate).toHaveBeenCalledWith('movie');
+    });
+  });
 });
+

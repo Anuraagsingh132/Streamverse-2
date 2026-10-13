@@ -5,6 +5,7 @@ import { liveActionMovies, liveGenreConfigs } from '../data/cinemaosLiveMatch';
 import { allMedia } from '../data/mediaData';
 import { getByGenre, GENRE_NAME_TO_MOVIE_ID, GENRE_NAME_TO_TV_ID } from '../services/tmdb';
 import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
+import { FALLBACK_BACKDROP } from '../utils/imageUtils';
 
 interface GenreRailProps {
   onPlay: (item: MediaItem) => void;
@@ -96,8 +97,8 @@ export const GenreRail: React.FC<GenreRailProps> = ({
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="flex items-center gap-2.5">
-                <div className="h-3.5 w-[3px] rounded-full bg-rose-600" aria-hidden="true" />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+                <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
                   Find your mood
                 </p>
               </div>
@@ -153,8 +154,8 @@ export const GenreRail: React.FC<GenreRailProps> = ({
           <div
             className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-3 pb-3 pt-1 sm:gap-4 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black 100%)'
+              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
             }}
           >
             {genres.map((genre) => {
@@ -187,7 +188,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                       background: `linear-gradient(135deg, ${genre.color} 0%, rgba(0,0,0,0.4) 45%, rgba(0,0,0,0.85) 100%)`
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
                   <span className="absolute bottom-3 left-3.5 right-3 text-base font-black leading-tight tracking-tight text-white drop-shadow-lg sm:text-lg">
                     {genre.name}
                   </span>
@@ -279,10 +280,18 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                           decoding="async"
                           className="object-cover transition-[filter,transform] duration-700 group-hover:scale-105 h-full w-full"
                           src={
-                            item.backdrop_path?.includes('image.tmdb.org/t/p/')
-                              ? item.backdrop_path.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/')
-                              : item.backdrop_path
+                            (item.backdrop_path || item.poster_path)?.includes('image.tmdb.org/t/p/')
+                              ? (item.backdrop_path || item.poster_path)!.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/')
+                              : (item.backdrop_path || item.poster_path || FALLBACK_BACKDROP)
                           }
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (item.poster_path && target.src !== item.poster_path) {
+                              target.src = item.poster_path;
+                            } else if (target.src !== FALLBACK_BACKDROP) {
+                              target.src = FALLBACK_BACKDROP;
+                            }
+                          }}
                         />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
 

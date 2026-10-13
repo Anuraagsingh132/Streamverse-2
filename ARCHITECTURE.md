@@ -10,7 +10,7 @@ Streamverse 2 is a single-page media streaming and discovery application built w
 
 ### Key Architectural Pillars:
 1. **Decoupled Discovery & Streaming Layers**: Media browsing (TMDB & AniList) is separated from playback logic (`CinemaOSPlayer` & `HDHubPlayer`).
-2. **Dual-Engine Player Architecture**: Seamless switching between direct native HTML5 video streaming (via PixelDrain / Pengu / Cloudflare CDN streams with custom WebVTT subtitle parsing) and multi-provider iframe fallbacks (CinemaOS, VidSrc, AutoEmbed).
+2. **Dual-Engine Player Architecture**: Seamless switching between direct native HTML5 video streaming (via PixelDrain / Pengu / Cloudflare CDN streams with custom WebVTT subtitle parsing) and CinemaOS embed fallback.
 3. **Synchronized History Routing**: Client-side lightweight browser history routing with URL persistence (`/movie/:id`, `/tv/:id`, `/anime/:id`, `/watch/...`) and modal overlays.
 4. **Resilient Data Layer**: In-memory caching (`Map`), fallback API keys, curated offline metadata, and safe image CDN re-writers (`optimizeTmdbImage`).
 
@@ -33,11 +33,11 @@ Streamverse 2 is a single-page media streaming and discovery application built w
            | - Providers   |            |                         |
            +---------------+    +-------v-------+         +-------v-------+
                                 | Direct Player |         | Fallback      |
-                                | (HDHubPlayer) |         | Iframes       |
+                                | (HDHubPlayer) |         | Iframe        |
                                 | - PixelDrain  |         | - CinemaOS    |
-                                | - Pengu CDN   |         | - VidSrc      |
-                                | - Subtitles   |         | - AutoEmbed   |
-                                +---------------+         +---------------+
+                                | - Pengu CDN   |         |               |
+                                | - Subtitles   |         +---------------+
+                                +---------------+
 ```
 
 ---
@@ -147,9 +147,7 @@ The video player system is located in `src/components/CinemaOSPlayer.tsx` and `s
 3. **Fallback Providers**:
    - If direct playback is disabled or fails, `CinemaOSPlayer` falls back to high-res embed iframes:
      - CinemaOS Engine
-     - VidSrc / VidLink
-     - AutoEmbed
-     - MultiEmbed
+     - MegaPlay (Sub / Dub for Anime)
 
 ---
 

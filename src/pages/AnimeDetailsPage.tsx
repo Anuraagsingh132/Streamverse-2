@@ -19,6 +19,7 @@ import { resolveAnimeToTmdb } from '../services/animeResolver';
 import { SEOHead } from '../components/SEOHead';
 import { GlassBackButton } from '../components/details/GlassBackButton';
 import { purgeMediaItemCache } from '../utils/cacheManager';
+import { FALLBACK_BACKDROP } from '../utils/imageUtils';
 
 interface AnimeDetailsPageProps {
   item: MediaItem;
@@ -609,6 +610,14 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                     src={ep.still_path || d.backdrop_path}
                     alt={ep.title}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (d.backdrop_path && target.src !== d.backdrop_path) {
+                        target.src = d.backdrop_path;
+                      } else if (target.src !== FALLBACK_BACKDROP) {
+                        target.src = FALLBACK_BACKDROP;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/10 transition-opacity duration-500 group-hover:opacity-90" />
 
@@ -658,6 +667,14 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                     src={ep.still_path || d.backdrop_path}
                     alt={ep.title}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (d.backdrop_path && target.src !== d.backdrop_path) {
+                        target.src = d.backdrop_path;
+                      } else if (target.src !== FALLBACK_BACKDROP) {
+                        target.src = FALLBACK_BACKDROP;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/10 transition-opacity duration-500 group-hover:opacity-90" />
 
@@ -810,6 +827,14 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                     src={rel.image}
                     alt={rel.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (d.backdrop_path && target.src !== d.backdrop_path) {
+                        target.src = d.backdrop_path;
+                      } else if (target.src !== FALLBACK_BACKDROP) {
+                        target.src = FALLBACK_BACKDROP;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                   <span className="absolute left-2.5 top-2.5 rounded-md border border-white/10 bg-secondary/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary-foreground backdrop-blur-md">
@@ -884,6 +909,14 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                     src={rec.image}
                     alt={rec.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (d.backdrop_path && target.src !== d.backdrop_path) {
+                        target.src = d.backdrop_path;
+                      } else if (target.src !== FALLBACK_BACKDROP) {
+                        target.src = FALLBACK_BACKDROP;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                   <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">

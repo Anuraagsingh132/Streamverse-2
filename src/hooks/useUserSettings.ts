@@ -1,7 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../utils/pixeldrain';
 
-export type VideoServerId = 'hdhub' | 'pengu' | 'cinemaos' | 'vidsrc' | 'autoembed';
+export type VideoServerId =
+  | 'hdhub'
+  | 'pengu'
+  | 'cinemaos'
+  | 'vidsrc-sh'
+  | 'videasy'
+  | 'vidfast'
+  | 'vidlux'
+  | 'vidlove'
+  | 'vidrock'
+  | 'mappletv'
+  | 'vixsrc';
 export type VideoQuality = '1080p' | '720p' | '4k' | 'auto';
 export type SubtitleSize = 'small' | 'medium' | 'large';
 
@@ -49,7 +60,19 @@ export function validateSubtitleSize(raw: string | null | undefined): SubtitleSi
 export function getStoredUserSettings(): UserSettings {
   try {
     const rawServer = localStorage.getItem(STORAGE_KEYS.defaultServer);
-    const validServers: VideoServerId[] = ['hdhub', 'pengu', 'cinemaos', 'vidsrc', 'autoembed'];
+    const validServers: VideoServerId[] = [
+      'hdhub',
+      'pengu',
+      'cinemaos',
+      'vidsrc-sh',
+      'videasy',
+      'vidfast',
+      'vidlux',
+      'vidlove',
+      'vidrock',
+      'mappletv',
+      'vixsrc'
+    ];
     const defaultServer = (rawServer && validServers.includes(rawServer as VideoServerId))
       ? (rawServer as VideoServerId)
       : DEFAULT_USER_SETTINGS.defaultServer;

@@ -127,6 +127,7 @@ export function useScrubberDrag({
 
     const handleWindowTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 0) return;
+      e.preventDefault();
       const { percent, time } = calculateScrubTime(e.touches[0].clientX);
       setHoverProgress({ xPercent: percent, time });
       onSeek(time);
@@ -157,7 +158,7 @@ export function useScrubberDrag({
 
     window.addEventListener('mousemove', handleWindowMouseMove);
     window.addEventListener('mouseup', handleWindowMouseUp);
-    window.addEventListener('touchmove', handleWindowTouchMove, { passive: true });
+    window.addEventListener('touchmove', handleWindowTouchMove, { passive: false });
     window.addEventListener('touchend', handleWindowTouchEnd);
 
     return () => {

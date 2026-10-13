@@ -2,6 +2,7 @@ import { getImdbId } from './tmdb';
 import { MediaType } from '../types/media';
 import { HDHubStream, parseStreamBitrate, parseAudioCodec } from './hdhub';
 import { resolvePixelDrainStreamUrl, registerPixelDrainCacheInvalidator } from '../utils/pixeldrain';
+import { LRUCache } from '../utils/lruCache';
 
 const PENGU_BASE_RESOLVER = 'https://pengu.uk/%7B%22auth_token%22%3A%22QAgjPjVLyWOqIlIqXBXTjGamncIkhZZzliQBgU3x2zg%22%7D/stream';
 
@@ -11,18 +12,14 @@ export interface PenguResolutionResult {
   error?: string;
 }
 
-// In-memory cache for resolved streams
-const penguCache = new Map<string, { timestamp: number; result: PenguResolutionResult }>();
+// In-memory bounded LRU cache for resolved streams (capped at 50 entries)
+const penguCache = new LRUCache<string, { timestamp: number; result: PenguResolutionResult }>(50);
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export function clearPenguCache(targetId?: string | number): void {
   if (targetId !== undefined && targetId !== null) {
     const idStr = String(targetId);
-    for (const key of Array.from(penguCache.keys())) {
-      if (key.includes(idStr)) {
-        penguCache.delete(key);
-      }
-    }
+    penguCache.deleteWhere((key) => key.includes(idStr));
   } else {
     penguCache.clear();
   }
@@ -129,11 +126,12 @@ export async function fetchPenguStreams(
     imdbId = (await getImdbId(tmdbId, mediaType)) || undefined;
   }
 
-  if (!imdbId) {
+  // Validate IMDb ID format (/^tt\d{6,10}$/)
+  if (!imdbId || !/^tt\d{6,10}$/.test(imdbId)) {
     return {
-      imdbId: '',
+      imdbId: imdbId || '',
       streams: [],
-      error: 'IMDb ID not found for this media title. Direct cloud streams require an IMDb identifier.'
+      error: 'IMDb ID not found or invalid format for this media title. Direct cloud streams require a valid IMDb identifier.'
     };
   }
 
@@ -175,12 +173,12 @@ export async function fetchPenguStreams(
       return result;
     }
 
-    // Filter valid streaming URLs (exclude unsupported DASH formats like .mpd or /dash/ which cannot play in Hls.js/HTML5 video)
+    // Filter valid streaming URLs (enforce https:// only, exclude unsupported DASH formats like .mpd or /dash/ which cannot play in Hls.js/HTML5 video)
     const validStreams = rawStreams.filter(
       (s) =>
         s &&
         typeof s.url === 'string' &&
-        s.url.trim().startsWith('http') &&
+        s.url.trim().startsWith('https://') &&
         !s.url.includes('/dash/') &&
         !s.url.includes('.mpd')
     );

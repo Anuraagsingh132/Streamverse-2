@@ -102,20 +102,20 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
         <span className="card-3d-glare" aria-hidden="true" />
       </div>
 
-      {/* Card Metadata matching cinemaos.tech */}
+      {/* Card Metadata */}
       <div className="mt-2 px-0.5">
-        <h3 className="truncate text-[13px] font-semibold leading-tight text-foreground dark:text-white">
+        <h3 className="truncate text-sm font-semibold leading-tight text-white/95">
           {item.title}
         </h3>
         <div className="mt-1 flex items-center gap-1.5">
-          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary">
+          <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-rose-400">
             {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Movie'}
           </span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-xs font-medium text-white/65">
             {item.year || 2026}
           </span>
-          <span className="ml-auto flex items-center gap-0.5 text-[11px] text-muted-foreground">
-            <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+          <span className="ml-auto flex items-center gap-1 text-xs font-medium text-white/70">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
             {item.vote_average ? item.vote_average.toFixed(1) : '8.0'}
           </span>
         </div>

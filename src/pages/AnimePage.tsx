@@ -22,6 +22,7 @@ function getFallbackAnimeData(): Promise<Record<string, any[]>> {
 }
 import { getCachedAnimeLogo } from '../services/animeLogo';
 import { SEOHead } from '../components/SEOHead';
+import { FALLBACK_BACKDROP } from '../utils/imageUtils';
 
 interface AnimePageProps {
   onPlay: (item: MediaItem) => void;
@@ -89,13 +90,9 @@ export const AnimePage: React.FC<AnimePageProps> = ({
   const [isLoadingGenre, setIsLoadingGenre] = useState<boolean>(false);
   const [railsData, setRailsData] = useState<Record<string, any[]>>({});
   const [heroSlides] = useState<any[]>(animeHeroSlides);
-  const hasLoadedRef = useRef(false);
-
+ 
   // Progressive background fetch for rails to keep UI snappy without 429 errors or lag
   useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-
     let isMounted = true;
 
     // Load fallback anime data asynchronously in background
@@ -241,22 +238,25 @@ export const AnimePage: React.FC<AnimePageProps> = ({
         onToggleWatchlist={onToggleWatchlist}
       />
 
-      {/* Main Content Overlapping Hero Banner (1:1 with cinemaos.tech) */}
-      <div className="relative z-10 -mt-[32vh] sm:-mt-20 md:-mt-24 lg:-mt-52 4xl:-mt-72">
+      {/* Main Content Cleanly Below Hero Banner */}
+      <div 
+        className="relative z-10"
+        style={{ marginTop: '-36px' }}
+      >
         <div className="flex w-full flex-col gap-0">
           
           {/* Sticky Genre Pills Filter Bar */}
-          <div className="sticky top-14 z-20 w-full backdrop-blur-sm">
-            <div className="scrollbar-hide flex gap-2 overflow-x-auto px-5 py-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+          <div className="sticky top-14 z-20 w-full bg-[#060812]/90 backdrop-blur-md border-b border-white/5 py-1.5">
+            <div className="scrollbar-hide flex gap-2 overflow-x-auto px-5 py-1.5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
               {GENRES.map((genre) => (
                 <button
                   key={genre}
                   type="button"
                   onClick={() => handleSelectGenre(genre)}
-                  className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition duration-150 cursor-pointer ${
+                  className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition duration-150 cursor-pointer ${
                     selectedGenre === genre
-                      ? 'border-white bg-white text-black shadow'
-                      : 'border-white/15 bg-white/10 text-white/70 backdrop-blur-md hover:bg-white/20 hover:text-white'
+                      ? 'border-white bg-white text-black shadow-md'
+                      : 'border-white/15 bg-white/10 text-white/80 backdrop-blur-md hover:bg-white/20 hover:text-white'
                   }`}
                 >
                   {genre}
@@ -513,15 +513,22 @@ const AnimeCard = React.memo(function AnimeCard({ item, onClick }: { item: any; 
         onClick={onClick}
         className="group relative flex aspect-video w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 transition duration-200 hover:border-primary/40 hover:shadow-lg hover:ring-1 hover:ring-primary/20 cursor-pointer"
       >
-        {image && (
-          <img
-            src={image}
-            alt={title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-            loading="lazy"
-            decoding="async"
-          />
-        )}
+        <img
+          src={image || FALLBACK_BACKDROP}
+          alt={title}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            const target = e.currentTarget;
+            const coverFallback = item.coverImage?.extraLarge || item.coverImage?.large;
+            if (coverFallback && target.src !== coverFallback) {
+              target.src = coverFallback;
+            } else if (target.src !== FALLBACK_BACKDROP) {
+              target.src = FALLBACK_BACKDROP;
+            }
+          }}
+        />
         
         {/* Dark bottom gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

@@ -1,6 +1,7 @@
 import { getImdbId } from './tmdb';
 import { MediaType } from '../types/media';
 import { resolvePixelDrainStreamUrl, registerPixelDrainCacheInvalidator } from '../utils/pixeldrain';
+import { LRUCache, deduplicateInFlight } from '../utils/lruCache';
 
 const HDHUB_BASE_RESOLVER = 'https://hdhub.thevolecitor.qzz.io/eyJ0b3Jib3giOiJ1bnNldCIsInF1YWxpdGllcyI6IjIxNjBwLDEwODBwLDcyMHAiLCJzb3J0IjoiZGVzYyJ9/stream';
 
@@ -32,25 +33,29 @@ export interface HDHubResolutionResult {
   error?: string;
 }
 
-// In-memory cache for resolved streams
-const streamCache = new Map<string, { timestamp: number; result: HDHubResolutionResult }>();
+// In-memory bounded LRU cache for resolved streams (T3-06, capped at 50 entries)
+const streamCache = new LRUCache<string, { timestamp: number; result: HDHubResolutionResult }>(50);
+const inFlightStreams = new Map<string, Promise<HDHubResolutionResult>>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export function clearHDHubCache(targetId?: string | number): void {
   if (targetId !== undefined && targetId !== null) {
     const idStr = String(targetId);
-    for (const key of Array.from(streamCache.keys())) {
+    streamCache.deleteWhere((key) => key.includes(idStr));
+    for (const key of Array.from(inFlightStreams.keys())) {
       if (key.includes(idStr)) {
-        streamCache.delete(key);
+        inFlightStreams.delete(key);
       }
     }
   } else {
     streamCache.clear();
+    inFlightStreams.clear();
   }
 }
 
 registerPixelDrainCacheInvalidator(() => {
   streamCache.clear();
+  inFlightStreams.clear();
 });
 
 export function parseAudioCodec(
@@ -266,11 +271,12 @@ export async function fetchHDHubStreams(
     imdbId = (await getImdbId(tmdbId, mediaType)) || undefined;
   }
 
-  if (!imdbId) {
+  // Validate IMDb ID format (/^tt\d{6,10}$/)
+  if (!imdbId || !/^tt\d{6,10}$/.test(imdbId)) {
     return {
-      imdbId: '',
+      imdbId: imdbId || '',
       streams: [],
-      error: 'IMDb ID not found for this media title. Direct cloud streams require an IMDb identifier.'
+      error: 'IMDb ID not found or invalid format for this media title. Direct cloud streams require a valid IMDb identifier.'
     };
   }
 
@@ -281,172 +287,168 @@ export async function fetchHDHubStreams(
     return cached.result;
   }
 
-  // 2. Query HDHub resolver endpoint with cache busting to guarantee live fresh stream URLs (bypasses browser disk cache)
-  const baseTargetUrl = isTV
-    ? `${HDHUB_BASE_RESOLVER}/series/${imdbId}:${season}:${episode}.json`
-    : `${HDHUB_BASE_RESOLVER}/movie/${imdbId}.json`;
-  const targetUrl = `${baseTargetUrl}?_t=${Date.now()}`;
+  return deduplicateInFlight(
+    cacheKey,
+    async () => {
+      // 2. Query HDHub resolver endpoint
+      const targetUrl = isTV
+        ? `${HDHUB_BASE_RESOLVER}/series/${imdbId}:${season}:${episode}.json`
+        : `${HDHUB_BASE_RESOLVER}/movie/${imdbId}.json`;
 
-  try {
-    const res = await fetch(targetUrl, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
+      try {
+        const res = await fetch(targetUrl, {
+          signal: AbortSignal.timeout(8000),
+          headers: {
+            Accept: 'application/json'
+          }
+        });
+        if (!res.ok) {
+          throw new Error(`HDHub resolver responded with HTTP status ${res.status}`);
+        }
+
+        const data = await res.json();
+        const rawStreams: any[] = Array.isArray(data.streams) ? data.streams : [];
+
+        if (rawStreams.length === 0) {
+          const result: HDHubResolutionResult = {
+            imdbId,
+            streams: [],
+            error: 'No active streams found on HDHub for this title yet.'
+          };
+          streamCache.set(cacheKey, { timestamp: Date.now(), result });
+          return result;
+        }
+
+        // 3. Map and organize streams (enforce https:// only on stream URLs)
+        const validStreams = rawStreams.filter(
+          (s) => s && typeof s.url === 'string' && s.url.trim().startsWith('https://')
+        );
+
+        if (validStreams.length === 0) {
+          const result: HDHubResolutionResult = {
+            imdbId,
+            streams: [],
+            error: 'No direct video streaming URLs found in HDHub response for this title.'
+          };
+          streamCache.set(cacheKey, { timestamp: Date.now(), result });
+          return result;
+        }
+
+        const mapped: HDHubStream[] = validStreams.map((s, idx) => {
+          const fullText = `${s.name || ''} ${s.description || ''} ${s.title || ''} ${s.url || ''} ${s.behaviorHints?.filename || ''}`;
+          const quality = parseQuality(fullText);
+          const codec = parseCodec(fullText);
+          const provider = parseProvider(s.url || '', fullText);
+          const isDownloadOnly = /download only/i.test(fullText);
+          const notWebReady = Boolean(s.behaviorHints?.notWebReady);
+          const isHls = Boolean(s.url?.includes('.m3u8') || fullText.toLowerCase().includes('hls'));
+
+          // Extract size
+          let sizeFormatted = formatBytes(s.behaviorHints?.videoSize);
+          if (!sizeFormatted) {
+            const match = fullText.match(/(\d+(?:\.\d+)?\s*(?:GB|MB))/i);
+            if (match) sizeFormatted = match[1];
+          }
+
+          const audio = parseAudioLanguages(fullText);
+          const audioCodecInfo = parseAudioCodec(fullText, isHls);
+          const bitrateInfo = parseStreamBitrate(fullText, s.behaviorHints?.videoSize, isTV);
+
+          // Route PixelDrain URLs through our local /api/pixeldrain proxy or direct CDN based on route settings
+          const streamUrl = resolvePixelDrainStreamUrl(s.url, fullText);
+
+          return {
+            id: `hdhub-${idx}-${s.url?.slice(-12) || idx}`,
+            name: s.name || `Stream ${idx + 1}`,
+            title: s.title || s.name || `HDHub Stream ${idx + 1}`,
+            description: s.description,
+            url: streamUrl,
+            quality,
+            codec,
+            provider,
+            bitrate: bitrateInfo.bitrate,
+            bitrateMbps: bitrateInfo.bitrateMbps,
+            requiredSpeed: bitrateInfo.requiredSpeed,
+            isHls,
+            audioLanguages: audio.languages,
+            audioLabel: audio.label,
+            audioCodec: audioCodecInfo.audioCodec,
+            isWebAudio: audioCodecInfo.isWebAudio,
+            sizeFormatted,
+            isDownloadOnly,
+            notWebReady
+          };
+        });
+
+        // 4. PixelDrain and HubCloud streams are fully enabled
+        const activeStreams = mapped;
+
+        if (activeStreams.length === 0) {
+          const result: HDHubResolutionResult = {
+            imdbId,
+            streams: [],
+            error: 'No active direct streams found on HDHub for this title.'
+          };
+          streamCache.set(cacheKey, { timestamp: Date.now(), result });
+          return result;
+        }
+
+        // 5. Sort: Web-compatible audio first, then Cloudflare R2 (zero compute). Within each, 1080p > 720p > 2160p
+        const sorted = activeStreams.sort((a, b) => {
+          // Prioritize Cloudflare R2 (direct zero-compute CDN streaming) over other providers
+          const providerScore = (p: HDHubStream['provider']) => {
+            if (p === 'Cloudflare R2') return 4;
+            if (p === 'PixelDrain') return 2;
+            if (p === 'HubCloud') return 1;
+            return 1;
+          };
+
+          const pDiff = providerScore(b.provider) - providerScore(a.provider);
+          if (pDiff !== 0) return pDiff;
+
+          // Prioritize streams with native web browser audio (AAC / Stereo) over DDP 5.1/TrueHD
+          if (a.isWebAudio !== b.isWebAudio) {
+            return (b.isWebAudio ? 1 : 0) - (a.isWebAudio ? 1 : 0);
+          }
+
+          // Prioritize 1080p > 720p > 2160p > Unknown
+          const qualityScore = (q: HDHubStream['quality']) => {
+            if (q === '1080p') return 4;
+            if (q === '720p') return 3;
+            if (q === '2160p') return 2;
+            if (q === '480p') return 1;
+            return 0;
+          };
+
+          const qDiff = qualityScore(b.quality) - qualityScore(a.quality);
+          if (qDiff !== 0) return qDiff;
+
+          // Prioritize H.264 over H.265 for broader native browser compatibility
+          const codecScore = (c: HDHubStream['codec']) => {
+            if (c === 'H.264') return 2;
+            if (c === 'H.265') return 1;
+            return 0;
+          };
+
+          return codecScore(b.codec) - codecScore(a.codec);
+        });
+
+        const result: HDHubResolutionResult = {
+          imdbId,
+          streams: sorted
+        };
+
+        streamCache.set(cacheKey, { timestamp: Date.now(), result });
+        return result;
+      } catch (err: any) {
+        console.error('HDHub stream fetch error:', err);
+        return {
+          imdbId,
+          streams: [],
+          error: err?.message || 'Failed to fetch streams from HDHub resolver.'
+        };
       }
-    });
-    if (!res.ok) {
-      throw new Error(`HDHub resolver responded with HTTP status ${res.status}`);
-    }
-
-    const data = await res.json();
-    const rawStreams: any[] = Array.isArray(data.streams) ? data.streams : [];
-
-    if (rawStreams.length === 0) {
-      const result: HDHubResolutionResult = {
-        imdbId,
-        streams: [],
-        error: 'No active streams found on HDHub for this title yet.'
-      };
-      streamCache.set(cacheKey, { timestamp: Date.now(), result });
-      return result;
-    }
-
-    // 3. Map and organize streams (filtering out any non-direct streams or donation/discord notices without valid URLs)
-    const validStreams = rawStreams.filter(
-      (s) => s && typeof s.url === 'string' && s.url.trim().startsWith('http')
-    );
-
-    if (validStreams.length === 0) {
-      const result: HDHubResolutionResult = {
-        imdbId,
-        streams: [],
-        error: 'No direct video streaming URLs found in HDHub response for this title.'
-      };
-      streamCache.set(cacheKey, { timestamp: Date.now(), result });
-      return result;
-    }
-
-    const mapped: HDHubStream[] = validStreams.map((s, idx) => {
-      const fullText = `${s.name || ''} ${s.description || ''} ${s.title || ''} ${s.url || ''} ${s.behaviorHints?.filename || ''}`;
-      const quality = parseQuality(fullText);
-      const codec = parseCodec(fullText);
-      const provider = parseProvider(s.url || '', fullText);
-      const isDownloadOnly = /download only/i.test(fullText);
-      const notWebReady = Boolean(s.behaviorHints?.notWebReady);
-      const isHls = Boolean(s.url?.includes('.m3u8') || fullText.toLowerCase().includes('hls'));
-
-      // Extract size
-      let sizeFormatted = formatBytes(s.behaviorHints?.videoSize);
-      if (!sizeFormatted) {
-        const match = fullText.match(/(\d+(?:\.\d+)?\s*(?:GB|MB))/i);
-        if (match) sizeFormatted = match[1];
-      }
-
-      const audio = parseAudioLanguages(fullText);
-      const audioCodecInfo = parseAudioCodec(fullText, isHls);
-      const bitrateInfo = parseStreamBitrate(fullText, s.behaviorHints?.videoSize, isTV);
-
-      // Route PixelDrain URLs through our local /api/pixeldrain proxy or direct CDN based on route settings
-      const streamUrl = resolvePixelDrainStreamUrl(s.url, fullText);
-
-      return {
-        id: `hdhub-${idx}-${s.url?.slice(-12) || idx}`,
-        name: s.name || `Stream ${idx + 1}`,
-        title: s.title || s.name || `HDHub Stream ${idx + 1}`,
-        description: s.description,
-        url: streamUrl,
-        quality,
-        codec,
-        provider,
-        bitrate: bitrateInfo.bitrate,
-        bitrateMbps: bitrateInfo.bitrateMbps,
-        requiredSpeed: bitrateInfo.requiredSpeed,
-        isHls,
-        audioLanguages: audio.languages,
-        audioLabel: audio.label,
-        audioCodec: audioCodecInfo.audioCodec,
-        isWebAudio: audioCodecInfo.isWebAudio,
-        sizeFormatted,
-        isDownloadOnly,
-        notWebReady
-      };
-    });
-
-    // 4. Temporarily disable PixelDrain and HubCloud servers (commented out as requested)
-    const activeStreams = mapped.filter((s) => {
-      /*
-      // To re-enable PixelDrain / HubCloud, uncomment the lines below:
-      if (s.provider === 'PixelDrain' || s.provider === 'HubCloud') {
-        return true;
-      }
-      */
-      return s.provider !== 'PixelDrain' && s.provider !== 'HubCloud';
-    });
-
-    if (activeStreams.length === 0) {
-      const result: HDHubResolutionResult = {
-        imdbId,
-        streams: [],
-        error: 'No active direct streams found on HDHub for this title (PixelDrain & HubCloud are temporarily disabled).'
-      };
-      streamCache.set(cacheKey, { timestamp: Date.now(), result });
-      return result;
-    }
-
-    // 5. Sort: Web-compatible audio first, then Cloudflare R2 (zero compute). Within each, 1080p > 720p > 2160p
-    const sorted = activeStreams.sort((a, b) => {
-      // Prioritize Cloudflare R2 (direct zero-compute CDN streaming) over other providers
-      const providerScore = (p: HDHubStream['provider']) => {
-        if (p === 'Cloudflare R2') return 4;
-        if (p === 'PixelDrain') return 2;
-        if (p === 'HubCloud') return 1;
-        return 1;
-      };
-
-      const pDiff = providerScore(b.provider) - providerScore(a.provider);
-      if (pDiff !== 0) return pDiff;
-
-      // Prioritize streams with native web browser audio (AAC / Stereo) over DDP 5.1/TrueHD
-      if (a.isWebAudio !== b.isWebAudio) {
-        return (b.isWebAudio ? 1 : 0) - (a.isWebAudio ? 1 : 0);
-      }
-
-      // Prioritize 1080p > 720p > 2160p > Unknown
-      const qualityScore = (q: HDHubStream['quality']) => {
-        if (q === '1080p') return 4;
-        if (q === '720p') return 3;
-        if (q === '2160p') return 2;
-        if (q === '480p') return 1;
-        return 0;
-      };
-
-      const qDiff = qualityScore(b.quality) - qualityScore(a.quality);
-      if (qDiff !== 0) return qDiff;
-
-      // Prioritize H.264 over H.265 for broader native browser compatibility
-      const codecScore = (c: HDHubStream['codec']) => {
-        if (c === 'H.264') return 2;
-        if (c === 'H.265') return 1;
-        return 0;
-      };
-
-      return codecScore(b.codec) - codecScore(a.codec);
-    });
-
-    const result: HDHubResolutionResult = {
-      imdbId,
-      streams: sorted
-    };
-
-    streamCache.set(cacheKey, { timestamp: Date.now(), result });
-    return result;
-  } catch (err: any) {
-    console.error('HDHub stream fetch error:', err);
-    return {
-      imdbId,
-      streams: [],
-      error: err?.message || 'Failed to fetch streams from HDHub resolver.'
-    };
-  }
+    },
+    inFlightStreams
+  );
 }

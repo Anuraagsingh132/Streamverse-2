@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MediaItem } from '../types/media';
+import { safeSetStorageItem, safeGetStorageItem } from '../utils/storageManager';
 
 export interface PlaybackRecord {
-  id: string | number;
-  tmdbId?: string | number;
+  id: string;
+  tmdbId?: string;
   media_type: 'movie' | 'tv' | 'anime';
   title: string;
   poster_path?: string;
@@ -19,6 +20,47 @@ export interface PlaybackRecord {
 export const CONTINUE_WATCHING_STORAGE_KEY = 'streamverse_playback_history';
 export const CONTINUE_WATCHING_CHANGE_EVENT = 'streamverse_playback_history_change';
 const MAX_HISTORY_RECORDS = 50;
+
+function normalizePlaybackRecord(r: any): PlaybackRecord {
+  return {
+    ...r,
+    id: String(r.id),
+    tmdbId: r.tmdbId ? String(r.tmdbId) : undefined,
+    currentTime: Number(r.currentTime) || 0,
+    duration: Number(r.duration) || 0,
+    progressPercent: Number(r.progressPercent) || 0,
+    updatedAt: Number(r.updatedAt) || 0
+  };
+}
+
+/**
+ * Merges two lists of playback records, resolving duplicate media/episode keys
+ * by retaining the record with the most recent `updatedAt` timestamp.
+ * Returns records sorted descending by `updatedAt` (MRU order), capped at MAX_HISTORY_RECORDS.
+ */
+export function mergePlaybackRecords(
+  primary: PlaybackRecord[],
+  secondary: PlaybackRecord[]
+): PlaybackRecord[] {
+  const map = new Map<string, PlaybackRecord>();
+  const getRecordKey = (r: PlaybackRecord) => {
+    const baseId = String(r.tmdbId || r.id);
+    const isSeries = r.media_type === 'tv' || r.media_type === 'anime' || r.season !== undefined;
+    return isSeries ? `${baseId}_s${r.season || 1}_e${r.episode || 1}` : `${baseId}_movie`;
+  };
+
+  for (const r of [...secondary, ...primary]) {
+    const key = getRecordKey(r);
+    const existing = map.get(key);
+    if (!existing || (r.updatedAt || 0) >= (existing.updatedAt || 0)) {
+      map.set(key, r);
+    }
+  }
+
+  return Array.from(map.values())
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    .slice(0, MAX_HISTORY_RECORDS);
+}
 
 /**
  * Migration & Cleanup: Purges legacy fragmented per-episode keys (DATA-05).
@@ -42,14 +84,13 @@ function cleanLegacyZombieKeys(): void {
 }
 
 function getInitialHistory(): PlaybackRecord[] {
-  if (typeof window === 'undefined' || !window.localStorage) return [];
+  cleanLegacyZombieKeys();
   try {
-    cleanLegacyZombieKeys();
-    const raw = window.localStorage.getItem(CONTINUE_WATCHING_STORAGE_KEY);
+    const raw = safeGetStorageItem(CONTINUE_WATCHING_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed.slice(0, MAX_HISTORY_RECORDS);
+      return parsed.map(normalizePlaybackRecord).slice(0, MAX_HISTORY_RECORDS);
     }
     return [];
   } catch {
@@ -62,17 +103,29 @@ let globalHistory: PlaybackRecord[] = getInitialHistory();
 function emitHistoryChange() {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(
+    safeSetStorageItem(
       CONTINUE_WATCHING_STORAGE_KEY,
       JSON.stringify(globalHistory.slice(0, MAX_HISTORY_RECORDS))
     );
   } catch (err) {
-    console.warn('Failed to persist playback history to localStorage', err);
+    console.warn('Failed to persist playback history to storage', err);
   }
 
   window.dispatchEvent(
     new CustomEvent(CONTINUE_WATCHING_CHANGE_EVENT, { detail: globalHistory })
   );
+}
+
+function readDiskRecords(): PlaybackRecord[] {
+  try {
+    const raw = safeGetStorageItem(CONTINUE_WATCHING_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map(normalizePlaybackRecord);
+    }
+  } catch {}
+  return [];
 }
 
 export function savePlaybackRecord(
@@ -82,7 +135,8 @@ export function savePlaybackRecord(
   const { currentTime, duration, season, episode } = progress;
   if (!Number.isFinite(currentTime) || currentTime < 5) return;
 
-  const baseId = String(item.tmdbId || item.id);
+  const strId = String(item.id);
+  const strTmdbId = item.tmdbId ? String(item.tmdbId) : undefined;
   const isSeries = item.media_type === 'tv' || item.media_type === 'anime' || season !== undefined;
 
   // If video is basically finished (last 15 seconds or > 95%), remove from continue watching
@@ -94,8 +148,8 @@ export function savePlaybackRecord(
   const percent = duration > 0 ? Math.min(100, Math.round((currentTime / duration) * 100)) : 0;
 
   const newRecord: PlaybackRecord = {
-    id: item.id,
-    tmdbId: item.tmdbId,
+    id: strId,
+    tmdbId: strTmdbId,
     media_type: (item.media_type as any) || (isSeries ? 'tv' : 'movie'),
     title: item.title || 'Untitled',
     poster_path: item.poster_path,
@@ -108,8 +162,13 @@ export function savePlaybackRecord(
     updatedAt: Date.now()
   };
 
-  // Remove matching existing record for same show/season/episode or same movie
-  globalHistory = globalHistory.filter((r) => {
+  // Merge with latest disk records by updatedAt before saving to prevent multi-tab overwrites
+  const diskRecords = readDiskRecords();
+  const baseMerged = mergePlaybackRecords(globalHistory, diskRecords);
+
+  // Remove existing matching entry for same media/episode
+  const baseId = strTmdbId || strId;
+  const filtered = baseMerged.filter((r) => {
     const rBaseId = String(r.tmdbId || r.id);
     if (rBaseId !== baseId) return true;
     if (isSeries) {
@@ -118,8 +177,7 @@ export function savePlaybackRecord(
     return false;
   });
 
-  // Prepend to top (MRU order) and cap at 50
-  globalHistory = [newRecord, ...globalHistory].slice(0, MAX_HISTORY_RECORDS);
+  globalHistory = [newRecord, ...filtered].slice(0, MAX_HISTORY_RECORDS);
   emitHistoryChange();
 }
 
@@ -129,7 +187,10 @@ export function removePlaybackRecord(
   episode?: number
 ): void {
   const targetId = String(id);
-  globalHistory = globalHistory.filter((r) => {
+  const diskRecords = readDiskRecords();
+  const merged = mergePlaybackRecords(globalHistory, diskRecords);
+
+  globalHistory = merged.filter((r) => {
     const matchId = String(r.id) === targetId || (r.tmdbId && String(r.tmdbId) === targetId);
     if (!matchId) return true;
     if (season !== undefined && episode !== undefined) {
@@ -165,12 +226,19 @@ export function useContinueWatchingStore() {
   useEffect(() => {
     const handleSync = (e: Event) => {
       if (e instanceof StorageEvent) {
-        if (e.key === CONTINUE_WATCHING_STORAGE_KEY && e.newValue) {
+        if (e.key === CONTINUE_WATCHING_STORAGE_KEY) {
+          if (e.newValue === null) {
+            // Storage cleared in another tab
+            globalHistory = [];
+            setHistory([]);
+            return;
+          }
           try {
             const parsed = JSON.parse(e.newValue);
             if (Array.isArray(parsed)) {
-              globalHistory = parsed;
-              setHistory(parsed);
+              const incoming = parsed.map(normalizePlaybackRecord);
+              globalHistory = mergePlaybackRecords(incoming, globalHistory);
+              setHistory(globalHistory);
               return;
             }
           } catch {

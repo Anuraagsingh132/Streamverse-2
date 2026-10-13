@@ -143,9 +143,11 @@ describe('Video Player Lifecycle Tests (TEST-03)', () => {
     });
 
     // Video element mounted with stream 1 URL
-    const video = document.querySelector('video');
-    expect(video).toBeInTheDocument();
-    expect(video).toHaveAttribute('src', mockStreams[0].url);
+    await waitFor(() => {
+      const video = document.querySelector('video');
+      expect(video).toBeInTheDocument();
+      expect(video).toHaveAttribute('src', mockStreams[0].url);
+    });
   });
 
   it('2. Stream switching correctly re-attaches source and resets state', async () => {
@@ -189,6 +191,10 @@ describe('Video Player Lifecycle Tests (TEST-03)', () => {
 
     const video = document.querySelector('video');
     expect(video).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(video).toHaveAttribute('src', mockStreams[0].url);
+    });
 
     // Trigger video error with code 4 (MEDIA_ERR_SRC_NOT_SUPPORTED) on prototype
     Object.defineProperty(window.HTMLMediaElement.prototype, 'error', {

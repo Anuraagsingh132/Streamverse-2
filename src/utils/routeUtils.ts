@@ -14,9 +14,10 @@ export function getRouteHref(route: string): string {
     case 'anime':
       return '/anime';
     case 'ai':
-    case 'discover':
     case 'search':
       return '/ai';
+    case 'discover':
+      return '/discover';
     case 'providers':
       return '/providers';
     case 'livesports':
@@ -25,8 +26,9 @@ export function getRouteHref(route: string): string {
     case 'music':
       return '/music';
     case 'watchlist':
-    case 'continue-watching':
       return '/watchlist';
+    case 'continue-watching':
+      return '/continue-watching';
     case 'settings':
       return '/settings';
     default:

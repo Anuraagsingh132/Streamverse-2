@@ -826,7 +826,7 @@ export const liveGenreConfigs: GenreConfig[] = [
   {
     name: 'Adventure',
     id: 12,
-    img: 'https://image.tmdb.org/t/p/w500/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
+    img: 'https://image.tmdb.org/t/p/w500/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
     gradient: 'linear-gradient(135deg, rgba(245,158,11,0.85) 0%, rgba(245,158,11,0.35) 45%, rgba(0,0,0,0.75) 100%)',
     glowColor: 'rgba(245,158,11,0.6)'
   },
@@ -868,7 +868,7 @@ export const liveGenreConfigs: GenreConfig[] = [
   {
     name: 'Family',
     id: 10751,
-    img: 'https://image.tmdb.org/t/p/w500/7GOW6jod9lLurW5utokAatxg7ql.jpg',
+    img: 'https://image.tmdb.org/t/p/w500/4D1pdB27uph7J8HQzNf8QvvH9bn.jpg',
     gradient: 'linear-gradient(135deg, rgba(34,197,94,0.85) 0%, rgba(34,197,94,0.35) 45%, rgba(0,0,0,0.75) 100%)',
     glowColor: 'rgba(34,197,94,0.6)'
   },

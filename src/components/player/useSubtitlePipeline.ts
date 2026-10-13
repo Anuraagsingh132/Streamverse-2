@@ -50,6 +50,8 @@ export function useSubtitlePipeline({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const createdBlobUrlsRef = useRef<Set<string>>(new Set());
   const prevSubtitleOffsetRef = useRef<number>(subtitleOffset);
+  const latestSelectionIdRef = useRef<number>(0);
+  const currentSubtitleUrlRef = useRef<string | null>(null);
 
   // 1. Fetch available Subtitles for this title
   useEffect(() => {
@@ -57,6 +59,11 @@ export function useSubtitlePipeline({
 
     async function loadSubs() {
       setSubtitlesLoading(true);
+      if (currentSubtitleUrlRef.current) {
+        revokeSubtitleBlob(currentSubtitleUrlRef.current);
+        createdBlobUrlsRef.current.delete(currentSubtitleUrlRef.current);
+        currentSubtitleUrlRef.current = null;
+      }
       setSelectedSubtitleId(null);
       setCurrentSubtitleUrl(null);
 
@@ -134,6 +141,15 @@ export function useSubtitlePipeline({
   // 4. Select subtitle track
   const handleSelectSubtitle = useCallback(
     async (sub: SubtitleTrackItem | null) => {
+      const selectionId = ++latestSelectionIdRef.current;
+
+      // Revoke previous blob URL immediately when a new subtitle track is selected
+      if (currentSubtitleUrlRef.current && currentSubtitleUrlRef.current !== sub?.url) {
+        revokeSubtitleBlob(currentSubtitleUrlRef.current);
+        createdBlobUrlsRef.current.delete(currentSubtitleUrlRef.current);
+        currentSubtitleUrlRef.current = null;
+      }
+
       if (!sub) {
         setSelectedSubtitleId(null);
         setCurrentSubtitleUrl(null);
@@ -147,13 +163,23 @@ export function useSubtitlePipeline({
         let vttUrl = sub.url;
         if (sub.url.startsWith('http')) {
           vttUrl = await fetchSubtitleVttBlob(sub.url);
+          // If another selection occurred while fetching, clean up and abandon
+          if (selectionId !== latestSelectionIdRef.current) {
+            revokeSubtitleBlob(vttUrl);
+            return;
+          }
           createdBlobUrlsRef.current.add(vttUrl);
+        } else if (selectionId !== latestSelectionIdRef.current) {
+          return;
         }
+
+        currentSubtitleUrlRef.current = vttUrl;
         setSelectedSubtitleId(sub.id);
         setCurrentSubtitleUrl(vttUrl);
         showToast(`Subtitles: ${sub.label}`);
         onCloseSettings?.();
       } catch (err) {
+        if (selectionId !== latestSelectionIdRef.current) return;
         console.error('Failed to load subtitle track:', err);
         showToast('Failed to load subtitle');
       }
@@ -167,9 +193,11 @@ export function useSubtitlePipeline({
       const file = e.target.files?.[0];
       if (!file) return;
 
+      const selectionId = ++latestSelectionIdRef.current;
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
+          if (selectionId !== latestSelectionIdRef.current) return;
           const content = event.target?.result as string;
           let vttContent = content;
           if (file.name.toLowerCase().endsWith('.srt')) {
@@ -181,6 +209,13 @@ export function useSubtitlePipeline({
           const blobUrl = URL.createObjectURL(blob);
           createdBlobUrlsRef.current.add(blobUrl);
 
+          // Revoke previous blob URL immediately
+          if (currentSubtitleUrlRef.current && currentSubtitleUrlRef.current !== blobUrl) {
+            revokeSubtitleBlob(currentSubtitleUrlRef.current);
+            createdBlobUrlsRef.current.delete(currentSubtitleUrlRef.current);
+          }
+
+          currentSubtitleUrlRef.current = blobUrl;
           const customSub: SubtitleTrackItem = {
             id: `custom-${Date.now()}`,
             lang: 'custom',
@@ -200,6 +235,8 @@ export function useSubtitlePipeline({
         }
       };
       reader.readAsText(file);
+      // Reset input value so users can re-upload if needed
+      e.target.value = '';
     },
     [showToast, onCloseSettings]
   );

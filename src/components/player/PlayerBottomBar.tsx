@@ -154,17 +154,18 @@ export const PlayerBottomBar: React.FC<PlayerBottomBarProps> = ({
         aria-valuemin={0}
         aria-valuemax={Math.round(validDuration)}
         aria-valuenow={Math.round(currentTime)}
+        aria-valuetext={`${formatTime(currentTime)} of ${formatTime(validDuration)}`}
         onKeyDown={handleScrubberKeyDown}
         onMouseDown={handleScrubberMouseDown}
         onTouchStart={handleScrubberTouchStart}
         onMouseMove={handleScrubberMouseMove}
         onMouseLeave={handleScrubberMouseLeave}
-        className="relative group/progress mb-3 sm:mb-4 h-10 sm:h-6 flex items-center cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-full"
+        className="relative group/progress mb-3 sm:mb-4 h-10 sm:h-6 flex items-center cursor-pointer select-none touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-full"
       >
         {/* Time Tooltip on Hover / Drag */}
         {hoverProgress && (
           <div
-            style={{ left: `${Math.max(2, Math.min(98, hoverProgress.xPercent))}%` }}
+            style={{ left: `${Math.max(6, Math.min(94, hoverProgress.xPercent))}%` }}
             className="absolute -top-10 -translate-x-1/2 pointer-events-none px-2.5 py-1 rounded-lg bg-zinc-950/90 border border-white/20 text-white font-mono text-xs font-semibold shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 z-30"
           >
             <span>{formatTime(hoverProgress.time)}</span>
@@ -268,7 +269,7 @@ export const PlayerBottomBar: React.FC<PlayerBottomBarProps> = ({
                 <Volume2 className="h-5 w-5" strokeWidth={1.8} />
               )}
             </button>
-            <div className="w-0 overflow-hidden opacity-0 group-hover/volume:w-20 group-hover/volume:opacity-100 transition-all duration-200 flex items-center">
+            <div className="w-0 overflow-hidden opacity-0 group-hover/volume:w-20 group-hover/volume:opacity-100 focus-within:w-20 focus-within:opacity-100 transition-all duration-200 flex items-center">
               <input
                 type="range"
                 min={0}
@@ -277,6 +278,10 @@ export const PlayerBottomBar: React.FC<PlayerBottomBarProps> = ({
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeSliderChange}
                 aria-label="Volume slider"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round((isMuted ? 0 : volume) * 100)}
+                aria-valuetext={isMuted ? 'Muted' : `${Math.round(volume * 100)}%`}
                 className="w-18 h-1 bg-white/25 rounded-lg appearance-none cursor-pointer accent-primary"
               />
             </div>

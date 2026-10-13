@@ -103,7 +103,10 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
       />
 
       {/* Main Content Overlapping Hero */}
-      <div className="relative z-10 -mt-[32vh] sm:-mt-20 md:-mt-24 lg:-mt-52 4xl:-mt-72 space-y-6 pb-12">
+      <div 
+        className="relative z-10 space-y-6 pb-12"
+        style={{ marginTop: '-36px' }}
+      >
         {/* Top 10 Today Row */}
         <TopTenRow
           title="Top 10 today"

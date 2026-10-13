@@ -1,7 +1,8 @@
 /**
  * LocalStorage Quota & LRU Eviction Manager
  * Prevents QuotaExceededError by purging expired items and enforcing an LRU cap (default 30 items)
- * across key prefixes (e.g. 'tmdb_', 'anilist_').
+ * across explicit key prefixes (e.g. 'tmdb_', 'anilist_').
+ * Strictly protects user preferences (watchlist, settings, playback history, theme) from eviction.
  */
 
 export interface StorageOptions {
@@ -13,14 +14,51 @@ export interface StorageOptions {
 const DEFAULT_MAX_ITEMS = 30;
 const DEFAULT_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
+export const PROTECTED_STORAGE_KEYS = [
+  'streamverse_watchlist',
+  'streamverse_watchlist_items',
+  'streamverse_settings',
+  'streamverse_playback_history',
+  'streamverse_theme',
+  'streamverse_continue_watching',
+  'streamverse_pixeldrain_route'
+];
+
+export function isProtectedStorageKey(key: string): boolean {
+  return PROTECTED_STORAGE_KEYS.some((p) => key === p || key.startsWith(p));
+}
+
 interface CachedRecord {
   key: string;
   timestamp: number;
 }
 
+const sweepTimers = new Map<string, any>();
+
 /**
- * Scans localStorage for keys matching the prefix, deletes expired entries (> ttlMs),
+ * Debounced background storage sweep to avoid blocking the main thread on every write.
+ */
+export function debouncedSweepStorage(
+  prefix: string,
+  maxItems: number = DEFAULT_MAX_ITEMS,
+  ttlMs: number = DEFAULT_TTL_MS,
+  delayMs: number = 200
+): void {
+  if (!prefix) return;
+  if (sweepTimers.has(prefix)) {
+    clearTimeout(sweepTimers.get(prefix));
+  }
+  const timer = setTimeout(() => {
+    sweepTimers.delete(prefix);
+    sweepStorage(prefix, maxItems, ttlMs);
+  }, delayMs);
+  sweepTimers.set(prefix, timer);
+}
+
+/**
+ * Scans localStorage for keys matching the explicit prefix, deletes expired entries (> ttlMs),
  * and if the remaining count exceeds maxItems, evicts the oldest entries until within quota.
+ * Never evicts protected user preference keys.
  */
 export function sweepStorage(
   prefix: string,
@@ -28,6 +66,7 @@ export function sweepStorage(
   ttlMs: number = DEFAULT_TTL_MS
 ): void {
   if (typeof window === 'undefined' || !window.localStorage) return;
+  if (!prefix) return; // Hazardous auto-inferred prefix removed: explicit prefix required
 
   const now = Date.now();
   const matchedEntries: CachedRecord[] = [];
@@ -38,12 +77,13 @@ export function sweepStorage(
     const keysToCheck: string[] = [];
     for (let i = 0; i < totalKeys; i++) {
       const k = window.localStorage.key(i);
-      if (k && k.startsWith(prefix)) {
+      if (k && k.startsWith(prefix) && !isProtectedStorageKey(k)) {
         keysToCheck.push(k);
       }
     }
 
     for (const k of keysToCheck) {
+      if (isProtectedStorageKey(k)) continue;
       try {
         const raw = window.localStorage.getItem(k);
         if (!raw) {
@@ -78,7 +118,10 @@ export function sweepStorage(
       matchedEntries.sort((a, b) => a.timestamp - b.timestamp);
       const toRemoveCount = matchedEntries.length - maxItems + 1; // leave room for 1 new item
       for (let i = 0; i < toRemoveCount; i++) {
-        window.localStorage.removeItem(matchedEntries[i].key);
+        const itemKey = matchedEntries[i]?.key;
+        if (itemKey && !isProtectedStorageKey(itemKey)) {
+          window.localStorage.removeItem(itemKey);
+        }
       }
     }
   } catch {
@@ -97,20 +140,21 @@ export function safeSetStorageItem(
 ): boolean {
   if (typeof window === 'undefined') return false;
 
-  const prefix = options?.prefix || (key.includes('_') ? key.split('_')[0] + '_' : '');
+  // Explicit prefix only - hazardous auto-inferred prefix is removed
+  const prefix = options?.prefix;
   const maxItems = options?.maxItems ?? DEFAULT_MAX_ITEMS;
   const ttlMs = options?.ttlMs ?? DEFAULT_TTL_MS;
 
-  // Sweep matching keys before writing
+  // Debounced sweep so writing does not block main thread on every write
   if (prefix) {
-    sweepStorage(prefix, maxItems, ttlMs);
+    debouncedSweepStorage(prefix, maxItems, ttlMs);
   }
 
   try {
     window.localStorage.setItem(key, value);
     return true;
   } catch {
-    // Emergency eviction: purge all items with prefix
+    // Emergency eviction: purge oldest items with prefix if quota exceeded
     try {
       if (prefix) {
         sweepStorage(prefix, Math.floor(maxItems / 2), ttlMs);
@@ -167,6 +211,7 @@ export function clearMediaDiskCache(itemId?: string | number): void {
 
         // Never clear user settings, watchlist, theme, or playback progress
         if (
+          isProtectedStorageKey(k) ||
           k.startsWith('streamverse_watchlist') ||
           k.startsWith('streamverse_settings') ||
           k.startsWith('streamverse_theme') ||

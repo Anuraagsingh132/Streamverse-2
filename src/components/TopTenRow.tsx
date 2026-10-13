@@ -16,7 +16,7 @@ interface TopTenRowProps {
   onTypeFilterChange?: (type: 'movie' | 'tv') => void;
 }
 
-import { optimizeTmdbImage } from '../utils/imageUtils';
+import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../utils/imageUtils';
 
 export const TopTenRow: React.FC<TopTenRowProps> = ({
   title,
@@ -56,7 +56,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
           <div>
             <div className="flex items-center gap-2.5">
               <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
                 {subtitle}
               </p>
             </div>
@@ -130,8 +130,8 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
           ref={scrollRef}
           className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" 
           style={{
-            maskImage: 'linear-gradient(to right, black 0%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 0%, black 100%)'
+            maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
           }}
         >
           {items.slice(0, 10).map((item, idx) => {
@@ -139,15 +139,15 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
             return (
               <div 
                 key={`${item.id}-${idx}`} 
-                className="group/rank relative flex shrink-0 items-start pl-14 sm:pl-16 lg:pl-20"
+                className="group/rank relative flex shrink-0 items-start pl-16 sm:pl-20 lg:pl-24"
               >
                 {/* Giant Outlined Rank Number */}
                 <span 
                   aria-hidden="true" 
                   className="pointer-events-none absolute left-0 top-1/2 -translate-y-[62%] select-none text-[110px] font-black leading-none tracking-tighter text-transparent transition-transform duration-500 group-hover/rank:-translate-x-1 sm:text-[130px] lg:text-[160px]" 
                   style={{
-                    WebkitTextStroke: '2px rgba(255,255,255,0.35)',
-                    backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.2), transparent 85%)',
+                    WebkitTextStroke: '2px rgba(255,255,255,0.60)',
+                    backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.35), transparent 80%)',
                     WebkitBackgroundClip: 'text',
                     backgroundClip: 'text'
                   }}
@@ -187,11 +187,10 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                           src={optimizeTmdbImage(item.backdrop_path || item.poster_path, 'backdrop')} 
                           onError={(e) => {
                             const target = e.currentTarget;
-                            const fallback = 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1280&auto=format&fit=crop';
                             if (item.poster_path && target.src !== item.poster_path) {
                               target.src = item.poster_path;
-                            } else if (target.src !== fallback) {
-                              target.src = fallback;
+                            } else if (target.src !== FALLBACK_BACKDROP) {
+                              target.src = FALLBACK_BACKDROP;
                             }
                           }}
                         />
@@ -236,17 +235,17 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
 
                     {/* Card Metadata */}
                     <div className="mt-2 px-0.5">
-                      <h3 className="truncate text-[13px] font-semibold leading-tight text-foreground">
+                      <h3 className="truncate text-sm font-semibold leading-tight text-white/95">
                         {item.title}
                       </h3>
                       <div className="mt-1 flex items-center gap-1.5">
-                        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary">
+                        <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-rose-400">
                           {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Movie'}
                         </span>
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-xs font-medium text-white/65">
                           {item.year || 2026}
                         </span>
-                        <span className="ml-auto flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                        <span className="ml-auto flex items-center gap-1 text-xs font-medium text-white/70">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           {item.vote_average ? item.vote_average.toFixed(1) : '8.0'}
                         </span>

@@ -24,6 +24,7 @@ import { diggerCuratedDetails, lanternsCuratedDetails } from '../data/cinemaosLi
 import { SEOHead } from '../components/SEOHead';
 import { GlassBackButton } from '../components/details/GlassBackButton';
 import { purgeMediaItemCache } from '../utils/cacheManager';
+import { FALLBACK_BACKDROP } from '../utils/imageUtils';
 
 interface DetailsPageProps {
   item: MediaItem;
@@ -318,7 +319,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 <span className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                   {item.media_type === 'tv'
-                    ? `Series  ·  ${item.year || 2026}–  ·  ${item.seasons || 1} Season${(item.seasons || 1) > 1 ? 's' : ''}  ·  ${item.content_rating || 'TV-MA'}`
+                    ? `Series  ·  ${item.year || 2026}–Present  ·  ${item.seasons || 1} Season${(item.seasons || 1) > 1 ? 's' : ''}  ·  ${item.content_rating || 'TV-MA'}`
                     : `Movie  ·  ${item.year || 2026}  ·  ${item.duration || '2h 9m'}  ·  ${item.content_rating || 'R'}`}
                 </span>
               </div>
@@ -326,18 +327,15 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               {/* Title Logo (1:1 with transparent PNG or typography fallback) */}
               <div className="h-20 w-full max-w-[280px] sm:h-24 sm:max-w-sm lg:h-32 lg:max-w-lg">
                 {item.logo_path ? (
-                  <>
-                    <h1 className="sr-only">{item.title}</h1>
-                    <img
-                      src={item.logo_path}
-                      alt={item.title}
-                      loading="eager"
-                      className="h-full w-full object-contain object-left-bottom transition-opacity duration-300"
-                      style={{
-                        filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.75)) drop-shadow(0 0 2px rgba(0,0,0,0.5))'
-                      }}
-                    />
-                  </>
+                  <img
+                    src={item.logo_path}
+                    alt={item.title}
+                    loading="eager"
+                    className="h-full w-full object-contain object-left-bottom transition-opacity duration-300"
+                    style={{
+                      filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.75)) drop-shadow(0 0 2px rgba(0,0,0,0.5))'
+                    }}
+                  />
                 ) : (
                   <h1 className="text-3xl font-black uppercase tracking-tight text-white drop-shadow-md sm:text-5xl lg:text-6xl">
                     {item.title}
@@ -347,7 +345,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
               {/* Tagline */}
               {item.tagline && (
-                <p className="text-sm italic text-white/60 md:text-base">{item.tagline}</p>
+                <p className="text-sm italic text-white/85 tracking-wide md:text-base">{item.tagline}</p>
               )}
 
               {/* Ratings & Genres */}
@@ -526,8 +524,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                         src={episodes[0]?.still_path || item.backdrop_path}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                      <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
-                        Next episode
+                      <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                        Latest episode
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center">
                         <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md transition group-hover:scale-110 group-hover:bg-white/25">
@@ -538,13 +536,13 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                         <p className="line-clamp-1 text-sm font-semibold text-white">
                           {episodes[episodes.length - 1]?.name || 'Dirt and Stars'}
                         </p>
-                        <p className="mt-0.5 text-xs text-white/60">
-                          S1 · E{episodes.length || 8} · Airs Oct 4, 2026
+                        <p className="mt-0.5 text-xs text-white/70">
+                          S{selectedSeason} · E{episodes.length || 8} · Available now
                         </p>
                       </div>
                     </div>
-                    <span className="mt-3 flex items-center justify-between text-xs font-semibold text-white/70 transition group-hover:text-white">
-                      Catch up on the latest episode <span aria-hidden="true">→</span>
+                    <span className="mt-3 flex items-center justify-between text-xs font-semibold text-white/80 transition group-hover:text-white">
+                      Watch latest episode <span aria-hidden="true">→</span>
                     </span>
                   </div>
                 )}
@@ -792,7 +790,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               {episodes.map((ep) => (
                 <div
                   key={ep.id}
-                  className="group flex gap-4 rounded-2xl p-2 transition hover:bg-white/[0.06] sm:p-3"
+                  className="group flex gap-4 rounded-2xl p-2.5 transition duration-200 hover:bg-white/[0.05] border-b border-white/[0.04] sm:p-3.5"
                 >
                   {/* 16:9 Thumbnail */}
                   <div className="w-36 shrink-0 sm:w-56 md:w-64">
@@ -806,6 +804,14 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                           loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           src={ep.still_path || item.backdrop_path}
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (item.backdrop_path && target.src !== item.backdrop_path) {
+                              target.src = item.backdrop_path;
+                            } else if (target.src !== FALLBACK_BACKDROP) {
+                              target.src = FALLBACK_BACKDROP;
+                            }
+                          }}
                         />
                         <span className="absolute left-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-bold text-white backdrop-blur">
                           E{ep.episode_number}
@@ -827,16 +833,16 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
                   {/* Episode Details */}
                   <div className="flex min-w-0 flex-1 flex-col py-0.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50">
                       Episode {ep.episode_number}
                     </p>
                     <h3 className="mt-0.5 line-clamp-1 text-sm font-semibold text-white md:text-base">
                       {ep.name}
                     </h3>
-                    <p className="mt-0.5 text-xs text-white/50">
-                      {ep.air_date || '2026'} · {ep.runtime || 50} min · ★ {ep.vote_average || '7.5'}
+                    <p className="mt-0.5 text-xs text-white/60">
+                      {ep.air_date || '2026'} · ★ {ep.vote_average ? ep.vote_average.toFixed(1) : '7.5'}
                     </p>
-                    <p className="mt-2 line-clamp-2 hidden text-xs leading-relaxed text-white/60 sm:block md:text-sm">
+                    <p className="mt-2 line-clamp-2 hidden text-xs leading-relaxed text-white/70 sm:block md:text-sm">
                       {ep.overview}
                     </p>
 
@@ -852,10 +858,11 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                       <button
                         type="button"
                         onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
-                        className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+                        title="Download episode"
+                        aria-label={`Download episode ${ep.episode_number}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/75 backdrop-blur-md transition hover:bg-white/15 hover:text-white"
                       >
                         <Download className="h-3.5 w-3.5" />
-                        Download
                       </button>
                     </div>
                   </div>
@@ -876,8 +883,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="flex items-center gap-2.5">
-                <div className="h-3.5 w-[3px] rounded-full bg-rose-600" aria-hidden="true" />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+                <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
                   Watch the
                 </p>
               </div>
@@ -946,141 +953,139 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         </section>
       )}
 
-      {/* Cast & Crew Section (1:1 with cinemaos.tech) */}
+      {/* Cast & Crew Section */}
       <section className="w-full px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" aria-labelledby="cast-crew-heading">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] shadow-sm backdrop-blur-xl">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4 sm:px-6">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <div className="h-3.5 w-[3px] rounded-full bg-rose-600" aria-hidden="true" />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
-                  Featuring
-                </p>
-              </div>
-              <h2 id="cast-crew-heading" className="mt-1.5 text-xl font-bold tracking-tight text-white md:text-2xl">
-                Cast &amp; crew
-              </h2>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
+                Featuring
+              </p>
             </div>
-            <div className="inline-flex items-center rounded-md border-0 bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
-              {item.cast?.length || 10} credited
+            <h2 id="cast-crew-heading" className="mt-1.5 text-xl font-bold tracking-tight text-white md:text-2xl">
+              Cast &amp; crew
+            </h2>
+          </div>
+          <div className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/70 backdrop-blur-md">
+            {item.cast?.length || 10} credited
+          </div>
+        </div>
+
+        <div className="grid gap-8 border-t border-white/10 pt-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          {/* Left: Starring Column */}
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/80">
+              <UsersRound className="h-4 w-4" aria-hidden="true" />
+              Starring
+            </div>
+            <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+              {item.cast?.map((actor) => (
+                <div key={actor.id} className="flex min-w-0 items-center gap-3">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white/10">
+                    <img
+                      alt={actor.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                      src={actor.profile_path || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">{actor.name}</p>
+                    <p className="truncate text-xs text-white/60" title={actor.character}>
+                      {actor.character}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="grid divide-y divide-white/10 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] lg:divide-x lg:divide-y-0">
-            {/* Left: Starring Column */}
-            <div className="p-5 sm:p-6">
-              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-white/70">
-                <UsersRound className="h-4 w-4" aria-hidden="true" />
-                Starring
-              </div>
-              <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
-                {item.cast?.map((actor) => (
-                  <div key={actor.id} className="flex min-w-0 items-center gap-3">
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white/10">
-                      <img
-                        alt={actor.name}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                        src={actor.profile_path || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white">{actor.name}</p>
-                      <p className="truncate text-sm text-white/50" title={actor.character}>
-                        {actor.character}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Right: Creative team Column */}
+          <div className="lg:border-l lg:border-white/10 lg:pl-8">
+            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/80">
+              <Clapperboard className="h-4 w-4" aria-hidden="true" />
+              Creative team
             </div>
-
-            {/* Right: Creative team Column */}
-            <div className="p-5 sm:p-6">
-              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-white/70">
-                <Clapperboard className="h-4 w-4" aria-hidden="true" />
-                Creative team
-              </div>
-              <dl className="space-y-4">
-                {/* Directed by */}
-                {directorList.length > 0 && (
-                  <div>
-                    <dt className="mb-2 text-xs font-medium uppercase tracking-wide text-white/50">
-                      {item.media_type === 'tv' ? 'Created by' : 'Directed by'}
-                    </dt>
-                    <dd className="flex flex-wrap gap-x-4 gap-y-2">
-                      {directorList.map((dir) => (
-                        <div key={dir.id} className="flex min-w-0 items-center gap-2">
-                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
-                            <img
-                              alt={dir.name}
-                              loading="lazy"
-                              className="h-full w-full object-cover"
-                              src={dir.profile_path || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'}
-                            />
-                          </div>
-                          <span className="max-w-32 truncate text-sm font-medium text-white">
-                            {dir.name}
-                          </span>
+            <dl className="space-y-4">
+              {/* Directed by */}
+              {directorList.length > 0 && (
+                <div>
+                  <dt className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/60">
+                    {item.media_type === 'tv' ? 'Created by' : 'Directed by'}
+                  </dt>
+                  <dd className="flex flex-wrap gap-x-4 gap-y-2">
+                    {directorList.map((dir) => (
+                      <div key={dir.id} className="flex min-w-0 items-center gap-2">
+                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
+                          <img
+                            alt={dir.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                            src={dir.profile_path || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'}
+                          />
                         </div>
-                      ))}
-                    </dd>
-                  </div>
-                )}
+                        <span className="text-sm font-medium text-white">
+                          {dir.name}
+                        </span>
+                      </div>
+                    ))}
+                  </dd>
+                </div>
+              )}
 
-                {/* Written by */}
-                {writerList.length > 0 && (
-                  <div>
-                    <dt className="mb-2 text-xs font-medium uppercase tracking-wide text-white/50">
-                      Written by
-                    </dt>
-                    <dd className="flex flex-wrap gap-x-4 gap-y-2">
-                      {writerList.map((writer) => (
-                        <div key={writer.id} className="flex min-w-0 items-center gap-2">
-                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
-                            <img
-                              alt={writer.name}
-                              loading="lazy"
-                              className="h-full w-full object-cover"
-                              src={writer.profile_path || 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100'}
-                            />
-                          </div>
-                          <span className="max-w-32 truncate text-sm font-medium text-white">
-                            {writer.name}
-                          </span>
+              {/* Written by */}
+              {writerList.length > 0 && (
+                <div>
+                  <dt className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/60">
+                    Written by
+                  </dt>
+                  <dd className="flex flex-wrap gap-x-4 gap-y-2">
+                    {writerList.map((writer) => (
+                      <div key={writer.id} className="flex min-w-0 items-center gap-2">
+                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
+                          <img
+                            alt={writer.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                            src={writer.profile_path || 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100'}
+                          />
                         </div>
-                      ))}
-                    </dd>
-                  </div>
-                )}
+                        <span className="text-sm font-medium text-white">
+                          {writer.name}
+                        </span>
+                      </div>
+                    ))}
+                  </dd>
+                </div>
+              )}
 
-                {/* Produced by */}
-                {producerList.length > 0 && (
-                  <div>
-                    <dt className="mb-2 text-xs font-medium uppercase tracking-wide text-white/50">
-                      Produced by
-                    </dt>
-                    <dd className="flex flex-wrap gap-x-4 gap-y-2">
-                      {producerList.map((producer) => (
-                        <div key={producer.id} className="flex min-w-0 items-center gap-2">
-                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
-                            <img
-                              alt={producer.name}
-                              loading="lazy"
-                              className="h-full w-full object-cover"
-                              src={producer.profile_path || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'}
-                            />
-                          </div>
-                          <span className="max-w-32 truncate text-sm font-medium text-white">
-                            {producer.name}
-                          </span>
+              {/* Produced by */}
+              {producerList.length > 0 && (
+                <div>
+                  <dt className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/60">
+                    Produced by
+                  </dt>
+                  <dd className="flex flex-wrap gap-x-4 gap-y-2">
+                    {producerList.map((producer) => (
+                      <div key={producer.id} className="flex min-w-0 items-center gap-2">
+                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
+                          <img
+                            alt={producer.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                            src={producer.profile_path || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'}
+                          />
                         </div>
-                      ))}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            </div>
+                        <span className="text-sm font-medium text-white">
+                          {producer.name}
+                        </span>
+                      </div>
+                    ))}
+                  </dd>
+                </div>
+              )}
+            </dl>
           </div>
         </div>
       </section>
@@ -1090,8 +1095,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="h-3.5 w-[3px] rounded-full bg-rose-600" aria-hidden="true" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+              <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
                 Keep watching
               </p>
             </div>
@@ -1119,10 +1124,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
           <div
             ref={moreLikeRailRef}
-            className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 sm:px-2 lg:gap-5"
+            className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)'
+              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
             }}
           >
             {similarItems.map((similarItem) => (
@@ -1143,8 +1148,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="h-3.5 w-[3px] rounded-full bg-rose-600" aria-hidden="true" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+              <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
                 Picked for you
               </p>
             </div>
@@ -1172,10 +1177,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
           <div
             ref={recommendedRailRef}
-            className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 sm:px-2 lg:gap-5"
+            className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)'
+              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
             }}
           >
             {recommendedItems.map((recItem) => (

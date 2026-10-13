@@ -19,7 +19,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
 }) => {
   const rating = item.vote_average ? item.vote_average.toFixed(1) : '7.5';
   const year = item.year || (item.release_date ? new Date(item.release_date).getFullYear() : 2026);
-  const typeLabel = item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Film';
+  const typeLabel = item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Movie';
 
   const optimizedPosterSrc = optimizeTmdbImage(item.poster_path || item.backdrop_path, 'poster');
 
@@ -107,10 +107,10 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
 
       {/* Underneath Metadata */}
       <div className="mt-2.5 px-0.5">
-        <p className="truncate text-[13px] font-semibold text-white/90">
+        <p className="truncate text-sm font-semibold text-white/95">
           {item.title}
         </p>
-        <p className="mt-0.5 text-[11px] uppercase tracking-[0.12em] text-white/40">
+        <p className="mt-0.5 text-xs font-medium uppercase tracking-[0.12em] text-white/65">
           {year} · {typeLabel}
         </p>
       </div>

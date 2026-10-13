@@ -8,7 +8,8 @@ import {
   ChevronRight,
   AlertCircle,
   RefreshCw,
-  Film
+  Film,
+  Server
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { fetchHDHubStreams, HDHubStream } from '../services/hdhub';
@@ -137,6 +138,29 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
   const lastTimeUpdateRef = useRef<number>(0);
   const lastSaveTimeRef = useRef<number>(0);
   const failoverAttemptedRef = useRef<boolean>(false);
+  const pendingSeekTimeRef = useRef<{ time: number; play: boolean } | null>(null);
+  const isMountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const applyPendingSeek = useCallback(() => {
+    if (pendingSeekTimeRef.current !== null && videoRef.current) {
+      const { time, play } = pendingSeekTimeRef.current;
+      if (time > 0) {
+        videoRef.current.currentTime = time;
+        setCurrentTime(time);
+        if (play) {
+          videoRef.current.play().catch(() => {});
+        }
+      }
+      pendingSeekTimeRef.current = null;
+    }
+  }, []);
 
   const isTV = item.media_type === 'tv' || item.media_type === 'anime';
 
@@ -485,8 +509,24 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
         }
         setNativeAudioTracks(list);
       }
+
+      applyPendingSeek();
     }
   };
+
+  const handleSelectStreamIndex = useCallback(
+    (idx: number) => {
+      if (idx !== selectedStreamIndex) {
+        const prevTime = videoRef.current?.currentTime || 0;
+        const wasPlaying = isPlaying;
+        if (prevTime > 0) {
+          pendingSeekTimeRef.current = { time: prevTime, play: wasPlaying };
+        }
+        setSelectedStreamIndex(idx);
+      }
+    },
+    [selectedStreamIndex, isPlaying]
+  );
 
   // Audio options builder
   const audioOptions = useMemo<AudioOptionItem[]>(() => {
@@ -542,15 +582,12 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     } else if (opt.streamIndex !== undefined && opt.streamIndex !== selectedStreamIndex) {
       const prevTime = videoRef.current?.currentTime || 0;
       const wasPlaying = isPlaying;
+      if (prevTime > 0) {
+        pendingSeekTimeRef.current = { time: prevTime, play: wasPlaying };
+      }
       setSelectedStreamIndex(opt.streamIndex);
       setSelectedAudioLang(opt.label);
       showToast(`Switched to ${opt.label}`);
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.currentTime = prevTime;
-          if (wasPlaying) videoRef.current.play().catch(() => {});
-        }
-      }, 150);
     } else {
       setSelectedAudioLang(opt.label);
       if (!hasNativeTracks && !hlsRef.current) {
@@ -651,6 +688,9 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
     (route: PixelDrainRoute) => {
       const prevTime = videoRef.current?.currentTime || 0;
       const wasPlaying = isPlaying;
+      if (prevTime > 0) {
+        pendingSeekTimeRef.current = { time: prevTime, play: wasPlaying };
+      }
       setPlaybackError(false);
       setPixelDrainRoute(route);
       setPixelDrainRouteState(route);
@@ -666,12 +706,6 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
       showToast(`PixelDrain: ${route === 'cdn' ? 'Fast CDN Mirror' : 'Normal Proxy'}`);
       setIsSettingsMenuOpen(false);
       setSettingsTab('main');
-      setTimeout(() => {
-        if (videoRef.current && prevTime > 0) {
-          videoRef.current.currentTime = prevTime;
-          if (wasPlaying) videoRef.current.play().catch(() => {});
-        }
-      }, 150);
     },
     [isPlaying, showToast, setPlaybackError]
   );
@@ -777,6 +811,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
           }}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          onCanPlay={applyPendingSeek}
           onError={() => {
             const err = videoRef.current?.error;
             console.warn('Stream playback error on stream index', selectedStreamIndex, err);
@@ -867,7 +902,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
         streams={streams}
         selectedStreamIndex={selectedStreamIndex}
         selectedStream={selectedStream}
-        setSelectedStreamIndex={setSelectedStreamIndex}
+        setSelectedStreamIndex={handleSelectStreamIndex}
         showToast={showToast}
         item={item}
         isTV={isTV}
@@ -878,53 +913,56 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
         onNextEpisode={onNextEpisode}
         onOpenEpisodeDrawer={onOpenEpisodeDrawer}
         isEpisodeDrawerOpen={isEpisodeDrawerOpen}
+        playbackError={playbackError}
       />
 
       {/* 3. Center Play Button & 10s Skip Controls */}
-      <div
-        className={`absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-all duration-300 ${
-          showControls || !isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-        }`}
-      >
-        <div className="flex items-center gap-4 sm:gap-8 pointer-events-auto">
-          {/* Skip -10s */}
-          <button
-            type="button"
-            onClick={() => handleSkip(-10)}
-            className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/80 shadow-2xl backdrop-blur-xl transition hover:bg-white/20 hover:text-white hover:scale-105 active:scale-90"
-            title="Rewind 10s"
-            aria-label="Rewind 10 seconds"
-          >
-            <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
-          </button>
+      {!loading && (!error || streams.length > 0) && (
+        <div
+          className={`absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-all duration-300 ${
+            showControls || !isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+          }`}
+        >
+          <div className="flex items-center gap-4 sm:gap-8 pointer-events-auto">
+            {/* Skip -10s */}
+            <button
+              type="button"
+              onClick={() => handleSkip(-10)}
+              className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/80 shadow-2xl backdrop-blur-xl transition hover:bg-white/20 hover:text-white hover:scale-105 active:scale-90"
+              title="Rewind 10s"
+              aria-label="Rewind 10 seconds"
+            >
+              <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
 
-          {/* Main Play/Pause Button */}
-          <button
-            type="button"
-            onClick={handleTogglePlay}
-            className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-primary text-black shadow-[0_0_40px_rgba(255,255,255,0.3)] transition hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
-            title={isPlaying ? 'Pause' : 'Play'}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-          >
-            {isPlaying ? (
-              <Pause className="h-8 w-8 sm:h-10 sm:w-10 fill-current" />
-            ) : (
-              <Play className="h-8 w-8 sm:h-10 sm:w-10 fill-current ml-1" />
-            )}
-          </button>
+            {/* Main Play/Pause Button */}
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-primary text-black shadow-[0_0_40px_rgba(255,255,255,0.3)] transition hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
+              title={isPlaying ? 'Pause' : 'Play'}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isPlaying ? (
+                <Pause className="h-8 w-8 sm:h-10 sm:w-10 fill-current" />
+              ) : (
+                <Play className="h-8 w-8 sm:h-10 sm:w-10 fill-current ml-1" />
+              )}
+            </button>
 
-          {/* Skip +10s */}
-          <button
-            type="button"
-            onClick={() => handleSkip(10)}
-            className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/80 shadow-2xl backdrop-blur-xl transition hover:bg-white/20 hover:text-white hover:scale-105 active:scale-90"
-            title="Forward 10s"
-            aria-label="Forward 10 seconds"
-          >
-            <RotateCw className="h-5 w-5 sm:h-6 sm:w-6" />
-          </button>
+            {/* Skip +10s */}
+            <button
+              type="button"
+              onClick={() => handleSkip(10)}
+              className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/80 shadow-2xl backdrop-blur-xl transition hover:bg-white/20 hover:text-white hover:scale-105 active:scale-90"
+              title="Forward 10s"
+              aria-label="Forward 10 seconds"
+            >
+              <RotateCw className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 4. Center Loading Spinner */}
       {loading && (
@@ -943,42 +981,50 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
 
       {/* 5. Error State (No Streams Found) */}
       {!loading && error && streams.length === 0 && (
-        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-zinc-950 p-6 text-center max-w-md mx-auto">
-          <div className="h-12 w-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 mb-3">
-            <AlertCircle className="h-6 w-6" />
-          </div>
-          <h3 className="text-base font-bold text-white">No Streams Found on {currentServerName}</h3>
-          <p className="text-xs text-white/60 mt-1.5 leading-relaxed">{error}</p>
-          <div className="flex items-center gap-2.5 mt-5">
-            <button
-              type="button"
-              onClick={() => {
-                setLoading(true);
-                setError(null);
-                const fetchFn = currentServerId === 'pengu' ? fetchPenguStreams : fetchHDHubStreams;
-                fetchFn(item.tmdbId || item.id, item.media_type, item.imdbId, season, episode, true)
-                  .then((res) => {
-                    setStreams(res.streams);
-                    if (res.streams.length > 0) setSelectedStreamIndex(0);
-                    else setError(res.error || 'No streams available');
-                  })
-                  .finally(() => setLoading(false));
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition active:scale-95 border border-white/10"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              <span>Retry Search</span>
-            </button>
-            {onSwitchServer && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#060812]/95 backdrop-blur-md p-6 text-center animate-in fade-in">
+          <div className="flex flex-col items-center justify-center max-w-md w-full mx-auto p-6 sm:p-8 rounded-2xl bg-white/[0.04] border border-white/10 shadow-2xl backdrop-blur-xl">
+            <div className="h-14 w-14 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center text-rose-400 mb-4 shadow-lg shadow-rose-500/10">
+              <AlertCircle className="h-7 w-7" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">No Streams Found on {currentServerName}</h3>
+            <p className="text-xs sm:text-sm text-white/70 mt-2 leading-relaxed">{error}</p>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
               <button
                 type="button"
-                onClick={() => onSwitchServer('cinemaos')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-primary text-black hover:brightness-110 transition active:scale-95 shadow-md"
+                onClick={() => {
+                  setLoading(true);
+                  setError(null);
+                  const fetchFn = currentServerId === 'pengu' ? fetchPenguStreams : fetchHDHubStreams;
+                  fetchFn(item.tmdbId || item.id, item.media_type, item.imdbId, season, episode, true)
+                    .then((res) => {
+                      if (!isMountedRef.current) return;
+                      setStreams(res.streams);
+                      if (res.streams.length > 0) setSelectedStreamIndex(0);
+                      else setError(res.error || 'No streams available');
+                    })
+                    .finally(() => {
+                      if (isMountedRef.current) setLoading(false);
+                    });
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition active:scale-95 border border-white/10 cursor-pointer"
               >
-                <Film className="h-3.5 w-3.5 fill-current" />
-                <span>Switch to CinemaOS</span>
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Retry Search</span>
               </button>
-            )}
+              {onSwitchServer && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const altServer = serversList.find((s) => s.id !== currentServerId)?.id || 'cinemaos';
+                    onSwitchServer(altServer);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold bg-primary text-black hover:brightness-110 transition active:scale-95 shadow-md cursor-pointer"
+                >
+                  <Server className="h-3.5 w-3.5" />
+                  <span>Try another server</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1005,7 +1051,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
 
       {/* 7. Bottom Progress Bar & Player Controls Subcomponent */}
       <PlayerBottomBar
-        showControls={showControls}
+        showControls={showControls && !(!loading && Boolean(error) && streams.length === 0)}
         scrubberRef={scrubberRef}
         validDuration={validDuration}
         currentTime={currentTime}
@@ -1061,7 +1107,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
         handleSelectPixelDrainRoute={handleSelectPixelDrainRoute}
         streams={streams}
         selectedStreamIndex={selectedStreamIndex}
-        setSelectedStreamIndex={setSelectedStreamIndex}
+        setSelectedStreamIndex={handleSelectStreamIndex}
       />
 
       {/* 8. Codec / MKV Notice Modal Subcomponent */}
@@ -1070,7 +1116,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
         selectedStream={selectedStream}
         streams={streams}
         selectedStreamIndex={selectedStreamIndex}
-        setSelectedStreamIndex={setSelectedStreamIndex}
+        setSelectedStreamIndex={handleSelectStreamIndex}
         setPlaybackError={setPlaybackError}
         handleCopyLink={handleCopyLink}
         copied={copied}

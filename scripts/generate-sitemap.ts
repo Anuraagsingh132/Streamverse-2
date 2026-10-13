@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { allMedia } from '../src/data/mediaData';
+import { extractedAnime } from '../src/data/animeData';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,10 +26,11 @@ const staticRoutes: SitemapUrl[] = [
   { loc: `${BASE_URL}/sports`, changefreq: 'daily', priority: '0.7', lastmod: TODAY },
   { loc: `${BASE_URL}/music`, changefreq: 'weekly', priority: '0.7', lastmod: TODAY },
   { loc: `${BASE_URL}/ai`, changefreq: 'monthly', priority: '0.7', lastmod: TODAY },
-  { loc: `${BASE_URL}/watchlist`, changefreq: 'monthly', priority: '0.5', lastmod: TODAY },
 ];
 
-const dynamicRoutes: SitemapUrl[] = allMedia.map((item) => {
+const combinedMedia = [...allMedia, ...extractedAnime];
+
+const dynamicRoutes: SitemapUrl[] = combinedMedia.map((item) => {
   const segment = item.media_type === 'tv' ? 'tv' : item.media_type === 'anime' ? 'anime' : 'movie';
   return {
     loc: `${BASE_URL}/${segment}/${item.id}`,

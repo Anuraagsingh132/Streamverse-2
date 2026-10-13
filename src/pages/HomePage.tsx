@@ -3,7 +3,6 @@ import { HeroBanner } from '../components/HeroBanner';
 import { TopTenRow } from '../components/TopTenRow';
 import { ProviderRail } from '../components/ProviderRail';
 import { GenreRail } from '../components/GenreRail';
-import { PlatformsMarquee } from '../components/PlatformsMarquee';
 import { SEOHead } from '../components/SEOHead';
 import { ContinueWatchingRail } from '../components/ContinueWatchingRail';
 import { MediaItem } from '../types/media';
@@ -97,8 +96,11 @@ export const HomePage: React.FC<HomePageProps> = ({
         onToggleWatchlist={onToggleWatchlist}
       />
 
-      {/* Main Content Overlapping Hero with exact negative margin */}
-      <div className="relative z-10 -mt-[32vh] sm:-mt-20 md:-mt-24 lg:-mt-52 4xl:-mt-72 space-y-6">
+      {/* Main Content Overlapping Hero with smooth gradient fade */}
+      <div 
+        className="relative z-10 space-y-6"
+        style={{ marginTop: '-36px' }}
+      >
         {/* Continue Watching Rail */}
         <ContinueWatchingRail onPlay={onPlay} onOpenDetails={onOpenDetails} />
 
@@ -157,9 +159,6 @@ export const HomePage: React.FC<HomePageProps> = ({
           onToggleWatchlist={onToggleWatchlist}
           onNavigateGenre={() => onNavigate('movie')}
         />
-
-        {/* Platforms Marquee */}
-        <PlatformsMarquee />
       </div>
     </div>
   );

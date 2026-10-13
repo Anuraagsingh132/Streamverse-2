@@ -98,8 +98,6 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           let thumb = item.backdrop_path || item.poster_path || '';
           if (thumb.includes('image.tmdb.org/t/p/')) {
             thumb = thumb.replace(/\/t\/p\/(original|w\d+)\//, '/t/p/w300/');
-          } else if (thumb && !thumb.includes('wsrv.nl') && !thumb.startsWith('data:')) {
-            thumb = `https://wsrv.nl/?url=${encodeURIComponent(thumb)}&w=300&output=webp&q=65`;
           }
 
           return (
@@ -107,6 +105,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
               key={`glow-${item.id}`} 
               alt="" 
               src={thumb} 
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (item.poster_path && target.src !== item.poster_path) {
+                  target.src = item.poster_path;
+                }
+              }}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
                 isActive ? 'opacity-60' : 'opacity-0'
               }`}
@@ -176,6 +180,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           {/* Gradients */}
           <div className="absolute inset-0 z-20 bg-gradient-to-r from-white/80 via-white/30 to-transparent dark:from-black/85 dark:via-black/40 dark:to-transparent" />
           <div className="absolute inset-0 z-20 bg-gradient-to-b from-white/10 via-transparent to-transparent dark:from-black/40 dark:via-transparent dark:to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 bg-gradient-to-t from-[#060812] via-[#060812]/80 to-transparent pointer-events-none" />
         </div>
 
         {/* Vertical Watermark */}
@@ -187,7 +192,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
         </div>
 
         {/* Content Container */}
-        <div className="relative z-10 flex h-full items-end pb-[36vh] sm:pb-32 md:pb-36 lg:pb-64 4xl:pb-80">
+        <div 
+          className="relative z-10 flex h-full items-end"
+          style={{ paddingBottom: 'clamp(130px, 18vh, 170px)' }}
+        >
           <div className="w-full px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
             <div className="flex max-w-xl flex-col gap-3 sm:gap-4 2xl:max-w-2xl">
               {/* Badge & Trending Row */}
@@ -264,7 +272,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 className="line-clamp-2 text-sm leading-relaxed text-gray-800 drop-shadow-lg duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both dark:text-white/80 sm:line-clamp-3 lg:text-base" 
                 style={{ animationDelay: '260ms' }}
               >
-                {current.overview}
+                {(current.overview || '').replace(/\s*\(Source:.*?\)\s*/gi, '').trim()}
               </p>
 
               {/* Action Buttons */}
@@ -316,13 +324,13 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                       type="button"
                       onClick={() => goToSlide(idx)}
                       aria-label={`Go to slide ${idx + 1}`} 
-                      className="group h-4 flex-1 py-1.5"
+                      className="group h-5 flex-1 py-1.5"
                     >
-                      <span className="relative block h-1 overflow-hidden rounded-full bg-gray-500/30 transition group-hover:bg-gray-500/50 dark:bg-white/20 dark:group-hover:bg-white/35">
+                      <span className="relative block h-1.5 overflow-hidden rounded-full bg-gray-500/30 transition group-hover:bg-gray-500/50 dark:bg-white/25 dark:group-hover:bg-white/40">
                         {isActive && (
                           <span 
                             key={`progress-${idx}`}
-                            className="absolute inset-0 origin-left bg-gray-900 dark:bg-white" 
+                            className="absolute inset-0 origin-left bg-rose-500 shadow-sm shadow-rose-500/50" 
                             style={{ 
                               animation: 'hero-progress 8000ms linear forwards',
                               animationPlayState: isPaused ? 'paused' : 'running' 
@@ -360,8 +368,11 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           </div>
 
           {/* Up Next Section on Right */}
-          <div className="absolute bottom-[36vh] right-5 hidden flex-col gap-2.5 sm:bottom-32 md:bottom-36 lg:bottom-64 lg:right-10 xl:right-12 xl:flex 2xl:right-14 4xl:bottom-80">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-800 dark:text-white/60">
+          <div 
+            className="absolute right-5 hidden flex-col gap-2.5 lg:right-10 xl:right-12 xl:flex 2xl:right-14"
+            style={{ bottom: 'clamp(130px, 18vh, 170px)' }}
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
               <span className="h-3.5 w-[3px] rounded-full bg-primary" />
               Up next
             </div>
@@ -389,7 +400,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                     </div>
                     <span className="card-3d-glare" aria-hidden="true" />
                   </div>
-                  <p className="mt-1.5 line-clamp-1 text-xs font-medium text-gray-800 dark:text-white/70 dark:group-hover:text-white">
+                  <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-snug text-white/80 transition-colors group-hover:text-white">
                     {item.title}
                   </p>
                 </button>

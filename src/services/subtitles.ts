@@ -91,22 +91,29 @@ export function sanitizeSubtitleText(text: string): string {
   sanitized = sanitized.replace(/\{[\\/][^}]*\}/g, '');
 
   // 3. Strip all tags except strict WebVTT allowed tags: b, i, u, c, v, lang
-  sanitized = sanitized.replace(/<\/?([a-zA-Z0-9]+)([^>]*)>/gi, (match, tagName, attrs) => {
-    const lowerTag = tagName.toLowerCase();
-    const allowedTags = ['b', 'i', 'u', 'c', 'v', 'lang'];
-    if (!allowedTags.includes(lowerTag)) {
-      return ''; // Strip forbidden tag completely
-    }
-    if (lowerTag === 'v') {
-      const cleanVoice = attrs.replace(/[<>"'=;]/g, '').trim();
-      return `<v ${cleanVoice}>`;
-    }
-    if (lowerTag === 'c') {
-      const classMatch = attrs.match(/\.([a-zA-Z0-9_-]+)/);
-      return classMatch ? `<c.${classMatch[1]}>` : '<c>';
-    }
-    return match.startsWith('</') ? `</${lowerTag}>` : `<${lowerTag}>`;
-  });
+  // Recursively strip tags to prevent nested tag evasion (e.g. <sc<script>ript>)
+  let prevSanitized: string;
+  let iterations = 0;
+  do {
+    prevSanitized = sanitized;
+    sanitized = sanitized.replace(/<\/?([a-zA-Z0-9]+)([^>]*)>/gi, (match, tagName, attrs) => {
+      const lowerTag = tagName.toLowerCase();
+      const allowedTags = ['b', 'i', 'u', 'c', 'v', 'lang'];
+      if (!allowedTags.includes(lowerTag)) {
+        return ''; // Strip forbidden tag completely
+      }
+      if (lowerTag === 'v') {
+        const cleanVoice = attrs.replace(/[<>"'=;]/g, '').trim();
+        return cleanVoice ? `<v ${cleanVoice}>` : '<v>';
+      }
+      if (lowerTag === 'c') {
+        const classMatch = attrs.match(/\.([a-zA-Z0-9_-]+)/);
+        return classMatch ? `<c.${classMatch[1]}>` : '<c>';
+      }
+      return match.startsWith('</') ? `</${lowerTag}>` : `<${lowerTag}>`;
+    });
+    iterations++;
+  } while (sanitized !== prevSanitized && iterations < 10);
 
   // 4. Strip any dangling javascript: or event attributes
   sanitized = sanitized.replace(/javascript\s*:/gi, '');
@@ -120,7 +127,7 @@ export function sanitizeSubtitleText(text: string): string {
  * - Strips UTF-8 Byte Order Mark (BOM)
  * - Removes SSA / ASS style override tags ({\an8}, {\c&H...&}, {\pos(...)})
  * - Sanitizes dangerous HTML tags using strict whitelist
- * - Converts comma timestamps to dot timestamps with 2-digit hour padding
+ * - Converts comma/dot timestamps to standard WebVTT dot timestamps with 2-digit hour padding and 3-digit ms
  */
 export function convertSrtToVtt(srtContent: string): string {
   if (!srtContent) return 'WEBVTT\n\n';
@@ -135,10 +142,11 @@ export function convertSrtToVtt(srtContent: string): string {
   clean = sanitizeSubtitleText(clean);
 
   // 4. Convert comma in SRT timestamps (00:00:16,225 or 0:00:16,225) to dot in VTT (00:00:16.225)
-  const vttBody = clean.replace(/(\d{1,2}:\d{2}:\d{2}),(\d{3})/g, (_match, time, ms) => {
+  // Handles 1 to 3 digits of milliseconds and pads to 3 digits
+  const vttBody = clean.replace(/(\d{1,2}:\d{2}:\d{2})[,\.](\d{1,3})/g, (_match, time, ms) => {
     const parts = time.split(':');
     if (parts[0].length === 1) parts[0] = '0' + parts[0];
-    return `${parts.join(':')}.${ms}`;
+    return `${parts.join(':')}.${ms.padEnd(3, '0')}`;
   });
 
   return `WEBVTT\n\n${vttBody.trim()}\n`;
@@ -173,14 +181,19 @@ export function revokeSubtitleBlob(url: string | null | undefined): void {
  * Fetches an SRT subtitle file from remote URL and converts it to a local Blob URL
  */
 export async function fetchSubtitleVttBlob(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to load subtitle file from ${url} (HTTP ${response.status})`);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to load subtitle file from ${url} (HTTP ${response.status})`);
+    }
+    const srtText = await response.text();
+    const vttContent = convertSrtToVtt(srtText);
+    const blob = new Blob([vttContent], { type: 'text/vtt;charset=utf-8' });
+    return URL.createObjectURL(blob);
+  } catch (err: any) {
+    console.warn(`Subtitle fetch failed for ${url}:`, err);
+    throw new Error(err?.message || `Failed to fetch subtitle track from ${url}`);
   }
-  const srtText = await response.text();
-  const vttContent = convertSrtToVtt(srtText);
-  const blob = new Blob([vttContent], { type: 'text/vtt;charset=utf-8' });
-  return URL.createObjectURL(blob);
 }
 
 // In-memory cache for subtitles per media item
