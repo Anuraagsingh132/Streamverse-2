@@ -176,11 +176,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
                 <Icon className={`relative z-10 h-[18px] w-[18px] shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/65'}`} strokeWidth={1.5} />
                 <span className="relative z-10">{item.label}</span>
-                {item.badge && (
-                  <span className="relative z-10 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/70 border border-white/15">
-                    {item.badge}
-                  </span>
-                )}
               </motion.a>
             );
           })}

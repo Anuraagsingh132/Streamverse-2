@@ -171,9 +171,8 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                     className="font-black leading-none tracking-tighter text-transparent select-none text-[110px] sm:text-[145px] lg:text-[170px] 2xl:text-[190px]" 
                     style={{
                       WebkitTextStroke: '2px rgba(255, 255, 255, 0.45)',
-                      textStroke: '2px rgba(255, 255, 255, 0.45)' as any,
                       fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-                    }}
+                    } as React.CSSProperties}
                   >
                     {rank}
                   </span>

@@ -243,7 +243,7 @@ export const SettingsPage: React.FC = () => {
     { id: 'storage', label: 'Storage & Cache', icon: Database },
   ];
 
-  const activeServerName = serverOptions.find((s) => s.id === settings.defaultServer)?.name || settings.defaultServer;
+  const activeServerName = SERVER_OPTIONS.find((s) => s.id === settings.defaultServer)?.name || settings.defaultServer;
 
   return (
     <div className="relative min-h-screen overflow-hidden px-4 sm:px-6 lg:px-8 pt-28 pb-24">
@@ -368,7 +368,7 @@ export const SettingsPage: React.FC = () => {
                         : 'text-white/70 hover:text-white'
                     }`}
                   >
-                    {filter === 'all' ? `All (${serverOptions.length})` : filter === 'direct' ? 'Direct Streams' : 'Embed Mirrors'}
+                    {filter === 'all' ? `All (${SERVER_OPTIONS.length})` : filter === 'direct' ? 'Direct Streams' : 'Embed Mirrors'}
                   </button>
                 ))}
               </div>
