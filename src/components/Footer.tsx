@@ -32,9 +32,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               e.preventDefault();
               onNavigate('home');
             }} 
-            className="inline-flex items-center gap-2.5 text-left"
+            className="group inline-flex items-center gap-2.5 text-left transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/10">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/10 transition-colors group-hover:border-primary/40 group-hover:bg-primary/10">
               <Clapperboard className="lucide lucide-clapperboard h-4 w-4 text-primary" />
             </span>
             <span className="text-base font-black tracking-tight text-white">Streamverse</span>
@@ -50,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   e.preventDefault();
                   onNavigate(link.route);
                 }}
-                className="text-sm text-white/60 transition hover:text-white"
+                className="text-sm text-white/60 transition-colors duration-200 hover:text-white active:opacity-75"
               >
                 {link.label}
               </a>
@@ -59,17 +59,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         {/* Disclaimer & Copyright */}
-        <div className="mt-5 flex flex-col gap-2 border-t border-white/10 pt-4 text-xs leading-relaxed text-white/65 md:flex-row md:items-center md:justify-between md:gap-6">
+        <div className="mt-5 flex flex-col gap-2.5 border-t border-white/10 pt-4 text-[13px] leading-relaxed text-white/80 md:flex-row md:items-center md:justify-between md:gap-6">
           <p className="max-w-2xl">
             Streamverse doesn't host any files — all content comes from third-party providers. Direct DMCA requests to the respective providers.
           </p>
-          <p className="shrink-0">
+          <p className="shrink-0 text-white/70">
             © 2026 Streamverse · Data by{' '}
             <a 
               href="https://www.themoviedb.org" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-white/80 hover:text-white underline underline-offset-2"
+              className="text-white font-medium hover:underline underline-offset-2"
             >
               TMDB
             </a>{' '}

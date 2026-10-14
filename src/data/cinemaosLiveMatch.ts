@@ -111,8 +111,8 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 8.0,
     badge: '#9 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/kX6ZX4GL7km04332caiOVapR2lb.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'Odysseus, the legendary King of Ithaca, embarks on a long and perilous journey home following the Trojan War. Throughout his voyage, he is forced to confront the whims of gods, mythological monsters, and trials that stretch both his cunning and his humanity to the breaking point.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -172,26 +172,48 @@ export const liveHeroItems: MediaItem[] = [
 
 export const liveTop10Movies: MediaItem[] = [
   {
-    id: '1248832',
-    title: 'Digger',
+    id: '969681',
+    title: 'Spider-Man: Brand New Day',
+    media_type: 'movie',
+    year: 2026,
+    vote_average: 8.4,
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
+    poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
+    overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate and dangerous new enemies.',
+    genres: ['Action', 'Adventure', 'Sci-Fi']
+  },
+  {
+    id: '1234561',
+    title: 'Animals',
     media_type: 'movie',
     year: 2026,
     vote_average: 7.4,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/2ikG6AQhfhdas2pIsctPMEzSRJm.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/2ikG6AQhfhdas2pIsctPMEzSRJm.jpg',
-    overview: 'A high-stakes excavator must race to fix an environmental crisis before civilization collapses.',
-    genres: ['Comedy', 'Drama']
+    backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+    overview: 'A mayoral candidate and his wife must make an impossible moral compromise when their son is kidnapped in Los Angeles.',
+    genres: ['Crime', 'Drama', 'Thriller']
   },
   {
-    id: '1377237',
-    title: 'Runner',
+    id: '1234562',
+    title: 'Matchbox the Movie',
     media_type: 'movie',
     year: 2026,
-    vote_average: 8.3,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/w8fEorMTwgMN9h1cgOb3yMggbiu.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/w8fEorMTwgMN9h1cgOb3yMggbiu.jpg',
-    overview: 'A former soldier is thrown into a brutal race against time when a critical medical delivery makes him the target of a ruthless cartel.',
-    genres: ['Action', 'Comedy']
+    vote_average: 7.8,
+    backdrop_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
+    overview: 'A world-class stunt driver and military team race against time in high-powered customized tactical vehicles across hostile territory.',
+    genres: ['Action', 'Adventure', 'Thriller']
+  },
+  {
+    id: '1234563',
+    title: 'Insidious: Out of the Dark',
+    media_type: 'movie',
+    year: 2026,
+    vote_average: 7.2,
+    backdrop_path: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=800&q=80',
+    overview: 'The Lambert family is pulled back into The Further when an ancient malevolence seeks a permanent vessel in the living world.',
+    genres: ['Horror', 'Mystery', 'Thriller']
   },
   {
     id: '977942',
@@ -205,77 +227,55 @@ export const liveTop10Movies: MediaItem[] = [
     genres: ['History', 'Drama']
   },
   {
-    id: '1492640',
-    title: 'UNABOMBER',
+    id: '1377237',
+    title: 'Runner',
     media_type: 'movie',
     year: 2026,
-    vote_average: 6.6,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/kLqPRuoLtyM6Y7DW6t0CqptIEIB.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/kLqPRuoLtyM6Y7DW6t0CqptIEIB.jpg',
-    overview: 'The harrowing pursuit of Ted Kaczynski as federal agents race against time to halt a deadly nationwide campaign of bombings.',
-    genres: ['Crime', 'Drama', 'Thriller']
+    vote_average: 8.3,
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/w8fEorMTwgMN9h1cgOb3yMggbiu.jpg',
+    poster_path: 'https://image.tmdb.org/t/p/w780/w8fEorMTwgMN9h1cgOb3yMggbiu.jpg',
+    overview: 'A former soldier is thrown into a brutal race against time when a critical medical delivery makes him the target of a ruthless cartel.',
+    genres: ['Action', 'Comedy']
   },
   {
     id: '1423191',
     title: 'Resident Evil',
     media_type: 'movie',
     year: 2026,
-    vote_average: 7.3,
+    vote_average: 7.5,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/3icyRAqgakNcQn6aDVz9libFmBA.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/3icyRAqgakNcQn6aDVz9libFmBA.jpg',
     overview: 'Medical courier Bryan unwittingly finds himself fighting for survival as one fateful, horrifying night collapses around him in chaos.',
     genres: ['Horror', 'Sci-Fi']
   },
   {
-    id: '1283515',
-    title: 'Verity',
+    id: '1368337',
+    title: 'The Odyssey',
     media_type: 'movie',
     year: 2026,
-    vote_average: 6.7,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/3BoHXmGAfC2qO4wnCpMYV0BzpHD.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/3BoHXmGAfC2qO4wnCpMYV0BzpHD.jpg',
-    overview: 'A struggling author accepts the offer of a lifetime to finish a bestselling series, uncovering sinister manuscripts in the process.',
-    genres: ['Mystery', 'Thriller']
+    vote_average: 8.0,
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    overview: 'Odysseus embarks on a long and perilous journey home following the Trojan War.',
+    genres: ['Adventure', 'Action', 'Fantasy']
   },
   {
     id: '774752',
     title: 'Coyote vs. Acme',
     media_type: 'movie',
     year: 2026,
-    vote_average: 7.5,
+    vote_average: 7.6,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/viZqGq9TNvQ5uXSD4ahg2RpRONT.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/viZqGq9TNvQ5uXSD4ahg2RpRONT.jpg',
     overview: 'Wile E. Coyote takes the Acme Corporation to court over their defective products in a landmark legal battle.',
     genres: ['Comedy', 'Animation']
   },
   {
-    id: '1339713',
-    title: 'Obsession',
-    media_type: 'movie',
-    year: 2026,
-    vote_average: 8.2,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/5lTZyuBTNOfawsfPT8Q0cIg6qAF.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/5lTZyuBTNOfawsfPT8Q0cIg6qAF.jpg',
-    overview: 'After breaking the mysterious "One Wish Willow" to win his crush\'s heart, a hopeless romantic discovers the dark price of his wish.',
-    genres: ['Horror', 'Thriller']
-  },
-  {
-    id: '969681',
-    title: 'Spider-Man: Brand New Day',
-    media_type: 'movie',
-    year: 2026,
-    vote_average: 7.9,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
-    overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate and dangerous new enemies.',
-    genres: ['Action', 'Adventure', 'Sci-Fi']
-  },
-  {
     id: '1003596',
     title: 'Avengers: Doomsday',
     media_type: 'movie',
     year: 2026,
-    vote_average: 8.0,
+    vote_average: 8.2,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/s4v0UX1anfXm0UvloLsTTJ4v222.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/s4v0UX1anfXm0UvloLsTTJ4v222.jpg',
     overview: 'Earth’s mightiest heroes face their greatest multiversal threat yet as Victor von Doom unleashes cataclysmic forces.',
@@ -712,8 +712,8 @@ export const liveActionMovies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 8.0,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'Odysseus embarks on a long and perilous journey home following the Trojan War.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -826,7 +826,7 @@ export const liveGenreConfigs: GenreConfig[] = [
   {
     name: 'Adventure',
     id: 12,
-    img: 'https://image.tmdb.org/t/p/w500/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
     gradient: 'linear-gradient(135deg, rgba(245,158,11,0.85) 0%, rgba(245,158,11,0.35) 45%, rgba(0,0,0,0.75) 100%)',
     glowColor: 'rgba(245,158,11,0.6)'
   },
@@ -875,7 +875,7 @@ export const liveGenreConfigs: GenreConfig[] = [
   {
     name: 'Fantasy',
     id: 14,
-    img: 'https://image.tmdb.org/t/p/w500/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
     gradient: 'linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(139,92,246,0.35) 45%, rgba(0,0,0,0.75) 100%)',
     glowColor: 'rgba(139,92,246,0.6)'
   },

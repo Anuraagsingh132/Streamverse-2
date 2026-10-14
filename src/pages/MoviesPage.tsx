@@ -102,10 +102,10 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
         onToggleWatchlist={onToggleWatchlist}
       />
 
-      {/* Main Content Overlapping Hero */}
+      {/* Main Content Overlapping Hero with consistent 64-80px spacing rhythm */}
       <div 
-        className="relative z-10 space-y-6 pb-12"
-        style={{ marginTop: '-36px' }}
+        className="relative z-10 space-y-16 sm:space-y-20 pb-16 bg-[#060812]"
+        style={{ marginTop: '-48px' }}
       >
         {/* Top 10 Today Row */}
         <TopTenRow

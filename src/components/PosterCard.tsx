@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { Play, Star } from 'lucide-react';
 import { MediaItem } from '../types/media';
 
@@ -44,7 +45,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
           import('../pages/DetailsPage');
         }
       }}
-      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] transition-transform duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.97] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 will-change-transform"
     >
       <div className="card-3d relative rounded-xl">
         <div className="relative isolate aspect-[2/3] overflow-hidden rounded-xl bg-white/5 shadow-xl shadow-black/40">
@@ -52,7 +53,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
             alt={item.title}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover transition duration-300 lg:group-hover/card:brightness-50"
+            className="h-full w-full object-cover transition-[transform,filter] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/card:scale-[1.04] lg:group-hover/card:brightness-50"
             src={optimizedPosterSrc}
             onError={(e) => {
               const target = e.currentTarget;
@@ -64,31 +65,34 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
 
           {/* Top Left Rating Badge */}
           {showRatingBadge && (
-            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md transition-opacity lg:group-hover/card:opacity-0">
+            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md transition-opacity duration-300 lg:group-hover/card:opacity-0">
               <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
               {rating}
             </span>
           )}
 
           {/* Hover Glare Gradient */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 transition-opacity duration-500 lg:group-hover/card:opacity-100" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 transition-opacity duration-500 ease-out lg:group-hover/card:opacity-100" />
 
           {/* Center Hover Action Overlay */}
-          <div className="absolute inset-0 hidden translate-y-4 flex-col items-center justify-center p-4 opacity-0 transition duration-300 group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:flex">
-            <button
+          <div className="absolute inset-0 hidden translate-y-3 flex-col items-center justify-center p-4 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:flex">
+            <motion.button
               type="button"
               aria-label={`Play ${item.title}`}
               title={`Play ${item.title}`}
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={(e) => {
                 if (onPlay) {
                   e.stopPropagation();
                   onPlay(item);
                 }
               }}
-              className="mb-3 rounded-full bg-white p-3 text-black shadow-lg shadow-white/20 transition-transform group-hover/card:scale-110 hover:bg-white/90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+              className="mb-3 rounded-full bg-white p-3 text-black shadow-lg shadow-white/20 hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             >
               <Play className="h-5 w-5 fill-current" />
-            </button>
+            </motion.button>
             <h3 className="line-clamp-2 text-center text-sm font-bold leading-tight text-white drop-shadow-md">
               {item.title}
             </h3>

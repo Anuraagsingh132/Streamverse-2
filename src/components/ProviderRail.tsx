@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { Film, Tv, ArrowUpRight, Play, Plus, Check, Star, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { exactNetflixMovies } from '../data/cinemaosRichData';
@@ -131,30 +132,48 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
 
           <div className="flex items-center gap-2.5">
             {/* Movies / TV Shows Toggle */}
-            <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl">
+            <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl relative">
               <button
                 type="button"
                 onClick={() => setFilterType('movie')}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   filterType === 'movie'
-                    ? 'bg-white text-black shadow-md'
+                    ? 'text-black'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
-                <Film className="h-3.5 w-3.5" />
-                <span>Movies</span>
+                {filterType === 'movie' && (
+                  <motion.div
+                    layoutId="provider-media-type-pill"
+                    className="absolute inset-0 rounded-full bg-white shadow-md"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Film className="h-3.5 w-3.5" />
+                  <span>Movies</span>
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setFilterType('tv')}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   filterType === 'tv'
-                    ? 'bg-white text-black shadow-md'
+                    ? 'text-black'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
-                <Tv className="h-3.5 w-3.5" />
-                <span>TV Shows</span>
+                {filterType === 'tv' && (
+                  <motion.div
+                    layoutId="provider-media-type-pill"
+                    className="absolute inset-0 rounded-full bg-white shadow-md"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Tv className="h-3.5 w-3.5" />
+                  <span>TV Shows</span>
+                </span>
               </button>
             </div>
 
@@ -176,24 +195,21 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
         {providers.map((p) => {
           const isSelected = selectedProvider === p.name;
           return (
-            <button
+            <motion.button
               key={p.name}
               type="button"
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={() => setSelectedProvider(p.name)}
-              className="group flex w-[62px] sm:w-[72px] shrink-0 flex-col items-center gap-2 cursor-pointer focus-visible:outline-none"
+              className="group flex w-[62px] sm:w-[72px] shrink-0 flex-col items-center gap-1.5 cursor-pointer focus-visible:outline-none"
               aria-pressed={isSelected}
             >
               <span
-                className={`relative flex h-[58px] w-[58px] sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-[20px] sm:rounded-[22px] border transition-all duration-300 ${
+                className={`relative flex h-[58px] w-[58px] sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-[20px] sm:rounded-[22px] transition-all duration-300 ${
                   isSelected
-                    ? 'scale-105 border-white/20 bg-black opacity-100'
-                    : 'border-white/10 bg-black opacity-85 hover:scale-105 hover:opacity-100 hover:border-white/25'
+                    ? 'scale-105 ring-2 ring-white ring-offset-2 ring-offset-[#060812] border-white/40 bg-black opacity-100 shadow-[0_0_22px_rgba(255,255,255,0.2)]'
+                    : 'border border-white/10 bg-black opacity-75 hover:scale-105 hover:opacity-100 hover:border-white/25'
                 }`}
-                style={{
-                  boxShadow: isSelected
-                    ? `0 14px 30px -4px ${p.color}`
-                    : '0 4px 14px rgba(0,0,0,0.45)'
-                }}
               >
                 <img
                   alt={p.name}
@@ -205,22 +221,31 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
               </span>
               <span
                 className={`w-full truncate text-center text-xs transition-colors ${
-                  isSelected ? 'text-white font-semibold' : 'text-zinc-400 font-medium group-hover:text-white'
+                  isSelected ? 'text-white font-bold' : 'text-zinc-400 font-medium group-hover:text-white'
                 }`}
               >
                 {p.name}
               </span>
-            </button>
+              {isSelected ? (
+                <motion.div
+                  layoutId="active-provider-dot"
+                  className="h-1 w-3.5 rounded-full bg-white shadow-sm"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              ) : (
+                <div className="h-1 w-3.5" />
+              )}
+            </motion.button>
           );
         })}
       </div>
 
-      {/* Active Provider Sub-Header Card (1:1 with Image 1) */}
+      {/* Active Provider Sub-Header Card (Subtle, Refined Border) */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 mt-4">
         <div
-          className="relative overflow-hidden flex items-center justify-between rounded-2xl border border-white/10 bg-[#0c1214]/90 sm:bg-white/[0.03] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300"
+          className="relative overflow-hidden flex items-center justify-between rounded-2xl border border-white/10 bg-[#0d1017]/85 p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 shadow-lg"
           style={{
-            backgroundImage: `linear-gradient(90deg, ${currentProviderObj.color.replace('0.55', '0.2').replace('0.35', '0.15')} 0%, transparent 45%)`
+            backgroundImage: `linear-gradient(90deg, ${currentProviderObj.color.replace('0.55', '0.12').replace('0.35', '0.08')} 0%, transparent 45%)`
           }}
         >
           <div className="flex items-center gap-3.5">
@@ -300,12 +325,12 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
                     className="group block cursor-pointer"
                   >
                     <div className="card-3d relative rounded-xl">
-                      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
+                      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
                         <img
                           alt={item.title}
                           loading={idx < 3 ? "eager" : "lazy"}
                           decoding="async"
-                          className="object-cover transition-[filter,transform] duration-700 group-hover:scale-105 h-full w-full"
+                          className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full"
                           src={
                             (item.backdrop_path || item.poster_path)?.includes('image.tmdb.org/t/p/')
                               ? (item.backdrop_path || item.poster_path)!.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/')
@@ -323,20 +348,25 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
 
                         {/* Add to watchlist */}
-                        <button
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.85 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                           title={isSaved ? 'In watchlist' : 'Add to watchlist'}
+                          aria-label={isSaved ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onToggleWatchlist(item);
                           }}
-                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 ${
+                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition-colors duration-200 cursor-pointer ${
                             isSaved
                               ? 'opacity-100 bg-rose-600 text-white'
                               : 'opacity-0 group-hover:opacity-100 bg-black/50 text-white hover:bg-black/70'
                           }`}
                         >
                           {isSaved ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                        </button>
+                        </motion.button>
 
                         {/* Play button on hover */}
                         <div
@@ -346,9 +376,14 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
                           }}
                           className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                         >
-                          <div className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                            <Play className="h-5 w-5 fill-white text-white" />
-                          </div>
+                          <motion.div
+                            whileHover={{ scale: 1.18 }}
+                            whileTap={{ scale: 0.92 }}
+                            transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 cursor-pointer shadow-lg"
+                          >
+                            <Play className="h-5 w-5 fill-white text-white ml-0.5" />
+                          </motion.div>
                         </div>
                       </div>
                       <span className="card-3d-glare" aria-hidden="true" />

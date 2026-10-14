@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { Play, Star, Plus, Check } from 'lucide-react';
 import { MediaItem } from '../types/media';
 
@@ -42,15 +43,15 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
           import('../pages/DetailsPage');
         }
       }}
-      className="group block cursor-pointer transition-transform duration-200 ease-out hover:-translate-y-1 active:scale-[0.98] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      className="group block cursor-pointer transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 active:scale-[0.98] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
     >
-      <div className="card-3d relative rounded-xl">
-        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
+      <div className="card-3d relative rounded-2xl">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-xl">
           <img
             alt={item.title}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover transition-[filter,transform] duration-700 group-hover:scale-105 blur-0"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 blur-0"
             src={imageSrc}
             onError={(e) => {
               const target = e.currentTarget;
@@ -61,62 +62,64 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
               }
             }}
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
           
           {/* Watchlist button */}
           {onToggleWatchlist && (
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.82 }}
               aria-label={isWatchlist ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
               title={isWatchlist ? "In Watchlist" : "Add to watchlist"}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleWatchlist(item);
               }}
-              className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 opacity-0 group-hover:opacity-100 ${
+              className={`absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-md transition-[opacity,background-color,border-color] duration-200 opacity-0 group-hover:opacity-100 ${
                 isWatchlist 
-                  ? 'bg-primary text-white' 
-                  : 'bg-black/50 text-white hover:bg-black/70'
+                  ? 'bg-primary text-white shadow-sm border-primary' 
+                  : 'bg-black/60 text-white hover:bg-black/85'
               }`}
             >
               {isWatchlist ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-            </button>
+            </motion.button>
           )}
 
           {/* Hover Play Button Overlay */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <button
+          <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-250 ease-out group-hover:opacity-100">
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.92 }}
               aria-label={`Play ${item.title}`}
               title={`Play ${item.title}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onPlay(item);
               }}
-              className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110"
+              className="h-12 w-12 rounded-full bg-white/25 ring-1 ring-white/50 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transform scale-90 group-hover:scale-100 transition-transform duration-250 ease-out cursor-pointer"
             >
-              <Play className="h-5 w-5 fill-white text-white" />
-            </button>
+              <Play className="h-5 w-5 fill-white text-white ml-0.5" />
+            </motion.button>
           </div>
         </div>
         <span className="card-3d-glare" aria-hidden="true" />
       </div>
 
-      {/* Card Metadata */}
-      <div className="mt-2 px-0.5">
-        <h3 className="truncate text-sm font-semibold leading-tight text-white/95">
+      {/* Card Metadata (Raised 1-2px, High Contrast) */}
+      <div className="mt-2.5 px-0.5">
+        <h3 className="truncate text-sm sm:text-base font-bold leading-tight text-white group-hover:text-primary transition-colors">
           {item.title}
         </h3>
-        <div className="mt-1 flex items-center gap-1.5">
-          <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-rose-400">
-            {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Movie'}
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="rounded bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/90">
+            {item.media_type === 'tv' ? 'SERIES' : item.media_type === 'anime' ? 'ANIME' : 'MOVIE'}
           </span>
-          <span className="text-xs font-medium text-white/65">
+          <span className="text-xs font-medium text-white/60">
             {item.year || 2026}
           </span>
-          <span className="ml-auto flex items-center gap-1 text-xs font-medium text-white/70">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            {item.vote_average ? item.vote_average.toFixed(1) : '8.0'}
+          <span className="ml-auto flex items-center gap-1 text-xs sm:text-[13px] font-bold text-amber-400">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <span>{item.vote_average ? item.vote_average.toFixed(1) : '8.0'}</span>
           </span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence } from 'motion/react';
 import {
   Play,
   Pause,
@@ -365,39 +366,41 @@ export const PlayerBottomBar: React.FC<PlayerBottomBarProps> = ({
             </button>
 
             {/* Settings Dropdown Popover */}
-            {isSettingsMenuOpen && (
-              <PlayerSettingsModal
-                settingsTab={settingsTab}
-                setSettingsTab={setSettingsTab}
-                setIsSettingsMenuOpen={setIsSettingsMenuOpen}
-                activeAudioLabel={activeAudioLabel}
-                selectedAudioLang={selectedAudioLang}
-                audioOptions={audioOptions}
-                handleSelectAudioOption={handleSelectAudioOption}
-                selectedStream={selectedStream}
-                handleCopyLink={handleCopyLink}
-                copied={copied}
-                fileInputRef={fileInputRef}
-                selectedSubtitleId={selectedSubtitleId}
-                subtitlesLoading={subtitlesLoading}
-                subtitlesList={subtitlesList}
-                handleSelectSubtitle={handleSelectSubtitle}
-                subtitleSize={subtitleSize}
-                subtitleOffset={subtitleOffset}
-                updateSettings={updateSettings}
-                playbackSpeed={playbackSpeed}
-                setPlaybackSpeed={setPlaybackSpeed}
-                videoRef={videoRef}
-                showToast={showToast}
-                objectFit={objectFit}
-                setObjectFit={setObjectFit}
-                pixelDrainRoute={pixelDrainRoute}
-                handleSelectPixelDrainRoute={handleSelectPixelDrainRoute}
-                streams={streams}
-                selectedStreamIndex={selectedStreamIndex}
-                setSelectedStreamIndex={setSelectedStreamIndex}
-              />
-            )}
+            <AnimatePresence>
+              {isSettingsMenuOpen && (
+                <PlayerSettingsModal
+                  settingsTab={settingsTab}
+                  setSettingsTab={setSettingsTab}
+                  setIsSettingsMenuOpen={setIsSettingsMenuOpen}
+                  activeAudioLabel={activeAudioLabel}
+                  selectedAudioLang={selectedAudioLang}
+                  audioOptions={audioOptions}
+                  handleSelectAudioOption={handleSelectAudioOption}
+                  selectedStream={selectedStream}
+                  handleCopyLink={handleCopyLink}
+                  copied={copied}
+                  fileInputRef={fileInputRef}
+                  selectedSubtitleId={selectedSubtitleId}
+                  subtitlesLoading={subtitlesLoading}
+                  subtitlesList={subtitlesList}
+                  handleSelectSubtitle={handleSelectSubtitle}
+                  subtitleSize={subtitleSize}
+                  subtitleOffset={subtitleOffset}
+                  updateSettings={updateSettings}
+                  playbackSpeed={playbackSpeed}
+                  setPlaybackSpeed={setPlaybackSpeed}
+                  videoRef={videoRef}
+                  showToast={showToast}
+                  objectFit={objectFit}
+                  setObjectFit={setObjectFit}
+                  pixelDrainRoute={pixelDrainRoute}
+                  handleSelectPixelDrainRoute={handleSelectPixelDrainRoute}
+                  streams={streams}
+                  selectedStreamIndex={selectedStreamIndex}
+                  setSelectedStreamIndex={setSelectedStreamIndex}
+                />
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Fullscreen Toggle */}

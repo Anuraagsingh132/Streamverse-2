@@ -6,8 +6,6 @@ import {
   Film, 
   Tv, 
   Cat, 
-  Sparkles, 
-  Music, 
   ChevronDown, 
   Search, 
   Sun, 
@@ -75,8 +73,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: 'Movies', route: 'movie', icon: Film },
     { label: 'TV Shows', route: 'tv', icon: Tv },
     { label: 'Anime', route: 'anime', icon: Cat },
-    { label: 'AI Search', route: 'ai', icon: Sparkles, badge: 'Soon' },
-    { label: 'Music', route: 'music', icon: Music, badge: 'Soon' },
   ];
 
   const browseItems = [
@@ -154,42 +150,52 @@ export const Navbar: React.FC<NavbarProps> = ({
             const Icon = item.icon;
             const isActive = currentRoute === item.route || (item.route === 'anime' && currentRoute === 'anime-details');
             return (
-              <a
+              <motion.a
                 key={item.route}
                 href={getRouteHref(item.route)}
+                whileTap={{ scale: 0.96 }}
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate(item.route);
                 }}
                 onMouseEnter={() => prefetchRoute(item.route)}
                 onFocus={() => prefetchRoute(item.route)}
-                className={`relative inline-flex h-10 items-center gap-2 px-3.5 rounded-full text-sm whitespace-nowrap transition duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
+                className={`relative inline-flex h-10 items-center gap-2 px-3.5 rounded-full text-sm whitespace-nowrap transition-colors duration-200 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
                   isActive
-                    ? 'bg-white/[0.08] ring-1 ring-inset ring-white/10 text-white font-medium shadow-sm'
+                    ? 'text-white font-medium shadow-sm'
                     : 'text-white/65 hover:text-white hover:bg-white/5 font-normal bg-transparent ring-0 border-0 shadow-none'
                 }`}
               >
-                <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-white' : 'text-white/65'}`} strokeWidth={1.5} />
-                <span>{item.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="desktop-navbar-active-pill"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    className="absolute inset-0 rounded-full bg-white/[0.08] ring-1 ring-inset ring-white/10"
+                    aria-hidden="true"
+                  />
+                )}
+                <Icon className={`relative z-10 h-[18px] w-[18px] shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/65'}`} strokeWidth={1.5} />
+                <span className="relative z-10">{item.label}</span>
                 {item.badge && (
-                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/70 border border-white/15">
+                  <span className="relative z-10 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/70 border border-white/15">
                     {item.badge}
                   </span>
                 )}
-              </a>
+              </motion.a>
             );
           })}
 
           {/* Browse Dropdown */}
           <div className="relative" ref={dropdownRef}>
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.95 }}
               onClick={() => setIsBrowseOpen(!isBrowseOpen)}
               onMouseEnter={() => {
                 prefetchRoute('providers');
                 prefetchRoute('livesports');
               }}
-              className={`relative inline-flex h-10 items-center gap-1.5 px-3.5 rounded-full text-sm whitespace-nowrap transition duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
+              className={`relative inline-flex h-10 items-center gap-1.5 px-3.5 rounded-full text-sm whitespace-nowrap transition-colors duration-200 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
                 isBrowseOpen 
                   ? 'bg-white/[0.08] ring-1 ring-inset ring-white/10 text-white font-medium shadow-sm' 
                   : 'text-white/65 hover:text-white hover:bg-white/5 font-normal bg-transparent ring-0 border-0 shadow-none'
@@ -197,7 +203,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <span>Browse</span>
               <ChevronDown className={`h-3.5 w-3.5 opacity-65 transition-transform duration-200 ${isBrowseOpen ? 'rotate-180' : ''}`} strokeWidth={1.5} />
-            </button>
+            </motion.button>
 
             <AnimatePresence>
               {isBrowseOpen && (
@@ -215,9 +221,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {browseItems.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <a
+                      <motion.a
                         key={item.route}
                         href={getRouteHref(item.route)}
+                        whileTap={{ scale: 0.98 }}
                         onClick={(e) => {
                           e.preventDefault();
                           onNavigate(item.route);
@@ -227,14 +234,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onFocus={() => prefetchRoute(item.route)}
                         className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-white/10 transition group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                       >
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70 group-hover:text-white">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70 group-hover:text-white transition-colors duration-150">
                           <Icon className="h-4 w-4" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium leading-none text-white">{item.label}</p>
                           <p className="mt-0.5 text-[11px] text-white/40 truncate">{item.description}</p>
                         </div>
-                      </a>
+                      </motion.a>
                     );
                   })}
                 </motion.div>
@@ -266,13 +273,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={toggleTheme}
             aria-label="Toggle theme"
             title="Toggle theme"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 overflow-hidden"
           >
-            {isDark ? (
-              <Sun className="h-[18px] w-[18px]" strokeWidth={1.5} />
-            ) : (
-              <Moon className="h-[18px] w-[18px]" strokeWidth={1.5} />
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={isDark ? 'dark' : 'light'}
+                initial={{ rotate: -45, opacity: 0, scale: 0.7 }}
+                animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                exit={{ rotate: 45, opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                className="flex items-center justify-center"
+              >
+                {isDark ? (
+                  <Sun className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                ) : (
+                  <Moon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                )}
+              </motion.span>
+            </AnimatePresence>
           </motion.button>
 
           {/* Discord Button */}

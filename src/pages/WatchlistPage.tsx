@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Bookmark, Trash2, Film, Tv, Cat, Sparkles, AlertTriangle } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
@@ -110,72 +111,108 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
           <button
             type="button"
             onClick={() => setActiveFilter('all')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
+            className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
               activeFilter === 'all'
-                ? 'bg-white text-black shadow-lg shadow-white/10'
+                ? 'text-black'
                 : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>All Titles</span>
-            <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
-              activeFilter === 'all' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
-            }`}>
-              {counts.all}
+            {activeFilter === 'all' && (
+              <motion.div
+                layoutId="watchlist-filter-pill"
+                className="absolute inset-0 rounded-xl bg-white shadow-lg shadow-white/10"
+                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>All Titles</span>
+              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
+                activeFilter === 'all' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
+              }`}>
+                {counts.all}
+              </span>
             </span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveFilter('movie')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
+            className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
               activeFilter === 'movie'
-                ? 'bg-white text-black shadow-lg shadow-white/10'
+                ? 'text-black'
                 : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <Film className="h-3.5 w-3.5" />
-            <span>Movies</span>
-            <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
-              activeFilter === 'movie' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
-            }`}>
-              {counts.movie}
+            {activeFilter === 'movie' && (
+              <motion.div
+                layoutId="watchlist-filter-pill"
+                className="absolute inset-0 rounded-xl bg-white shadow-lg shadow-white/10"
+                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Film className="h-3.5 w-3.5" />
+              <span>Movies</span>
+              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
+                activeFilter === 'movie' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
+              }`}>
+                {counts.movie}
+              </span>
             </span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveFilter('tv')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
+            className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
               activeFilter === 'tv'
-                ? 'bg-white text-black shadow-lg shadow-white/10'
+                ? 'text-black'
                 : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <Tv className="h-3.5 w-3.5" />
-            <span>TV Series</span>
-            <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
-              activeFilter === 'tv' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
-            }`}>
-              {counts.tv}
+            {activeFilter === 'tv' && (
+              <motion.div
+                layoutId="watchlist-filter-pill"
+                className="absolute inset-0 rounded-xl bg-white shadow-lg shadow-white/10"
+                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Tv className="h-3.5 w-3.5" />
+              <span>TV Series</span>
+              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
+                activeFilter === 'tv' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
+              }`}>
+                {counts.tv}
+              </span>
             </span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveFilter('anime')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
+            className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
               activeFilter === 'anime'
-                ? 'bg-white text-black shadow-lg shadow-white/10'
+                ? 'text-black'
                 : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <Cat className="h-3.5 w-3.5" />
-            <span>Anime</span>
-            <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
-              activeFilter === 'anime' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
-            }`}>
-              {counts.anime}
+            {activeFilter === 'anime' && (
+              <motion.div
+                layoutId="watchlist-filter-pill"
+                className="absolute inset-0 rounded-xl bg-white shadow-lg shadow-white/10"
+                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Cat className="h-3.5 w-3.5" />
+              <span>Anime</span>
+              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
+                activeFilter === 'anime' ? 'bg-black/10 text-black' : 'bg-white/10 text-zinc-400'
+              }`}>
+                {counts.anime}
+              </span>
             </span>
           </button>
         </div>
@@ -217,54 +254,80 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 sm:gap-4">
-          {filteredItems.map((item) => (
-            <MediaCard
-              key={item.id}
-              item={item}
-              onPlay={onPlay}
-              onOpenDetails={onOpenDetails}
-              isWatchlist={true}
-              onToggleWatchlist={onToggleWatchlist}
-            />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filteredItems.map((item) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] } }}
+                transition={{ layout: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }}
+              >
+                <MediaCard
+                  item={item}
+                  onPlay={onPlay}
+                  onOpenDetails={onOpenDetails}
+                  isWatchlist={true}
+                  onToggleWatchlist={onToggleWatchlist}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
       {/* Confirmation Modal */}
-      {showClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-red-500">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10">
-                <AlertTriangle className="h-5 w-5" />
+      <AnimatePresence>
+        {showClearConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowClearConfirm(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 8 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 8 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center gap-3 text-red-500">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Clear entire watchlist?</h3>
+                  <p className="text-xs text-zinc-400">This action cannot be undone.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Clear entire watchlist?</h3>
-                <p className="text-xs text-zinc-400">This action cannot be undone.</p>
+              <p className="text-xs text-zinc-300">
+                Are you sure you want to remove all {allSavedItems.length} saved movies, anime, and series from your personal library?
+              </p>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(false)}
+                  className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmClear}
+                  className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/30 hover:bg-red-500 transition cursor-pointer"
+                >
+                  Yes, Clear All
+                </button>
               </div>
-            </div>
-            <p className="text-xs text-zinc-300">
-              Are you sure you want to remove all {allSavedItems.length} saved movies, anime, and series from your personal library?
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(false)}
-                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmClear}
-                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/30 hover:bg-red-500 transition cursor-pointer"
-              >
-                Yes, Clear All
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

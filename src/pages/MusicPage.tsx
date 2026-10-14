@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion } from 'motion/react';
 import {
   Music,
   Play,
@@ -239,58 +240,69 @@ export const MusicPage: React.FC = () => {
           {/* Controls Cluster */}
           <div className="flex items-center justify-center md:justify-start gap-3 sm:gap-5 pt-1">
             {/* Shuffle */}
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.88 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={() => setIsShuffling(!isShuffling)}
-              className={`p-2 rounded-full transition ${isShuffling ? 'text-rose-400 bg-rose-500/20' : 'text-zinc-400 hover:text-white'}`}
+              className={`p-2 rounded-full transition cursor-pointer ${isShuffling ? 'text-rose-400 bg-rose-500/20' : 'text-zinc-400 hover:text-white'}`}
               title="Shuffle Playlist"
               aria-label="Shuffle"
             >
               <Shuffle className="h-4 w-4" />
-            </button>
+            </motion.button>
 
             {/* Previous */}
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.88 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={handlePrevTrack}
-              className="p-2 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition"
+              className="p-2 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
               title="Previous Track"
               aria-label="Previous Track"
             >
               <SkipBack className="h-5 w-5" />
-            </button>
+            </motion.button>
 
             {/* Play/Pause Button */}
-            <button
+            <motion.button
               type="button"
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={() => setIsPlaying(!isPlaying)}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-600 text-white shadow-lg shadow-rose-600/40 hover:bg-rose-500 hover:scale-105 active:scale-95 transition"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-600 text-white shadow-lg shadow-rose-600/40 hover:bg-rose-500 transition cursor-pointer"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-white ml-0.5" />}
-            </button>
+            </motion.button>
 
             {/* Next */}
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.88 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={handleNextTrack}
-              className="p-2 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition"
+              className="p-2 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
               title="Next Track"
               aria-label="Next Track"
             >
               <SkipForward className="h-5 w-5" />
-            </button>
+            </motion.button>
 
             {/* Repeat */}
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.88 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={() => setIsLooping(!isLooping)}
-              className={`p-2 rounded-full transition ${isLooping ? 'text-rose-400 bg-rose-500/20' : 'text-zinc-400 hover:text-white'}`}
+              className={`p-2 rounded-full transition cursor-pointer ${isLooping ? 'text-rose-400 bg-rose-500/20' : 'text-zinc-400 hover:text-white'}`}
               title="Repeat Single Track"
               aria-label="Repeat Track"
             >
               <Repeat className="h-4 w-4" />
-            </button>
+            </motion.button>
 
             {/* Volume Control */}
             <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-white/10">

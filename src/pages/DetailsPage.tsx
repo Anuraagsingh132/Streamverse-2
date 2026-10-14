@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Play, 
   Bookmark, 
@@ -25,6 +26,7 @@ import { SEOHead } from '../components/SEOHead';
 import { GlassBackButton } from '../components/details/GlassBackButton';
 import { purgeMediaItemCache } from '../utils/cacheManager';
 import { FALLBACK_BACKDROP } from '../utils/imageUtils';
+import { modalBackdropVariants, modalContentVariants, dropdownMenuVariants } from '../utils/motion';
 
 interface DetailsPageProps {
   item: MediaItem;
@@ -406,62 +408,77 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2.5 pt-1">
                 {/* Play CTA */}
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => onPlay({ ...item, episodes_list: episodes }, 1, selectedSeason)}
-                  className="flex h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black shadow-lg transition hover:bg-white/85 sm:px-7"
+                  className="flex h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black shadow-lg transition-colors hover:bg-white/85 sm:px-7 cursor-pointer"
                 >
                   <Play className="h-4 w-4 fill-current" />
                   Play
-                </button>
+                </motion.button>
 
                 {/* Trailer CTA */}
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => {
                     setActiveVideoKey(officialTrailerKey);
                     setTrailerModalOpen(true);
                   }}
-                  className="flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/25 sm:px-5"
+                  className="flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25 sm:px-5 cursor-pointer"
                 >
                   <Clapperboard className="h-4 w-4" />
                   <span className="hidden sm:inline">Trailer</span>
-                </button>
+                </motion.button>
 
                 {/* Watch Later / Bookmark */}
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.88 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => onToggleWatchlist(item)}
                   title={isSaved ? 'In Watchlist' : 'Watch Later'}
                   aria-label={isSaved ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
-                  className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 backdrop-blur-md transition ${
+                  className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 backdrop-blur-md transition-colors cursor-pointer ${
                     isSaved ? 'bg-rose-600 text-white border-rose-500' : 'bg-white/10 text-white hover:bg-white/20'
                   }`}
                 >
                   <Bookmark className="h-4 w-4" />
-                </button>
+                </motion.button>
 
                 {/* Share */}
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.88 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={handleShare}
                   title={copiedShare ? 'Copied URL!' : 'Share'}
                   aria-label="Share"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 cursor-pointer"
                 >
                   {copiedShare ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
-                </button>
+                </motion.button>
 
                 {/* Download */}
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.88 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => onPlay({ ...item, episodes_list: episodes }, 1, selectedSeason)}
                   title="Download"
                   aria-label="Download"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 cursor-pointer"
                 >
                   <Download className="h-4 w-4" />
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -749,23 +766,31 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   <ChevronDown className="h-4 w-4 text-white/60 transition-transform group-hover:rotate-180" />
                 </button>
 
-                {seasonDropdownOpen && item.seasons_list && (
-                  <div className="absolute right-0 top-11 z-50 min-w-[160px] overflow-hidden rounded-xl border border-white/15 bg-zinc-900/95 p-1 shadow-2xl backdrop-blur-md">
-                    {item.seasons_list.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => handleSeasonChange(s.season_number)}
-                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
-                          selectedSeason === s.season_number ? 'bg-white text-black' : 'text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <span className="font-bold">S{s.season_number}</span>
-                        <span className="truncate">{s.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <AnimatePresence>
+                  {seasonDropdownOpen && item.seasons_list && (
+                    <motion.div
+                      variants={dropdownMenuVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="absolute right-0 top-11 z-50 min-w-[160px] overflow-hidden rounded-xl border border-white/15 bg-zinc-900/95 p-1 shadow-2xl backdrop-blur-md"
+                    >
+                      {item.seasons_list.map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => handleSeasonChange(s.season_number)}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
+                            selectedSeason === s.season_number ? 'bg-white text-black' : 'text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="font-bold">S{s.season_number}</span>
+                          <span className="truncate">{s.name}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -1197,27 +1222,43 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
       </section>
 
       {/* Trailer & Video Player Modal */}
-      {trailerModalOpen && activeVideoKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
-          <div className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-white/20 bg-black shadow-2xl">
-            <button
-              onClick={() => setTrailerModalOpen(false)}
-              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/40 transition"
+      <AnimatePresence>
+        {trailerModalOpen && activeVideoKey && (
+          <motion.div
+            variants={modalBackdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={() => setTrailerModalOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          >
+            <motion.div
+              variants={modalContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-white/20 bg-black shadow-2xl"
             >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="aspect-video w-full">
-              <iframe
-                title={item.title}
-                src={`https://www.youtube.com/embed/${activeVideoKey}?autoplay=1&rel=0`}
-                className="h-full w-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </div>
-      )}
+              <button
+                onClick={() => setTrailerModalOpen(false)}
+                className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/40 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="aspect-video w-full">
+                <iframe
+                  title={item.title}
+                  src={`https://www.youtube.com/embed/${activeVideoKey}?autoplay=1&rel=0`}
+                  className="h-full w-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

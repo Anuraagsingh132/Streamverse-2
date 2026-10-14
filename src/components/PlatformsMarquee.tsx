@@ -45,7 +45,7 @@ export const PlatformsMarquee: React.FC = () => {
                 {platforms.map((a, i) => (
                   <div
                     key={`${rep}-${i}`}
-                    className="group flex h-20 w-32 items-center justify-center rounded-xl border border-black/10 bg-white/10 backdrop-blur-sm transition duration-300 hover:border-black/30 hover:bg-white/20 dark:border-white/10 dark:bg-black/20 dark:hover:border-white/30 dark:hover:bg-black/30 md:h-24 md:w-40"
+                    className="group flex h-20 w-32 items-center justify-center rounded-xl border border-black/10 bg-white/10 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 hover:-translate-y-1 hover:border-black/30 hover:bg-white/20 dark:border-white/10 dark:bg-black/20 dark:hover:border-white/30 dark:hover:bg-black/30 md:h-24 md:w-40 cursor-pointer"
                   >
                     <div className="relative flex h-16 w-20 items-center justify-center p-2">
                       <img

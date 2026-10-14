@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   ChevronLeft, 
@@ -18,22 +19,37 @@ import { getSeasonEpisodes } from '../services/tmdb';
 import { resolveAnimeToTmdb } from '../services/animeResolver';
 import { purgeMediaItemCache } from '../utils/cacheManager';
 import { useContinueWatchingStore, savePlaybackRecord, getPlaybackRecord } from '../store/useContinueWatchingStore';
+import { dropdownMenuVariants, drawerVariants, modalBackdropVariants } from '../utils/motion';
 
 interface ServerOption {
   id: string;
   name: string;
   badge?: string;
   description?: string;
+  referrerPolicy?: React.HTMLAttributeReferrerPolicy;
   getUrl: (id: string | number, isTV: boolean, season: number, episode: number) => string;
 }
 
 // Anime-specific streaming servers (MegaPlay Sub & Dub powered by AniList ID + Episode)
 const ANIME_SERVERS: ServerOption[] = [
   {
+    id: 'cinemaos',
+    name: 'CinemaOS',
+    badge: 'Server 1 · Official (Default)',
+    description: 'CinemaOS official embed player',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
+      }
+      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
+    }
+  },
+  {
     id: 'megaplay-sub',
     name: 'MegaPlay (Sub)',
     badge: 'Anime · Subbed',
-    description: 'Fast HD Japanese audio with subtitles (Default)',
+    description: 'Fast HD Japanese audio with subtitles',
     getUrl: (id, _isTV, _season, episode) =>
       `https://megaplay.buzz/stream/ani/${encodeURIComponent(id)}/${encodeURIComponent(episode)}/sub`
   },
@@ -44,19 +60,6 @@ const ANIME_SERVERS: ServerOption[] = [
     description: 'English dubbed anime stream',
     getUrl: (id, _isTV, _season, episode) =>
       `https://megaplay.buzz/stream/ani/${encodeURIComponent(id)}/${encodeURIComponent(episode)}/dub`
-  },
-  {
-    id: 'cinemaos',
-    name: 'CinemaOS',
-    badge: 'Mirror 1 · HD',
-    description: 'CinemaOS official embed player',
-    getUrl: (tmdbId, isTV, season, episode) => {
-      const cleanId = encodeURIComponent(tmdbId);
-      if (!isTV) {
-        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
-      }
-      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
-    }
   },
   {
     id: 'hdhub',
@@ -77,10 +80,23 @@ const ANIME_SERVERS: ServerOption[] = [
 // Configurable video streaming servers list for Movies and TV Shows
 const MOVIE_TV_SERVERS: ServerOption[] = [
   {
+    id: 'cinemaos',
+    name: 'CinemaOS',
+    badge: 'Server 1 · Official (Default)',
+    description: 'CinemaOS official embed player (Default)',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
+      }
+      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
+    }
+  },
+  {
     id: 'hdhub',
     name: 'HDHub',
     badge: 'Direct Stream · HD',
-    description: 'High-speed PixelDrain & Cloudflare direct streams (Default)',
+    description: 'High-speed PixelDrain & Cloudflare direct streams',
     getUrl: () => ''
   },
   {
@@ -89,19 +105,6 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
     badge: 'Direct & HLS · Fast',
     description: 'Pengu cloud streams with native HLS and multi-source mirrors',
     getUrl: () => ''
-  },
-  {
-    id: 'cinemaos',
-    name: 'CinemaOS',
-    badge: 'Server 1 · HD',
-    description: 'CinemaOS official embed player',
-    getUrl: (tmdbId, isTV, season, episode) => {
-      const cleanId = encodeURIComponent(tmdbId);
-      if (!isTV) {
-        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
-      }
-      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
-    }
   },
   {
     id: 'vidsrc-sh',
@@ -199,6 +202,7 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
     name: 'VixSrc',
     badge: 'Mirror 8 · Direct',
     description: 'VixSrc high-speed streaming server',
+    referrerPolicy: 'origin',
     getUrl: (tmdbId, isTV, season, episode) => {
       const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
@@ -279,7 +283,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     if (item?.media_type === 'anime') {
       return 'megaplay-sub';
     }
-    return settings.defaultServer || 'hdhub';
+    return settings.defaultServer || 'cinemaos';
   });
 
   const [prevItemIdForServer, setPrevItemIdForServer] = useState(item?.id);
@@ -288,7 +292,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     if (item?.media_type === 'anime') {
       setSelectedServerId((prev) => (prev === 'megaplay-dub' ? 'megaplay-dub' : 'megaplay-sub'));
     } else {
-      setSelectedServerId(settings.defaultServer || 'hdhub');
+      setSelectedServerId(settings.defaultServer || 'cinemaos');
     }
   }
 
@@ -662,13 +666,13 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
           </HDHubErrorBoundary>
         ) : embedUrl ? (
           <iframe
-            key={embedUrl}
+            key={`${selectedServerId}-${embedUrl}`}
             src={embedUrl}
             title={item.title}
             className="absolute inset-0 w-full h-full border-0 bg-black"
             allowFullScreen
             scrolling="no"
-            referrerPolicy="no-referrer"
+            referrerPolicy={currentServer.referrerPolicy || (selectedServerId === 'vixsrc' ? 'origin' : 'no-referrer')}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
           />
         ) : (
@@ -837,82 +841,88 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
                 </button>
 
                 {/* Server Dropdown Popover (Right-aligned!) */}
-                {isServerDropdownOpen && (
-                  <div
-                    data-lenis-prevent
-                    className="absolute right-0 top-full mt-2 z-50 w-64 sm:w-72 rounded-2xl border border-white/15 bg-[#111115]/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
-                  >
-                    <div className="flex items-center justify-between px-3 py-2 mb-1 border-b border-white/10">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-                        Select Server
-                      </span>
-                      <span className="text-[10px] text-primary font-semibold">
-                        {activeServers.length} Available
-                      </span>
-                    </div>
-
-                    <div
-                      style={{ maxHeight: '236px', overflowY: 'auto' }}
-                      className="max-h-60 overflow-y-auto space-y-1 pr-1 drawer-scroll overscroll-contain server-dropdown-scroll"
+                <AnimatePresence>
+                  {isServerDropdownOpen && (
+                    <motion.div
+                      variants={dropdownMenuVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      data-lenis-prevent
+                      className="absolute right-0 top-full mt-2 z-50 w-64 sm:w-72 rounded-2xl border border-white/15 bg-[#111115]/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
                     >
-                      {activeServers.map((srv) => {
-                        const isSelected = srv.id === selectedServerId;
-                        const isDirect = srv.id === 'hdhub' || srv.id === 'pengu' || srv.id === 'cinemaos';
-                        return (
-                          <button
-                            key={srv.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedServerId(srv.id);
-                              setIsServerDropdownOpen(false);
-                              resetHideTimer();
-                            }}
-                            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 text-left ${
-                              isSelected
-                                ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
-                                : 'text-white/70 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0 pr-2">
-                              <span
-                                className={`h-2 w-2 rounded-full shrink-0 ${
-                                  isDirect
-                                    ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'
-                                    : 'bg-amber-400/90 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
-                                }`}
-                                title={isDirect ? 'Direct Stream' : 'Fast Mirror'}
-                              />
-                              <div className="flex flex-col min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-semibold text-white truncate">{srv.name}</span>
-                                  {srv.badge && (
-                                    <span
-                                      className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                                        isSelected
-                                          ? 'bg-primary/25 text-primary border border-primary/35'
-                                          : 'bg-white/10 text-white/60 border border-white/10'
-                                      }`}
-                                    >
-                                      {srv.badge}
+                      <div className="flex items-center justify-between px-3 py-2 mb-1 border-b border-white/10">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                          Select Server
+                        </span>
+                        <span className="text-[10px] text-primary font-semibold">
+                          {activeServers.length} Available
+                        </span>
+                      </div>
+
+                      <div
+                        style={{ maxHeight: '236px', overflowY: 'auto' }}
+                        className="max-h-60 overflow-y-auto space-y-1 pr-1 drawer-scroll overscroll-contain server-dropdown-scroll"
+                      >
+                        {activeServers.map((srv) => {
+                          const isSelected = srv.id === selectedServerId;
+                          const isDirect = srv.id === 'hdhub' || srv.id === 'pengu' || srv.id === 'cinemaos';
+                          return (
+                            <button
+                              key={srv.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedServerId(srv.id);
+                                setIsServerDropdownOpen(false);
+                                resetHideTimer();
+                              }}
+                              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 text-left ${
+                                isSelected
+                                  ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
+                                  : 'text-white/70 hover:text-white hover:bg-white/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0 pr-2">
+                                <span
+                                  className={`h-2 w-2 rounded-full shrink-0 ${
+                                    isDirect
+                                      ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'
+                                      : 'bg-amber-400/90 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                                  }`}
+                                  title={isDirect ? 'Direct Stream' : 'Fast Mirror'}
+                                />
+                                <div className="flex flex-col min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-semibold text-white truncate">{srv.name}</span>
+                                    {srv.badge && (
+                                      <span
+                                        className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
+                                          isSelected
+                                            ? 'bg-primary/25 text-primary border border-primary/35'
+                                            : 'bg-white/10 text-white/60 border border-white/10'
+                                        }`}
+                                      >
+                                        {srv.badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {srv.description && (
+                                    <span className="text-[10px] text-white/40 truncate mt-0.5">
+                                      {srv.description}
                                     </span>
                                   )}
                                 </div>
-                                {srv.description && (
-                                  <span className="text-[10px] text-white/40 truncate mt-0.5">
-                                    {srv.description}
-                                  </span>
-                                )}
                               </div>
-                            </div>
-                            {isSelected && (
-                              <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                              {isSelected && (
+                                <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -920,25 +930,36 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
       )}
 
       {/* Dimmed backdrop covering the player to hide episode drawer and server dropdown when clicking inside player */}
-      {(isEpisodeDrawerOpen || isServerDropdownOpen) && (
-        <div 
-          onClick={() => {
-            setIsEpisodeDrawerOpen(false);
-            setIsServerDropdownOpen(false);
-            resetHideTimer();
-          }}
-          className="absolute inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-all duration-300 animate-in fade-in cursor-pointer"
-          aria-label="Close menus and return to player"
-          title="Click to resume playback"
-        />
-      )}
+      <AnimatePresence>
+        {(isEpisodeDrawerOpen || isServerDropdownOpen) && (
+          <motion.div 
+            variants={modalBackdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={() => {
+              setIsEpisodeDrawerOpen(false);
+              setIsServerDropdownOpen(false);
+              resetHideTimer();
+            }}
+            className="absolute inset-0 z-40 bg-black/40 backdrop-blur-[2px] cursor-pointer"
+            aria-label="Close menus and return to player"
+            title="Click to resume playback"
+          />
+        )}
+      </AnimatePresence>
 
       {/* Episode Selection Drawer for Series */}
-      {isTV && isEpisodeDrawerOpen && (
-        <aside 
-          data-lenis-prevent
-          className="absolute right-0 top-0 bottom-0 z-50 w-full max-w-sm sm:max-w-md h-full max-h-screen bg-zinc-950/95 border-l border-white/10 shadow-2xl backdrop-blur-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300 pointer-events-auto"
-        >
+      <AnimatePresence>
+        {isTV && isEpisodeDrawerOpen && (
+          <motion.aside 
+            variants={drawerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            data-lenis-prevent
+            className="absolute right-0 top-0 bottom-0 z-50 w-full max-w-sm sm:max-w-md h-full max-h-screen bg-zinc-950/95 border-l border-white/10 shadow-2xl backdrop-blur-2xl flex flex-col overflow-hidden pointer-events-auto"
+          >
           {/* Drawer Header */}
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-3.5">
             <div className="flex items-center gap-2.5">
@@ -962,31 +983,39 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
                     <ChevronDown className={`h-3 w-3 text-white/70 transition-transform duration-200 ${isSeasonDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {isSeasonDropdownOpen && (
-                    <div className="absolute left-0 top-full mt-1.5 z-50 w-36 rounded-xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-2xl backdrop-blur-2xl">
-                      <div 
-                        data-lenis-prevent
-                        onWheel={(e) => e.stopPropagation()}
-                        className="max-h-48 overflow-y-auto space-y-0.5 drawer-scroll"
+                  <AnimatePresence>
+                    {isSeasonDropdownOpen && (
+                      <motion.div
+                        variants={dropdownMenuVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="absolute left-0 top-full mt-1.5 z-50 w-36 rounded-xl border border-white/15 bg-zinc-950/95 p-1.5 shadow-2xl backdrop-blur-2xl"
                       >
-                        {availableSeasons.map((sObj) => (
-                          <button
-                            key={sObj.seasonNumber}
-                            type="button"
-                            onClick={() => handleSelectSeason(sObj.seasonNumber)}
-                            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition ${
-                              season === sObj.seasonNumber
-                                ? 'bg-white/15 text-white font-bold'
-                                : 'text-white/70 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            <span>{sObj.label}</span>
-                            {season === sObj.seasonNumber && <Check className="h-3.5 w-3.5 text-primary" />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        <div 
+                          data-lenis-prevent
+                          onWheel={(e) => e.stopPropagation()}
+                          className="max-h-48 overflow-y-auto space-y-0.5 drawer-scroll"
+                        >
+                          {availableSeasons.map((sObj) => (
+                            <button
+                              key={sObj.seasonNumber}
+                              type="button"
+                              onClick={() => handleSelectSeason(sObj.seasonNumber)}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition ${
+                                season === sObj.seasonNumber
+                                  ? 'bg-white/15 text-white font-bold'
+                                  : 'text-white/70 hover:text-white hover:bg-white/10'
+                              }`}
+                            >
+                              <span>{sObj.label}</span>
+                              {season === sObj.seasonNumber && <Check className="h-3.5 w-3.5 text-primary" />}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
             </div>
@@ -1137,8 +1166,9 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
               </div>
             )}
           </div>
-        </aside>
+        </motion.aside>
       )}
+      </AnimatePresence>
     </div>
   );
 };

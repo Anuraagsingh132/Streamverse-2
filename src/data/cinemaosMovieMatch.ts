@@ -61,8 +61,8 @@ export const movieHeroItems: MediaItem[] = [
     vote_average: 8.0,
     badge: '#5 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/kX6ZX4GL7km04332caiOVapR2lb.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'Odysseus, the legendary King of Ithaca, embarks on a long and perilous journey home following the Trojan War.',
     genres: ['Adventure', 'Action', 'Fantasy']
   }
@@ -141,8 +141,8 @@ export const movieTop10Items: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 8.0,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'Odysseus embarks on a perilous voyage home encountering mythical titans and monsters.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -222,7 +222,7 @@ export const moviePopularItems: MediaItem[] = [
     year: 2026,
     vote_average: 8.0,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/qaWgqQdJwohmc4XK4iXAiZiPOKH.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'Odysseus embarks on a long and perilous journey home following the Trojan War.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -302,7 +302,7 @@ export const movieActionItems: MediaItem[] = [
     year: 2026,
     vote_average: 8.0,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/qaWgqQdJwohmc4XK4iXAiZiPOKH.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'Odysseus embarks on a long and perilous voyage home facing divine wrath.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -484,7 +484,7 @@ export const movieNowPlayingItems: MediaItem[] = [
     year: 2026,
     vote_average: 8.0,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/qaWgqQdJwohmc4XK4iXAiZiPOKH.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'The Homeric journey across mythical oceans in IMAX.',
     genres: ['Adventure', 'Action']
   },
@@ -720,8 +720,8 @@ export const movieUpcomingItems: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 8.0,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bulFtfy3oBQtCnAMSi7g6DSSds3.jpg',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     overview: 'Homer’s timeless epic reimagined on the big screen.',
     genres: ['Adventure', 'Action']
   }

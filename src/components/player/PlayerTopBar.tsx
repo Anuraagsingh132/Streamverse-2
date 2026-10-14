@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import { MediaItem } from '../../types/media';
 import { HDHubStream } from '../../services/hdhub';
+import { dropdownMenuVariants } from '../../utils/motion';
 
 export interface PlayerTopBarProps {
   showControls: boolean;
@@ -227,66 +229,73 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
             </button>
 
             {/* Source Dropdown Popover (Right-aligned!) */}
-            {isServerDropdownOpen && (
-              <div
-                data-lenis-prevent
-                className="absolute right-0 top-full mt-2 w-64 sm:w-72 rounded-2xl border border-white/15 bg-[#111115]/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 z-50"
-              >
-                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Select Source</span>
-                  <span className="text-[10px] text-primary font-semibold">{serversList.length} Options</span>
-                </div>
-                <div
-                  style={{ maxHeight: '236px', overflowY: 'auto' }}
-                  className="max-h-60 overflow-y-auto space-y-1 pr-1 drawer-scroll overscroll-contain server-dropdown-scroll"
+            <AnimatePresence>
+              {isServerDropdownOpen && (
+                <motion.div
+                  key="server-dropdown"
+                  variants={dropdownMenuVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  data-lenis-prevent
+                  className="absolute right-0 top-full mt-2 w-64 sm:w-72 rounded-2xl border border-white/15 bg-[#111115]/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] backdrop-blur-2xl z-50"
                 >
-                  {serversList.map((srv) => {
-                    const isSelected = srv.id === currentServerId;
-                    const isDirect = srv.id === 'hdhub' || srv.id === 'pengu' || srv.id === 'cinemaos';
-                    return (
-                      <button
-                        key={srv.id}
-                        type="button"
-                        onClick={() => {
-                          if (onSwitchServer) onSwitchServer(srv.id);
-                          setIsServerDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition text-left ${
-                          isSelected
-                            ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
-                            : 'text-white/70 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0 pr-2">
-                          <span
-                            className={`h-2 w-2 rounded-full shrink-0 ${
-                              isDirect
-                                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'
-                                : 'bg-amber-400/90 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
-                            }`}
-                            title={isDirect ? 'Direct Stream' : 'Fast Mirror'}
-                          />
-                          <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-semibold text-white truncate">{srv.name}</span>
-                              {srv.badge && (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-white/10 text-white/60">
-                                  {srv.badge}
-                                </span>
+                  <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Select Source</span>
+                    <span className="text-[10px] text-primary font-semibold">{serversList.length} Options</span>
+                  </div>
+                  <div
+                    style={{ maxHeight: '236px', overflowY: 'auto' }}
+                    className="max-h-60 overflow-y-auto space-y-1 pr-1 drawer-scroll overscroll-contain server-dropdown-scroll"
+                  >
+                    {serversList.map((srv) => {
+                      const isSelected = srv.id === currentServerId;
+                      const isDirect = srv.id === 'hdhub' || srv.id === 'pengu' || srv.id === 'cinemaos';
+                      return (
+                        <button
+                          key={srv.id}
+                          type="button"
+                          onClick={() => {
+                            if (onSwitchServer) onSwitchServer(srv.id);
+                            setIsServerDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition text-left cursor-pointer ${
+                            isSelected
+                              ? 'bg-white/15 text-white font-semibold shadow-sm border border-white/10'
+                              : 'text-white/70 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 pr-2">
+                            <span
+                              className={`h-2 w-2 rounded-full shrink-0 ${
+                                isDirect
+                                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'
+                                  : 'bg-amber-400/90 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                              }`}
+                              title={isDirect ? 'Direct Stream' : 'Fast Mirror'}
+                            />
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-white truncate">{srv.name}</span>
+                                {srv.badge && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-white/10 text-white/60">
+                                    {srv.badge}
+                                  </span>
+                                )}
+                              </div>
+                              {srv.description && (
+                                <span className="text-[10px] text-white/40 truncate mt-0.5">{srv.description}</span>
                               )}
                             </div>
-                            {srv.description && (
-                              <span className="text-[10px] text-white/40 truncate mt-0.5">{srv.description}</span>
-                            )}
                           </div>
-                        </div>
-                        {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                          {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* 4. Quality Selector Pill */}
@@ -322,104 +331,111 @@ export const PlayerTopBar: React.FC<PlayerTopBarProps> = ({
               </button>
 
               {/* Quality Dropdown Popover (Right-aligned!) */}
-              {isQualityDropdownOpen && (
-                <div
-                  data-lenis-prevent
-                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-h-80 overflow-y-auto rounded-2xl border border-white/15 bg-[#111115]/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 z-50 drawer-scroll server-dropdown-scroll"
-                >
-                  <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Stream Quality</span>
-                    <span className="text-[10px] text-primary font-semibold">{streams.length} Available</span>
-                  </div>
-
-                  {/* Auto (Best Available) Option */}
-                  <button
-                    type="button"
-                    onClick={handleSelectAuto}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition mb-1 ${
-                      selectedStreamIndex === 0
-                        ? 'bg-white/15 text-white font-semibold border border-white/10 shadow-sm'
-                        : 'text-white/70 hover:text-white hover:bg-white/10'
-                    }`}
+              <AnimatePresence>
+                {isQualityDropdownOpen && (
+                  <motion.div
+                    key="quality-dropdown"
+                    variants={dropdownMenuVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    data-lenis-prevent
+                    className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-h-80 overflow-y-auto rounded-2xl border border-white/15 bg-[#111115]/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] backdrop-blur-2xl z-50 drawer-scroll server-dropdown-scroll"
                   >
-                    <div className="flex flex-col min-w-0 pr-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-white text-xs">Auto</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-medium">
-                          Best Available
+                    <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Stream Quality</span>
+                      <span className="text-[10px] text-primary font-semibold">{streams.length} Available</span>
+                    </div>
+
+                    {/* Auto (Best Available) Option */}
+                    <button
+                      type="button"
+                      onClick={handleSelectAuto}
+                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition mb-1 cursor-pointer ${
+                        selectedStreamIndex === 0
+                          ? 'bg-white/15 text-white font-semibold border border-white/10 shadow-sm'
+                          : 'text-white/70 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-white text-xs">Auto</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-medium">
+                            Best Available
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-white/40 mt-0.5">
+                          Automatically selects highest bandwidth & web audio stream
                         </span>
                       </div>
-                      <span className="text-[10px] text-white/40 mt-0.5">
-                        Automatically selects highest bandwidth & web audio stream
-                      </span>
-                    </div>
-                    {selectedStreamIndex === 0 && <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />}
-                  </button>
+                      {selectedStreamIndex === 0 && <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />}
+                    </button>
 
-                  {/* Stream Options */}
-                  <div className="space-y-1">
-                    {streams.map((s, idx) => {
-                      const isSelected = idx === selectedStreamIndex;
-                      const providerLabel = s.provider === 'Cloudflare R2' ? 'Cloudflare Fast CDN' : s.provider;
-                      const speedLabel = s.bitrate ? `Current speed: ${s.bitrate}` : null;
-                      return (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedStreamIndex(idx);
-                            setIsQualityDropdownOpen(false);
-                            showToast(`${s.quality === '2160p' ? '4K' : s.quality} · ${providerLabel}`);
-                          }}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition ${
-                            isSelected
-                              ? 'bg-white/15 text-white font-semibold border border-white/10 shadow-sm'
-                              : 'text-white/70 hover:text-white hover:bg-white/10'
-                          }`}
-                        >
-                          <div className="flex flex-col min-w-0 pr-2">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-white text-xs">
-                                {s.quality === '2160p' ? '4K · 2160p' : s.quality}
-                              </span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60 font-mono">
-                                {s.codec}
-                              </span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-medium truncate max-w-[130px]">
-                                {providerLabel}
-                              </span>
-                              {s.isHls && (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">
-                                  HLS
+                    {/* Stream Options */}
+                    <div className="space-y-1">
+                      {streams.map((s, idx) => {
+                        const isSelected = idx === selectedStreamIndex;
+                        const providerLabel = s.provider === 'Cloudflare R2' ? 'Cloudflare Fast CDN' : s.provider;
+                        const speedLabel = s.bitrate ? `Current speed: ${s.bitrate}` : null;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedStreamIndex(idx);
+                              setIsQualityDropdownOpen(false);
+                              showToast(`${s.quality === '2160p' ? '4K' : s.quality} · ${providerLabel}`);
+                            }}
+                            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition cursor-pointer ${
+                              isSelected
+                                ? 'bg-white/15 text-white font-semibold border border-white/10 shadow-sm'
+                                : 'text-white/70 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <div className="flex flex-col min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-white text-xs">
+                                  {s.quality === '2160p' ? '4K · 2160p' : s.quality}
                                 </span>
-                              )}
-                              {s.isWebAudio ? (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">
-                                  🎧 Web Audio
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60 font-mono">
+                                  {s.codec}
                                 </span>
-                              ) : (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
-                                  ⚠️ {s.audioCodec || 'DDP'} (VLC)
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-medium truncate max-w-[130px]">
+                                  {providerLabel}
                                 </span>
-                              )}
+                                {s.isHls && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">
+                                    HLS
+                                  </span>
+                                )}
+                                {s.isWebAudio ? (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">
+                                    🎧 Web Audio
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
+                                    ⚠️ {s.audioCodec || 'DDP'} (VLC)
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1 text-[10px] text-white/50 flex-wrap">
+                                {s.sizeFormatted && <span>{s.sizeFormatted}</span>}
+                                {speedLabel && (
+                                  <>
+                                    {s.sizeFormatted && <span className="text-white/20">•</span>}
+                                    <span className="text-white/60">{speedLabel}</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-white/50 flex-wrap">
-                              {s.sizeFormatted && <span>{s.sizeFormatted}</span>}
-                              {speedLabel && (
-                                <>
-                                  {s.sizeFormatted && <span className="text-white/20">•</span>}
-                                  <span className="text-white/60">{speedLabel}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          {isSelected && <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                            {isSelected && <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>

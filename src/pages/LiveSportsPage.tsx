@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Radio,
   Users,
@@ -17,6 +18,7 @@ import {
 import { liveSportsData } from '../data/mediaData';
 import { LiveSport } from '../types/media';
 import { SEOHead } from '../components/SEOHead';
+import { modalBackdropVariants, modalContentVariants } from '../utils/motion';
 
 // Genuine high-reliability public video streams for sports broadcast demo playback
 const DEMO_STREAM_URLS = {
@@ -113,21 +115,33 @@ export const LiveSportsPage: React.FC = () => {
 
       {/* Category Filter */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" role="tablist" aria-label="Sports categories">
-        {categories.map((c) => (
-          <button
-            key={c}
-            role="tab"
-            aria-selected={category === c}
-            onClick={() => setCategory(c)}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-              category === c
-                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                : 'bg-zinc-900 text-zinc-400 hover:text-white border border-white/5'
-            }`}
-          >
-            {c}
-          </button>
-        ))}
+        {categories.map((c) => {
+          const isSelected = category === c;
+          return (
+            <motion.button
+              key={c}
+              role="tab"
+              aria-selected={isSelected}
+              whileTap={{ scale: 0.94 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              onClick={() => setCategory(c)}
+              className={`relative rounded-full px-4 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                isSelected
+                  ? 'text-white'
+                  : 'bg-zinc-900 text-zinc-400 hover:text-white border border-white/5'
+              }`}
+            >
+              {isSelected && (
+                <motion.div
+                  layoutId="sports-category-pill"
+                  className="absolute inset-0 rounded-full bg-rose-600 shadow-md shadow-rose-600/30"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <span className="relative z-10">{c}</span>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Sports Grid */}
@@ -157,30 +171,44 @@ export const LiveSportsPage: React.FC = () => {
               </h3>
             </div>
 
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={() => {
                 setSelectedSport(sport);
                 setIsPlaying(true);
               }}
-              className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-2.5 text-sm font-semibold text-white hover:bg-rose-600 transition active:scale-95 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-2.5 text-sm font-semibold text-white hover:bg-rose-600 transition cursor-pointer"
             >
               <Play className="h-4 w-4 fill-white" />
               Watch Live Stream (Demo)
-            </button>
+            </motion.button>
           </div>
         ))}
       </div>
 
       {/* Live Stream Dialog */}
-      {selectedSport && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${selectedSport.title} Live Stream`}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-3 sm:p-4 backdrop-blur-md animate-in fade-in"
-        >
-          <div className="w-full max-w-4xl rounded-2xl bg-zinc-950 border border-white/15 overflow-hidden shadow-2xl flex flex-col">
+      <AnimatePresence>
+        {selectedSport && (
+          <motion.div
+            key="sports-stream-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedSport.title} Live Stream`}
+            variants={modalBackdropVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-3 sm:p-4 backdrop-blur-md"
+          >
+            <motion.div
+              variants={modalContentVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="w-full max-w-4xl rounded-2xl bg-zinc-950 border border-white/15 overflow-hidden shadow-2xl flex flex-col"
+            >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-white/10 bg-zinc-900/90">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -350,9 +378,10 @@ export const LiveSportsPage: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

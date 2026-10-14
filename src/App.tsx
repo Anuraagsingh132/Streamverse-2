@@ -19,6 +19,7 @@ import { MediaItem } from './types/media';
 import { getMediaDetails } from './services/tmdb';
 import { useWatchlistStore } from './store/useWatchlistStore';
 import { getRouteHref } from './utils/routeUtils';
+import { pageMotionVariants } from './utils/motion';
 import { ArrowLeft, Home, Compass } from 'lucide-react';
 
 // Lazy-loaded route views
@@ -603,9 +604,10 @@ const AppContent: React.FC = () => {
 
     const lenis = new Lenis({
       autoRaf: true,
-      duration: 1.1,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      lerp: 0.088,
       smoothWheel: true,
+      wheelMultiplier: 1.0,
+      gestureOrientation: 'vertical',
       respectReducedMotion: true,
     });
     lenisRef.current = lenis;
@@ -625,13 +627,13 @@ const AppContent: React.FC = () => {
     }
   }, [isWatchRoute, isSearchOpen]);
 
-  // Scroll to top on non-watch page navigation
+  // Scroll to top on non-watch page navigation cleanly without Lenis scroll race
   useEffect(() => {
     if (!isWatchRoute) {
       if (lenisRef.current) {
-        lenisRef.current.scrollTo(0, { immediate: false });
+        lenisRef.current.scrollTo(0, { immediate: true });
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'instant' });
       }
     }
   }, [location.pathname, isWatchRoute]);
@@ -718,15 +720,15 @@ const AppContent: React.FC = () => {
 
       {/* Main Page View with Animated Transitions */}
       <main className="flex-1">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            variants={pageMotionVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
-            <React.Suspense fallback={<div className="min-h-screen bg-transparent" />}>
+            <React.Suspense fallback={<div className="min-h-screen bg-transparent transition-opacity duration-200" />}>
               <Routes location={location}>
                 {/* Core Top-Level Routes */}
                 <Route

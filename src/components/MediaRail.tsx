@@ -138,7 +138,7 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                 >
                   <div className="card-3d relative rounded-xl">
                     <div
-                      className={`relative w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 ${
+                      className={`relative w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25 ${
                         posterAspect ? 'aspect-[2/3]' : 'aspect-[16/9]'
                       }`}
                     >
@@ -146,7 +146,7 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                         alt={item.title}
                         loading={idx < 3 ? "eager" : "lazy"}
                         decoding="async"
-                        className="object-cover transition-[filter,transform] duration-700 group-hover:scale-105 h-full w-full"
+                        className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full"
                         src={optimizeTmdbImage(
                           posterAspect
                             ? (item.poster_path || item.backdrop_path)
@@ -166,20 +166,25 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
 
                       {/* Add to watchlist button */}
-                      <button
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.85 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                         title={isSaved ? 'In watchlist' : 'Add to watchlist'}
+                        aria-label={isSaved ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onToggleWatchlist(item);
                         }}
-                        className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 ${
+                        className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition-colors duration-200 cursor-pointer ${
                           isSaved
                             ? 'opacity-100 bg-rose-600 text-white'
                             : 'opacity-0 group-hover:opacity-100 bg-black/50 text-white hover:bg-black/70'
                         }`}
                       >
                         {isSaved ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                      </button>
+                      </motion.button>
 
                       {/* Hover play button icon */}
                       <div
@@ -189,9 +194,14 @@ export const MediaRail: React.FC<MediaRailProps> = ({
                         }}
                         className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                       >
-                        <div className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                          <Play className="h-5 w-5 fill-white text-white" />
-                        </div>
+                        <motion.div
+                          whileHover={{ scale: 1.18 }}
+                          whileTap={{ scale: 0.92 }}
+                          transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                          className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 cursor-pointer shadow-lg"
+                        >
+                          <Play className="h-5 w-5 fill-white text-white ml-0.5" />
+                        </motion.div>
                       </div>
                     </div>
                     <span className="card-3d-glare" aria-hidden="true" />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { motion } from 'motion/react';
 import { MediaItem } from '../types/media';
 import { HeroBanner } from '../components/HeroBanner';
 import { ArrowUpRight, Star, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -248,20 +249,32 @@ export const AnimePage: React.FC<AnimePageProps> = ({
           {/* Sticky Genre Pills Filter Bar */}
           <div className="sticky top-14 z-20 w-full bg-[#060812]/90 backdrop-blur-md border-b border-white/5 py-1.5">
             <div className="scrollbar-hide flex gap-2 overflow-x-auto px-5 py-1.5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
-              {GENRES.map((genre) => (
-                <button
-                  key={genre}
-                  type="button"
-                  onClick={() => handleSelectGenre(genre)}
-                  className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition duration-150 cursor-pointer ${
-                    selectedGenre === genre
-                      ? 'border-white bg-white text-black shadow-md'
-                      : 'border-white/15 bg-white/10 text-white/80 backdrop-blur-md hover:bg-white/20 hover:text-white'
-                  }`}
-                >
-                  {genre}
-                </button>
-              ))}
+              {GENRES.map((genre) => {
+                const isSelected = selectedGenre === genre;
+                return (
+                  <motion.button
+                    key={genre}
+                    type="button"
+                    whileTap={{ scale: 0.94 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    onClick={() => handleSelectGenre(genre)}
+                    className={`relative shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer ${
+                      isSelected
+                        ? 'text-black shadow-md'
+                        : 'border border-white/15 bg-white/10 text-white/80 backdrop-blur-md hover:bg-white/20 hover:text-white'
+                    }`}
+                  >
+                    {isSelected && (
+                      <motion.div
+                        layoutId="anime-genre-pill"
+                        className="absolute inset-0 rounded-full bg-white"
+                        transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                      />
+                    )}
+                    <span className="relative z-10">{genre}</span>
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
 
@@ -511,7 +524,7 @@ const AnimeCard = React.memo(function AnimeCard({ item, onClick }: { item: any; 
     <div className="card-3d relative rounded-xl">
       <div
         onClick={onClick}
-        className="group relative flex aspect-video w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 transition duration-200 hover:border-primary/40 hover:shadow-lg hover:ring-1 hover:ring-primary/20 cursor-pointer"
+        className="group relative flex aspect-video w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] hover:border-primary/40 hover:shadow-lg hover:ring-1 hover:ring-primary/20 cursor-pointer"
       >
         <img
           src={image || FALLBACK_BACKDROP}

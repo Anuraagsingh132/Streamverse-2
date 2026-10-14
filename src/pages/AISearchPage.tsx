@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
   Star, 
@@ -224,15 +225,18 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                 </kbd>
 
                 {/* Discover Button: Crisp White Pill with Bold Black Text & Icon */}
-                <button
+                <motion.button
                   type="submit"
                   disabled={isAnalyzing}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.94 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   className="flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-xs sm:text-sm font-bold shadow-md hover:bg-white/90 active:scale-95 transition-all shrink-0 cursor-pointer disabled:opacity-50"
                   style={{ color: '#000000', backgroundColor: '#ffffff' }}
                 >
                   <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: '#000000', fill: '#000000' }} />
                   <span className="font-bold tracking-wide" style={{ color: '#000000' }}>Discover</span>
-                </button>
+                </motion.button>
               </div>
             </form>
 
@@ -243,9 +247,11 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                   <Clock className="h-2.5 w-2.5" /> Recent:
                 </span>
                 {recentSearches.map((item) => (
-                  <button
+                  <motion.button
                     key={item}
                     type="button"
+                    whileTap={{ scale: 0.94 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     onClick={() => {
                       setPrompt(item);
                       handleSearch(item);
@@ -253,7 +259,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                     className="inline-flex items-center rounded-full border border-white/5 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/55 hover:border-white/15 hover:bg-white/[0.07] hover:text-white transition cursor-pointer"
                   >
                     <span>{item}</span>
-                  </button>
+                  </motion.button>
                 ))}
                 <span className="text-white/40 select-none">·</span>
                 <button
@@ -270,212 +276,245 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
             {/* Compact Suggestion Chips: Single Row of Small Chips Directly Under Search Bar (No Big Heading) */}
             <div className="flex flex-wrap items-center justify-center gap-2 mt-3.5">
               {COMPACT_SUGGESTIONS.map((text) => (
-                <button
+                <motion.button
                   key={text}
                   type="button"
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.94 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => {
                     setPrompt(text);
                     handleSearch(text);
                   }}
-                  className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs text-white/70 backdrop-blur-md transition-all hover:border-white/25 hover:bg-white/[0.09] hover:text-white active:scale-95 cursor-pointer shadow-sm"
+                  className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs text-white/70 backdrop-blur-md transition-all hover:border-white/25 hover:bg-white/[0.09] hover:text-white cursor-pointer shadow-sm"
                 >
                   <span>{text}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Loading State Skeleton */}
-        {isAnalyzing && (
-          <div className="space-y-6 pt-4 animate-in fade-in duration-300">
-            <div className="flex items-center justify-center gap-3 py-4 text-white/60">
-              <Sparkles className="h-4 w-4 animate-spin text-white/80" />
-              <span className="text-xs sm:text-sm font-medium">Synthesizing recommendations from TMDB catalogue...</span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="animate-pulse space-y-2">
-                  <div className="aspect-[2/3] w-full rounded-xl bg-white/[0.05] border border-white/10" />
-                  <div className="h-3.5 w-3/4 rounded bg-white/[0.08]" />
-                  <div className="h-2.5 w-1/2 rounded bg-white/[0.04]" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Search Results State */}
-        {!isAnalyzing && activeQuery && (
-          <div className="space-y-6 pt-2 animate-in fade-in duration-300">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="h-3.5 w-[3px] rounded-full bg-primary" />
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  Results for "{activeQuery}"
-                </h2>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/70">
-                  {results.length} titles
-                </span>
+        {/* Dynamic Content Transitions */}
+        <AnimatePresence mode="wait">
+          {/* Loading State Skeleton */}
+          {isAnalyzing && (
+            <motion.div
+              key="analyzing"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-6 pt-4"
+            >
+              <div className="flex items-center justify-center gap-3 py-4 text-white/60">
+                <Sparkles className="h-4 w-4 animate-spin text-white/80" />
+                <span className="text-xs sm:text-sm font-medium">Synthesizing recommendations from TMDB catalogue...</span>
               </div>
-              <button 
-                onClick={handleClearResults}
-                className="flex items-center gap-1 text-xs text-white/50 hover:text-white transition cursor-pointer"
-              >
-                <RotateCcw className="h-3 w-3" />
-                <span>Reset</span>
-              </button>
-            </div>
 
-            {results.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4">
-                {results.map((item) => {
-                  const isSaved = watchlist.includes(item.id);
-                  const rating = item.vote_average ? item.vote_average.toFixed(1) : '8.0';
-                  const posterImg = item.poster_path || item.backdrop_path || 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=780';
-                  const optimizedImg = posterImg.includes('image.tmdb.org/t/p/')
-                    ? posterImg.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/')
-                    : posterImg;
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="animate-pulse space-y-2">
+                    <div className="aspect-[2/3] w-full rounded-xl bg-white/[0.05] border border-white/10" />
+                    <div className="h-3.5 w-3/4 rounded bg-white/[0.08]" />
+                    <div className="h-2.5 w-1/2 rounded bg-white/[0.04]" />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => onOpenDetails(item)}
-                      className="group/card block cursor-pointer select-none transition-transform duration-200 hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      <div className="card-3d relative rounded-xl">
-                        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-md">
-                          <img
-                            alt={item.title}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                            src={optimizedImg}
-                          />
+          {/* Search Results State */}
+          {!isAnalyzing && activeQuery && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-6 pt-2"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-3.5 w-[3px] rounded-full bg-primary" />
+                  <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                    Results for "{activeQuery}"
+                  </h2>
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/70">
+                    {results.length} titles
+                  </span>
+                </div>
+                <button 
+                  onClick={handleClearResults}
+                  className="flex items-center gap-1 text-xs text-white/50 hover:text-white transition cursor-pointer"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  <span>Reset</span>
+                </button>
+              </div>
 
-                          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md">
-                            <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                            {rating}
-                          </span>
+              {results.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4">
+                  {results.map((item) => {
+                    const isSaved = watchlist.includes(item.id);
+                    const rating = item.vote_average ? item.vote_average.toFixed(1) : '8.0';
+                    const posterImg = item.poster_path || item.backdrop_path || 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=780';
+                    const optimizedImg = posterImg.includes('image.tmdb.org/t/p/')
+                      ? posterImg.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/')
+                      : posterImg;
 
-                          <button
-                            title={isSaved ? 'In Watchlist' : 'Add to watchlist'}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggleWatchlist(item);
-                            }}
-                            className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 ${
-                              isSaved 
-                                ? 'opacity-100 bg-primary text-black' 
-                                : 'opacity-0 group-hover/card:opacity-100 bg-black/50 text-white hover:bg-black/70'
-                            }`}
-                          >
-                            {isSaved ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                          </button>
+                    return (
+                      <motion.div
+                        key={item.id}
+                        whileHover={{ y: -4, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                        onClick={() => onOpenDetails(item)}
+                        className="group/card block cursor-pointer select-none"
+                      >
+                        <div className="card-3d relative rounded-xl">
+                          <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-md">
+                            <img
+                              alt={item.title}
+                              loading="lazy"
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                              src={optimizedImg}
+                            />
 
-                          <div 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPlay(item);
-                            }}
-                            className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 bg-black/30"
-                          >
-                            <div className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover/card:scale-110">
-                              <Play className="h-4 w-4 fill-white text-white" />
+                            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md">
+                              <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                              {rating}
+                            </span>
+
+                            <button
+                              title={isSaved ? 'In Watchlist' : 'Add to watchlist'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleWatchlist(item);
+                              }}
+                              className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 ${
+                                isSaved 
+                                  ? 'opacity-100 bg-primary text-black' 
+                                  : 'opacity-0 group-hover/card:opacity-100 bg-black/50 text-white hover:bg-black/70'
+                              }`}
+                            >
+                              {isSaved ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                            </button>
+
+                            <div 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onPlay(item);
+                              }}
+                              className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 bg-black/30"
+                            >
+                              <div className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover/card:scale-110">
+                                <Play className="h-4 w-4 fill-white text-white" />
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="mt-2 px-0.5">
-                        <h3 className="truncate text-xs sm:text-[13px] font-semibold text-white">
-                          {item.title}
-                        </h3>
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white/70">
-                            {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Movie'}
-                          </span>
-                          {item.year && (
-                            <span className="text-[11px] text-white/40">{item.year}</span>
-                          )}
+                        <div className="mt-2 px-0.5">
+                          <h3 className="truncate text-xs sm:text-[13px] font-semibold text-white">
+                            {item.title}
+                          </h3>
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white/70">
+                              {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Movie'}
+                            </span>
+                            {item.year && (
+                              <span className="text-[11px] text-white/40">{item.year}</span>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-white/50 text-sm">
+                  No matching titles found. Try adjusting your query or click one of the suggestions above.
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Moods Section: The Only Content Section on Default View */}
+          {!activeQuery && !isAnalyzing && (
+            <motion.div
+              key="moods"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-6 pt-4"
+            >
+              {/* Centered Moods Header with Perfectly Aligned Label Bar */}
+              <div className="flex flex-col items-center text-center gap-1">
+                <div className="inline-flex items-center gap-2">
+                  <div className="h-3 w-[2.5px] rounded-full bg-primary" aria-hidden="true" />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/50">
+                    Curated Moods
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5">
+                  Try These Moods
+                </h2>
+                <p className="text-xs text-white/40">
+                  Jump straight into a cinematic vibe with a single click
+                </p>
+              </div>
+
+              {/* 4 Mood Cards: Lighter Headings, High-Contrast Darkened Images, Readable Text */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 w-full">
+                {MOOD_CARDS.map((mood) => {
+                  const MoodIcon = mood.icon;
+                  return (
+                    <motion.div
+                      key={mood.title}
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                      onClick={() => {
+                        setPrompt(mood.query);
+                        handleSearch(mood.query);
+                      }}
+                      className="group relative h-40 sm:h-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 cursor-pointer shadow-lg transition-colors"
+                    >
+                      {/* Darkened Image Layer */}
+                      <img 
+                        src={mood.image} 
+                        alt={mood.title}
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover brightness-[0.55] contrast-105 transition-transform duration-700 group-hover:scale-105"
+                      />
+                      
+                      {/* Multi-Stop Dark Bottom Gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/85 to-black/30 transition-opacity duration-300 group-hover:opacity-95" />
+
+                      <div className="relative h-full p-4 flex flex-col justify-end">
+                        <div className="flex items-center gap-1.5 text-white mb-1">
+                          <MoodIcon className={`h-4 w-4 ${mood.colorAccent}`} />
+                          <h3 className="text-sm sm:text-[15px] font-bold tracking-tight text-white">
+                            {mood.title}
+                          </h3>
+                        </div>
+                        <p className="text-[11px] text-white/60 line-clamp-2 leading-relaxed">
+                          {mood.subtitle}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-white/70 group-hover:text-white transition">
+                          <span>Explore mood</span>
+                          <ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
-            ) : (
-              <div className="text-center py-12 text-white/50 text-sm">
-                No matching titles found. Try adjusting your query or click one of the suggestions above.
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Moods Section: The Only Content Section on Default View */}
-        {!activeQuery && !isAnalyzing && (
-          <div className="space-y-6 pt-4">
-            {/* Centered Moods Header with Perfectly Aligned Label Bar */}
-            <div className="flex flex-col items-center text-center gap-1">
-              <div className="inline-flex items-center gap-2">
-                <div className="h-3 w-[2.5px] rounded-full bg-primary" aria-hidden="true" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/50">
-                  Curated Moods
-                </span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5">
-                Try These Moods
-              </h2>
-              <p className="text-xs text-white/40">
-                Jump straight into a cinematic vibe with a single click
-              </p>
-            </div>
-
-            {/* 4 Mood Cards: Lighter Headings, High-Contrast Darkened Images, Readable Text */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 w-full">
-              {MOOD_CARDS.map((mood) => {
-                const MoodIcon = mood.icon;
-                return (
-                  <div
-                    key={mood.title}
-                    onClick={() => {
-                      setPrompt(mood.query);
-                      handleSearch(mood.query);
-                    }}
-                    className="group relative h-40 sm:h-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 cursor-pointer shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {/* Darkened Image Layer */}
-                    <img 
-                      src={mood.image} 
-                      alt={mood.title}
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover brightness-[0.55] contrast-105 transition-transform duration-700 group-hover:scale-105"
-                    />
-                    
-                    {/* Multi-Stop Dark Bottom Gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/85 to-black/30 transition-opacity duration-300 group-hover:opacity-95" />
-
-                    <div className="relative h-full p-4 flex flex-col justify-end">
-                      <div className="flex items-center gap-1.5 text-white mb-1">
-                        <MoodIcon className={`h-4 w-4 ${mood.colorAccent}`} />
-                        <h3 className="text-sm sm:text-[15px] font-bold tracking-tight text-white">
-                          {mood.title}
-                        </h3>
-                      </div>
-                      <p className="text-[11px] text-white/60 line-clamp-2 leading-relaxed">
-                        {mood.subtitle}
-                      </p>
-                      <div className="mt-2 flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-white/70 group-hover:text-white transition">
-                        <span>Explore mood</span>
-                        <ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

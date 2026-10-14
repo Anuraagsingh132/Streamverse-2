@@ -10,15 +10,13 @@ import {
   RotateCcw,
   Database,
   Trash2,
-  Sparkles,
   ShieldCheck,
   Activity,
   Layers,
   CheckCircle2,
   Sliders,
   Film,
-  HardDrive,
-  Info
+  HardDrive
 } from 'lucide-react';
 import { useUserSettings, VideoServerId, VideoQuality, SubtitleSize } from '../hooks/useUserSettings';
 import { PixelDrainRoute } from '../utils/pixeldrain';
@@ -36,6 +34,108 @@ interface ServerOption {
   ping: string;
   desc: string;
 }
+
+const SERVER_OPTIONS: ServerOption[] = [
+  {
+    id: 'cinemaos',
+    name: 'CinemaOS Official',
+    badge: 'Default · Official',
+    category: 'official',
+    protocol: 'Official Embed',
+    ping: '~28ms ping',
+    desc: 'CinemaOS official embed player with automatic server failover, built-in episode drawer, and ad-shielding.'
+  },
+  {
+    id: 'hdhub',
+    name: 'HDHub Direct Stream',
+    badge: 'Fast Direct',
+    category: 'direct',
+    protocol: 'Direct MP4 / HLS',
+    ping: '~32ms ping',
+    desc: 'Primary direct cloud stream with multi-track audio switching, custom subtitle engines, and adaptive bitrates.'
+  },
+  {
+    id: 'pengu',
+    name: 'Pengu Cloud',
+    badge: 'Direct & HLS',
+    category: 'direct',
+    protocol: 'Cloud HLS Stream',
+    ping: '~34ms ping',
+    desc: 'High-availability Pengu cloud mirror with redundant fallback stream channels and lossless audio.'
+  },
+  {
+    id: 'vidsrc-sh',
+    name: 'VidSrc (SH)',
+    badge: 'Mirror 1 · HD',
+    category: 'mirror',
+    protocol: 'Multi-Audio Embed',
+    ping: '~52ms ping',
+    desc: 'VidSrc high-speed global mirror with multi-language subtitle tracks and rapid buffer start.'
+  },
+  {
+    id: 'videasy',
+    name: 'Videasy',
+    badge: 'Mirror 2 · Fast',
+    category: 'mirror',
+    protocol: 'Adaptive Embed',
+    ping: '~48ms ping',
+    desc: 'Videasy low-latency player with automatic resolution scaling from 360p up to 1080p.'
+  },
+  {
+    id: 'vidfast',
+    name: 'VidFast',
+    badge: 'Mirror 3 · 1080p',
+    category: 'mirror',
+    protocol: 'Fast CDN Mirror',
+    ping: '~38ms ping',
+    desc: 'High-bandwidth edge delivery network optimized for bufferless 1080p Full HD streaming.'
+  },
+  {
+    id: 'vidlux',
+    name: 'VidLux',
+    badge: 'Mirror 4',
+    category: 'mirror',
+    protocol: 'High-Availability',
+    ping: '~55ms ping',
+    desc: 'VidLux redundant fallback embed with automatic regional CDN routing.'
+  },
+  {
+    id: 'vidlove',
+    name: 'VidLove',
+    badge: 'Mirror 5',
+    category: 'mirror',
+    protocol: 'Reliable Embed',
+    ping: '~61ms ping',
+    desc: 'VidLove reliable stream host with minimal buffering overhead and cross-platform compatibility.'
+  },
+  {
+    id: 'vidrock',
+    name: 'VidRock',
+    badge: 'Mirror 6 · Backup',
+    category: 'mirror',
+    protocol: 'Multi-Source',
+    ping: '~64ms ping',
+    desc: 'VidRock multi-source backup server for handling peak-traffic times and catalog edge-cases.'
+  },
+  {
+    id: 'mappletv',
+    name: 'MappleTV',
+    badge: 'Mirror 7 · HD',
+    category: 'mirror',
+    protocol: 'Cloud Mirror',
+    ping: '~49ms ping',
+    desc: 'MappleTV high-speed cloud mirror with direct media pass-through and rapid stream seeking.'
+  },
+  {
+    id: 'vixsrc',
+    name: 'VixSrc',
+    badge: 'Mirror 8 · Direct',
+    category: 'mirror',
+    protocol: 'Direct Server',
+    ping: '~44ms ping',
+    desc: 'VixSrc direct high-speed streaming server offering high-definition video feeds with zero ads.'
+  }
+];
 
 export const SettingsPage: React.FC = () => {
   const { settings, updateSettings, resetSettings } = useUserSettings();
@@ -125,116 +225,14 @@ export const SettingsPage: React.FC = () => {
     }
   }, [savedNotification, cachePurgedNotification]);
 
-  const serverOptions: ServerOption[] = [
-    {
-      id: 'hdhub',
-      name: 'HDHub Direct Stream',
-      badge: 'Default · Fastest',
-      category: 'direct',
-      protocol: 'Direct MP4 / HLS',
-      ping: '~28ms ping',
-      desc: 'Primary direct cloud stream with multi-track audio switching, custom subtitle engines, and adaptive bitrates.'
-    },
-    {
-      id: 'pengu',
-      name: 'Pengu Cloud',
-      badge: 'Direct & HLS',
-      category: 'direct',
-      protocol: 'Cloud HLS Stream',
-      ping: '~34ms ping',
-      desc: 'High-availability Pengu cloud mirror with redundant fallback stream channels and lossless audio.'
-    },
-    {
-      id: 'cinemaos',
-      name: 'CinemaOS Official',
-      badge: 'Embed Player',
-      category: 'official',
-      protocol: 'Official Embed',
-      ping: '~42ms ping',
-      desc: 'CinemaOS official embed player with automatic server failover, built-in episode drawer, and ad-shielding.'
-    },
-    {
-      id: 'vidsrc-sh',
-      name: 'VidSrc (SH)',
-      badge: 'Mirror 1 · HD',
-      category: 'mirror',
-      protocol: 'Multi-Audio Embed',
-      ping: '~52ms ping',
-      desc: 'VidSrc high-speed global mirror with multi-language subtitle tracks and rapid buffer start.'
-    },
-    {
-      id: 'videasy',
-      name: 'Videasy',
-      badge: 'Mirror 2 · Fast',
-      category: 'mirror',
-      protocol: 'Adaptive Embed',
-      ping: '~48ms ping',
-      desc: 'Videasy low-latency player with automatic resolution scaling from 360p up to 1080p.'
-    },
-    {
-      id: 'vidfast',
-      name: 'VidFast',
-      badge: 'Mirror 3 · 1080p',
-      category: 'mirror',
-      protocol: 'Fast CDN Mirror',
-      ping: '~38ms ping',
-      desc: 'High-bandwidth edge delivery network optimized for bufferless 1080p Full HD streaming.'
-    },
-    {
-      id: 'vidlux',
-      name: 'VidLux',
-      badge: 'Mirror 4',
-      category: 'mirror',
-      protocol: 'High-Availability',
-      ping: '~55ms ping',
-      desc: 'VidLux redundant fallback embed with automatic regional CDN routing.'
-    },
-    {
-      id: 'vidlove',
-      name: 'VidLove',
-      badge: 'Mirror 5',
-      category: 'mirror',
-      protocol: 'Reliable Embed',
-      ping: '~61ms ping',
-      desc: 'VidLove reliable stream host with minimal buffering overhead and cross-platform compatibility.'
-    },
-    {
-      id: 'vidrock',
-      name: 'VidRock',
-      badge: 'Mirror 6 · Backup',
-      category: 'mirror',
-      protocol: 'Multi-Source',
-      ping: '~64ms ping',
-      desc: 'VidRock multi-source backup server for handling peak-traffic times and catalog edge-cases.'
-    },
-    {
-      id: 'mappletv',
-      name: 'MappleTV',
-      badge: 'Mirror 7 · HD',
-      category: 'mirror',
-      protocol: 'Cloud Mirror',
-      ping: '~49ms ping',
-      desc: 'MappleTV high-speed cloud mirror with direct media pass-through and rapid stream seeking.'
-    },
-    {
-      id: 'vixsrc',
-      name: 'VixSrc',
-      badge: 'Mirror 8 · Direct',
-      category: 'mirror',
-      protocol: 'Direct Server',
-      ping: '~44ms ping',
-      desc: 'VixSrc direct high-speed streaming server offering high-definition video feeds with zero ads.'
-    }
-  ];
-
   const filteredServers = useMemo(() => {
     if (serverFilter === 'direct') {
-      return serverOptions.filter((s) => s.category === 'direct' || s.category === 'official');
+      return SERVER_OPTIONS.filter((s) => s.category === 'direct' || s.category === 'official');
     }
     if (serverFilter === 'mirror') {
-      return serverOptions.filter((s) => s.category === 'mirror');
+      return SERVER_OPTIONS.filter((s) => s.category === 'mirror');
     }
-    return serverOptions;
+    return SERVER_OPTIONS;
   }, [serverFilter]);
 
   const tabs: { id: SettingsTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -313,12 +311,21 @@ export const SettingsPage: React.FC = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`group relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer ${
                       isActive
-                        ? 'border border-rose-500/50 bg-rose-500/15 text-white shadow-[0_0_20px_rgba(244,63,94,0.2)]'
+                        ? 'text-white'
                         : 'border border-white/5 bg-white/[0.02] text-white/70 hover:border-white/15 hover:bg-white/[0.05] hover:text-white'
                     }`}
                   >
-                    <TabIcon className={`h-3.5 w-3.5 transition ${isActive ? 'text-rose-400' : 'text-white/70 group-hover:text-white'}`} />
-                    <span>{tab.label}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="settings-tab-pill"
+                        className="absolute inset-0 rounded-xl border border-rose-500/50 bg-rose-500/15 shadow-[0_0_20px_rgba(244,63,94,0.2)]"
+                        transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-2">
+                      <TabIcon className={`h-3.5 w-3.5 transition ${isActive ? 'text-rose-400' : 'text-white/70 group-hover:text-white'}`} />
+                      <span>{tab.label}</span>
+                    </span>
                   </button>
                 );
               })}
@@ -909,11 +916,20 @@ export const SettingsPage: React.FC = () => {
         {/* Reset Confirmation Modal */}
         <AnimatePresence>
           {confirmResetOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setConfirmResetOpen(false)}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
+            >
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
+                initial={{ scale: 0.95, opacity: 0, y: 8 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 8 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(e) => e.stopPropagation()}
                 className="w-full max-w-md rounded-3xl border border-white/10 bg-[#060812] p-6 sm:p-8 shadow-2xl space-y-5"
               >
                 <div className="flex items-center gap-3 text-rose-500">
@@ -947,7 +963,7 @@ export const SettingsPage: React.FC = () => {
                   </button>
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

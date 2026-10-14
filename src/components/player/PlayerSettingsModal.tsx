@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -92,9 +93,13 @@ export const PlayerSettingsModal: React.FC<PlayerSettingsModalProps> = ({
   setSelectedStreamIndex
 }) => {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 8 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 8 }}
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       data-lenis-prevent
-      className="absolute right-0 bottom-full mb-2 w-72 rounded-2xl border border-white/15 bg-zinc-950/95 p-2 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 z-50 max-h-[80vh] overflow-y-auto"
+      className="absolute right-0 bottom-full mb-2 w-72 rounded-2xl border border-white/15 bg-zinc-950/95 p-2 shadow-[0_16px_48px_rgba(0,0,0,0.7)] backdrop-blur-2xl z-50 max-h-[80vh] overflow-y-auto"
     >
       {settingsTab === 'main' ? (
         <div className="space-y-1">
@@ -640,6 +645,6 @@ export const PlayerSettingsModal: React.FC<PlayerSettingsModalProps> = ({
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

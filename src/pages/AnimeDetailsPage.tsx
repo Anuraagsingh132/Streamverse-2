@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Play,
   Clapperboard,
@@ -10,7 +11,8 @@ import {
   GalleryHorizontal,
   X,
   Bookmark,
-  Share2
+  Share2,
+  Check
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { fetchAniListAnimeDetails, FullAniListAnimeDetails } from '../services/anilist';
@@ -20,6 +22,7 @@ import { SEOHead } from '../components/SEOHead';
 import { GlassBackButton } from '../components/details/GlassBackButton';
 import { purgeMediaItemCache } from '../utils/cacheManager';
 import { FALLBACK_BACKDROP } from '../utils/imageUtils';
+import { modalBackdropVariants, modalContentVariants } from '../utils/motion';
 
 interface AnimeDetailsPageProps {
   item: MediaItem;
@@ -371,49 +374,64 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => handlePlayAnime(1)}
-                  className="flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-black shadow-lg transition hover:bg-white/90 active:scale-95 sm:px-6"
+                  className="flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-black shadow-lg transition-colors hover:bg-white/90 sm:px-6 cursor-pointer"
                 >
                   <Play className="h-4 w-4 fill-black text-black" />
                   Watch now
-                </button>
+                </motion.button>
 
                 {d.trailer_key && (
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     onClick={() => setTrailerOpen(true)}
-                    className="flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95 sm:px-5"
+                    className="flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25 sm:px-5 cursor-pointer"
                   >
                     <Clapperboard className="h-4 w-4" />
                     Trailer
-                  </button>
+                  </motion.button>
                 )}
 
-                <a
+                <motion.a
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   href={d.anilist_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-11 items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95 sm:px-4"
+                  className="flex h-11 items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25 sm:px-4 cursor-pointer"
                 >
                   AniList
                   <ExternalLink className="h-3.5 w-3.5 text-white/70" />
-                </a>
+                </motion.a>
 
                 {d.mal_url && (
-                  <a
+                  <motion.a
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     href={d.mal_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-11 items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95 sm:px-4"
+                    className="flex h-11 items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25 sm:px-4 cursor-pointer"
                   >
                     MAL
                     <ExternalLink className="h-3.5 w-3.5 text-white/70" />
-                  </a>
+                  </motion.a>
                 )}
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.88 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => onToggleWatchlist(initialItem)}
-                  className={`flex h-11 w-11 items-center justify-center rounded-full border transition active:scale-95 ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-full border transition-colors cursor-pointer ${
                     isSaved
                       ? 'border-primary bg-primary text-black'
                       : 'border-white/20 bg-white/15 text-white hover:bg-white/25'
@@ -421,15 +439,18 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                   aria-label="Add to Watchlist"
                 >
                   <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-black' : ''}`} />
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.88 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={handleShare}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur-md transition-colors hover:bg-white/25 cursor-pointer"
                   aria-label="Share"
                 >
-                  <Share2 className="h-4 w-4" />
-                </button>
+                  {copiedShare ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
+                </motion.button>
 
                 {copiedShare && (
                   <span className="text-xs font-semibold text-green-400">
@@ -939,35 +960,51 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
       )}
 
       {/* Trailer Modal */}
-      {trailerOpen && d.trailer_key && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-              <div className="flex items-center gap-2">
-                <Clapperboard className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-white">
-                  {d.title} — Official Trailer
-                </span>
+      <AnimatePresence>
+        {trailerOpen && d.trailer_key && (
+          <motion.div
+            variants={modalBackdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={() => setTrailerOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          >
+            <motion.div
+              variants={modalContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
+                <div className="flex items-center gap-2">
+                  <Clapperboard className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-white">
+                    {d.title} — Official Trailer
+                  </span>
+                </div>
+                <button
+                  onClick={() => setTrailerOpen(false)}
+                  className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setTrailerOpen(false)}
-                className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="relative aspect-video w-full">
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${d.trailer_key}?autoplay=1&rel=0`}
-                title={`${d.title} Trailer`}
-                className="h-full w-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="relative aspect-video w-full">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${d.trailer_key}?autoplay=1&rel=0`}
+                  title={`${d.title} Trailer`}
+                  className="h-full w-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

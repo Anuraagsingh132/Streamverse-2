@@ -1,5 +1,6 @@
-import React from 'react';
-import { Play, X, Clock } from 'lucide-react';
+import React, { useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useContinueWatchingStore, PlaybackRecord } from '../store/useContinueWatchingStore';
 import { MediaItem } from '../types/media';
 import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../utils/imageUtils';
@@ -14,10 +15,35 @@ export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
   onOpenDetails
 }) => {
   const { history, removeRecord } = useContinueWatchingStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  if (!history || history.length === 0) {
+  // Filter out invalid items, 0% watched, or items with less than 2% progress
+  const validHistory = useMemo(() => {
+    if (!history || history.length === 0) return [];
+    const seen = new Set<string>();
+    return history.filter((record) => {
+      if (!record.progressPercent || record.progressPercent < 2) return false;
+      const key = `${record.id}_${record.season || 0}_${record.episode || 0}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [history]);
+
+  if (validHistory.length === 0) {
     return null;
   }
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const amount = clientWidth * 0.75;
+      scrollRef.current.scrollTo({
+        left: direction === 'left' ? scrollLeft - amount : scrollLeft + amount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const handlePlayRecord = (record: PlaybackRecord) => {
     const mediaItem: MediaItem = {
@@ -52,101 +78,167 @@ export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
   };
 
   return (
-    <section 
+    <motion.section 
       aria-label="Continue Watching" 
-      className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="relative z-20 py-2 sm:py-3"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-rose-500" />
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            Continue Watching
-          </h2>
+      {/* Consistent Section Header matching Top 10 and other rows */}
+      <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="h-3.5 w-[3px] rounded-full bg-rose-500" aria-hidden="true" />
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
+            Resume playback
+          </p>
+        </div>
+        <h2 className="mt-1.5 text-xl font-bold tracking-tight text-white md:text-2xl">
+          Continue watching
+        </h2>
+      </div>
+
+      <div className="group/rail relative">
+        {/* Left Scroll Arrow */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          type="button"
+          onClick={() => scroll('left')}
+          aria-label="Scroll left"
+          className="absolute left-2 top-1/2 z-30 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/75 text-white border border-white/20 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black/90 shadow-2xl cursor-pointer"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </motion.button>
+
+        {/* Right Scroll Arrow */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          type="button"
+          onClick={() => scroll('right')}
+          aria-label="Scroll right"
+          className="absolute right-2 top-1/2 z-30 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/75 text-white border border-white/20 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black/90 shadow-2xl cursor-pointer"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </motion.button>
+
+        {/* Cards Row - Exact same grid, padding, width, and gap as the rows below */}
+        <div 
+          ref={scrollRef}
+          className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-4 pt-1 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
+          style={{
+            maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)'
+          }}
+        >
+          <AnimatePresence mode="popLayout">
+            {validHistory.map((record) => {
+              const imageSrc = optimizeTmdbImage(record.backdrop_path || record.poster_path, 'backdrop');
+              const isSeries = record.media_type === 'tv' || record.media_type === 'anime';
+
+              // Calculate clean remaining duration if available
+              let timeLabel = `${record.progressPercent}% watched`;
+              if (record.duration && record.duration > 0 && record.currentTime) {
+                const remainingSec = Math.max(0, record.duration - record.currentTime);
+                const remainingMin = Math.round(remainingSec / 60);
+                if (remainingMin > 0) {
+                  timeLabel = `${remainingMin} min left`;
+                }
+              }
+
+              const subtitleLine = isSeries && record.season !== undefined && record.episode !== undefined
+                ? `S${record.season} · E${record.episode} · ${timeLabel}`
+                : timeLabel;
+
+              return (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }}
+                  transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
+                  key={`${record.id}_${record.season || 0}_${record.episode || 0}`}
+                  className="group relative flex-none w-[78vw] sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
+                >
+                  {/* 16:9 Landscape Card with Info on the Image */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handlePlayRecord(record)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handlePlayRecord(record);
+                      }
+                    }}
+                    className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-xl cursor-pointer transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                  >
+                    {/* Always a Backdrop Still */}
+                    <img
+                      src={imageSrc}
+                      alt={record.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== FALLBACK_BACKDROP) {
+                          target.src = FALLBACK_BACKDROP;
+                        }
+                      }}
+                    />
+
+                    {/* Gradient Overlay for Text Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent pointer-events-none" />
+
+                    {/* Centered Play Button on Hover */}
+                    <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                      <div className="h-12 w-12 rounded-full bg-white/25 text-white flex items-center justify-center ring-1 ring-white/50 backdrop-blur-md shadow-2xl transform scale-90 group-hover:scale-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                        <Play className="h-5 w-5 fill-current ml-0.5" />
+                      </div>
+                    </div>
+
+                    {/* Remove (Dismiss) Button at Top-Right on Hover */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      aria-label={`Remove ${record.title} from continue watching`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeRecord(record.id, record.season, record.episode);
+                      }}
+                      className="absolute top-2.5 right-2.5 z-30 h-7 w-7 rounded-full bg-black/60 text-white/70 hover:text-white hover:bg-black/90 flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 cursor-pointer border border-white/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </motion.button>
+
+                    {/* Info Positioned Directly on the Image */}
+                    <div className="absolute inset-x-0 bottom-3 z-10 px-4 pointer-events-none">
+                      <p className="text-sm sm:text-base font-bold text-white truncate drop-shadow-md">
+                        {record.title}
+                      </p>
+                      <p className="text-xs font-medium text-white/75 mt-0.5 drop-shadow">
+                        {subtitleLine}
+                      </p>
+                    </div>
+
+                    {/* Clear 4px Progress Bar Along the Very Bottom Edge */}
+                    <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-20 overflow-hidden">
+                      <div
+                        className="h-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] transition-all duration-300 ease-out"
+                        style={{ width: `${Math.max(2, Math.min(100, record.progressPercent))}%` }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       </div>
-
-      <div className="flex gap-4 overflow-x-auto pb-4 pt-1 scrollbar-none scroll-smooth">
-        {history.map((record) => {
-          const imageSrc = optimizeTmdbImage(record.backdrop_path || record.poster_path, 'card');
-          const isSeries = record.media_type === 'tv' || record.media_type === 'anime';
-
-          return (
-            <div
-              key={`${record.id}_${record.season || 0}_${record.episode || 0}`}
-              className="group relative flex-none w-[240px] sm:w-[280px] rounded-xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/25 transition-all duration-200 hover:-translate-y-1"
-            >
-              <div 
-                className="relative aspect-[16/9] w-full overflow-hidden cursor-pointer"
-                onClick={() => handlePlayRecord(record)}
-              >
-                <img
-                  src={imageSrc}
-                  alt={record.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (target.src !== FALLBACK_BACKDROP) {
-                      target.src = FALLBACK_BACKDROP;
-                    }
-                  }}
-                />
-
-                {/* Ambient Play Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="h-10 w-10 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                    <Play className="h-5 w-5 fill-current ml-0.5" />
-                  </div>
-                </div>
-
-                {/* Series badge */}
-                {isSeries && record.season !== undefined && record.episode !== undefined && (
-                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[11px] font-semibold text-white/90 border border-white/10">
-                    S{record.season} E{record.episode}
-                  </div>
-                )}
-
-                {/* Dismiss Button */}
-                <button
-                  type="button"
-                  aria-label={`Remove ${record.title} from continue watching`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeRecord(record.id, record.season, record.episode);
-                  }}
-                  className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/70 text-white/70 hover:text-white hover:bg-black/90 flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-
-                {/* Progress bar */}
-                <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20">
-                  <div
-                    className="h-full bg-rose-500 transition-all duration-300"
-                    style={{ width: `${Math.max(5, Math.min(100, record.progressPercent))}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Title and metadata */}
-              <div className="p-3 flex items-center justify-between gap-2">
-                <div 
-                  className="min-w-0 cursor-pointer"
-                  onClick={() => handleOpenDetails(record)}
-                >
-                  <p className="text-sm font-semibold text-white truncate hover:text-rose-400 transition-colors">
-                    {record.title}
-                  </p>
-                  <p className="text-xs text-white/60">
-                    {record.progressPercent}% watched
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
+    </motion.section>
   );
 };
+
+export default ContinueWatchingRail;

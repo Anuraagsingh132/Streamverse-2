@@ -437,14 +437,23 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               <button
                 key={tab.value}
                 onClick={() => setActiveCategory(tab.value)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition duration-150 ${
+                className={`relative flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition duration-150 cursor-pointer ${
                   isSelected
-                    ? 'bg-white text-black'
+                    ? 'text-black'
                     : 'border border-white/15 bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
                 }`}
               >
-                <Icon className="h-3 w-3" />
-                <span>{tab.label}</span>
+                {isSelected && (
+                  <motion.div
+                    layoutId="search-tab-pill"
+                    className="absolute inset-0 rounded-full bg-white shadow-sm"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Icon className="h-3 w-3" />
+                  <span>{tab.label}</span>
+                </span>
               </button>
             );
           })}
@@ -481,8 +490,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               {searchResults.map((item, idx) => {
                 const isFocused = focusedIndex === idx;
                 return (
-                  <div
+                  <motion.div
                     key={item.key || idx}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1], delay: Math.min(idx * 0.02, 0.16) }}
                     data-idx={idx}
                     onClick={() => handleSelectItem(item)}
                     onMouseEnter={() => focusedIndex !== idx && setFocusedIndex(idx)}
@@ -496,7 +508,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                         <img
                           src={item.poster}
                           alt={item.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           loading="lazy"
                         />
                       ) : (
@@ -532,7 +544,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                         isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}
                     />
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>

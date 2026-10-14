@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { Film, Tv, ArrowUpRight, Play, Plus, Check, Star, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { liveActionMovies, liveGenreConfigs } from '../data/cinemaosLiveMatch';
@@ -108,31 +109,49 @@ export const GenreRail: React.FC<GenreRailProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Movies / TV Shows Toggle */}
-              <div className="flex rounded-full border border-white/15 bg-white/10 p-1 backdrop-blur-md">
+              {/* Movies / TV Shows Toggle (Standardized Segmented Control) */}
+              <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md relative">
                 <button
                   type="button"
                   onClick={() => setMediaType('movie')}
-                  className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
                     mediaType === 'movie'
-                      ? 'bg-white text-black shadow'
+                      ? 'text-black'
                       : 'text-white/70 hover:text-white'
                   }`}
                 >
-                  <Film className="h-3.5 w-3.5" />
-                  Movies
+                  {mediaType === 'movie' && (
+                    <motion.div
+                      layoutId="genre-media-type-pill"
+                      className="absolute inset-0 rounded-full bg-white shadow"
+                      transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <Film className="h-3.5 w-3.5" />
+                    Movies
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setMediaType('tv')}
-                  className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
                     mediaType === 'tv'
-                      ? 'bg-white text-black shadow'
+                      ? 'text-black'
                       : 'text-white/70 hover:text-white'
                   }`}
                 >
-                  <Tv className="h-3.5 w-3.5" />
-                  TV Shows
+                  {mediaType === 'tv' && (
+                    <motion.div
+                      layoutId="genre-media-type-pill"
+                      className="absolute inset-0 rounded-full bg-white shadow"
+                      transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <Tv className="h-3.5 w-3.5" />
+                    TV Shows
+                  </span>
                 </button>
               </div>
 
@@ -161,31 +180,34 @@ export const GenreRail: React.FC<GenreRailProps> = ({
             {genres.map((genre) => {
               const isSelected = selectedGenre === genre.name;
               return (
-                <button
+                <motion.button
                   key={genre.name}
                   type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                   onClick={() => setSelectedGenre(genre.name)}
                   aria-pressed={isSelected}
-                  className={`group relative aspect-[16/10] w-40 shrink-0 overflow-hidden rounded-2xl text-left transition duration-300 sm:w-48 lg:w-52 ${
+                  className={`group relative aspect-[16/10] w-40 shrink-0 overflow-hidden rounded-2xl text-left transition-[transform,opacity,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] sm:w-48 lg:w-52 cursor-pointer border ${
                     isSelected
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black/0 scale-100 opacity-100'
-                      : 'opacity-80 hover:opacity-100'
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-[#060812] border-white/40 scale-[1.03] opacity-100 z-10'
+                      : 'border-white/10 opacity-60 hover:opacity-90 hover:scale-[1.01]'
                   }`}
                   style={{
-                    boxShadow: isSelected ? `0 14px 34px -10px ${genre.glow}` : undefined
+                    boxShadow: isSelected ? `0 14px 34px -8px ${genre.glow}` : undefined
                   }}
                 >
                   <img
                     alt={genre.name}
                     loading="eager"
                     decoding="async"
-                    className="object-cover transition-transform duration-700 group-hover:scale-110 h-full w-full"
+                    className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full brightness-105"
                     src={genre.image}
                   />
                   <div
                     className="absolute inset-0"
                     style={{
-                      background: `linear-gradient(135deg, ${genre.color} 0%, rgba(0,0,0,0.4) 45%, rgba(0,0,0,0.85) 100%)`
+                      background: `linear-gradient(135deg, ${genre.color} 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.85) 100%)`
                     }}
                   />
                   <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
@@ -193,18 +215,18 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                     {genre.name}
                   </span>
                   {isSelected && (
-                    <span className="absolute right-2.5 top-2.5 rounded-full bg-white px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-black">
+                    <span className="absolute right-2.5 top-2.5 rounded-full bg-white px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-black shadow-md">
                       Showing
                     </span>
                   )}
-                </button>
+                </motion.button>
               );
             })}
           </div>
         </div>
 
-        {/* Sub-header (1:1 with CinemaOS) */}
-        <div className="mt-6 flex items-center gap-2.5 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+        {/* Sub-header with enhanced spacing */}
+        <div className="mt-8 sm:mt-10 flex items-center gap-2.5 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
           <span
             className="h-2 w-2 rounded-full"
             style={{ background: currentGenreObj.dot }}
@@ -218,8 +240,8 @@ export const GenreRail: React.FC<GenreRailProps> = ({
           </h3>
         </div>
 
-        {/* Media Rail for Selected Genre */}
-        <div className="group/rail relative mt-2">
+        {/* Media Rail for Selected Genre with generous spacing */}
+        <div className="group/rail relative mt-3 sm:mt-4">
           {/* Scroll Arrows */}
           <button
             onClick={() => scroll('left')}
@@ -273,12 +295,12 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                     className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <div className="card-3d relative rounded-xl">
-                      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
+                      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
                         <img
                           alt={item.title}
                           loading={idx < 3 ? "eager" : "lazy"}
                           decoding="async"
-                          className="object-cover transition-[filter,transform] duration-700 group-hover:scale-105 h-full w-full"
+                          className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full"
                           src={
                             (item.backdrop_path || item.poster_path)?.includes('image.tmdb.org/t/p/')
                               ? (item.backdrop_path || item.poster_path)!.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/')
@@ -295,36 +317,42 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                         />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
 
-                        <button
+                        <motion.button
                           type="button"
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.85 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                           aria-label={isSaved ? `Remove ${item.title} from watchlist` : `Add ${item.title} to watchlist`}
                           title={isSaved ? "Remove from watchlist" : "Add to watchlist"}
                           onClick={(e) => {
                             e.stopPropagation();
                             onToggleWatchlist(item);
                           }}
-                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition-colors duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer ${
                             isSaved
                               ? 'bg-rose-600 text-white'
                               : 'bg-black/50 text-white hover:bg-black/70'
                           }`}
                         >
                           {isSaved ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                        </button>
+                        </motion.button>
 
                         <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 focus-within:opacity-100">
-                          <button
+                          <motion.button
                             type="button"
+                            whileHover={{ scale: 1.18 }}
+                            whileTap={{ scale: 0.92 }}
+                            transition={{ type: 'spring', stiffness: 450, damping: 28 }}
                             aria-label={`Play ${item.title}`}
                             title={`Play ${item.title}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               onPlay(item);
                             }}
-                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 cursor-pointer shadow-lg"
                           >
-                            <Play className="h-5 w-5 fill-white text-white" />
-                          </button>
+                            <Play className="h-5 w-5 fill-white text-white ml-0.5" />
+                          </motion.button>
                         </div>
                       </div>
                       <span className="card-3d-glare" aria-hidden="true" />

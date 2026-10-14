@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { popularProviders, allMedia } from '../data/mediaData';
 import { MediaCard } from '../components/MediaCard';
 import { MediaItem } from '../types/media';
@@ -84,9 +85,11 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
 
         {/* Filter Pills */}
         <div className="mt-6 flex flex-wrap items-center gap-2">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             onClick={() => setMediaFilter(mediaFilter === 'movie' ? 'all' : 'movie')}
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border ${
+            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border cursor-pointer ${
               mediaFilter === 'movie'
                 ? 'bg-white text-black border-white'
                 : 'bg-white/10 text-white/80 border-white/15 hover:bg-white/20'
@@ -94,11 +97,13 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
           >
             <Film className="h-3.5 w-3.5" />
             Movies
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             onClick={() => setMediaFilter(mediaFilter === 'tv' ? 'all' : 'tv')}
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border ${
+            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border cursor-pointer ${
               mediaFilter === 'tv'
                 ? 'bg-white text-black border-white'
                 : 'bg-white/10 text-white/80 border-white/15 hover:bg-white/20'
@@ -106,11 +111,13 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
           >
             <Tv className="h-3.5 w-3.5" />
             TV Shows
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             onClick={() => setSortMode('popular')}
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border ${
+            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border cursor-pointer ${
               sortMode === 'popular'
                 ? 'bg-white text-black border-white'
                 : 'bg-white/10 text-white/80 border-white/15 hover:bg-white/20'
@@ -118,11 +125,13 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
           >
             <TrendingUp className="h-3.5 w-3.5" />
             Most watched
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             onClick={() => setSortMode('alpha')}
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border ${
+            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition backdrop-blur-md border cursor-pointer ${
               sortMode === 'alpha'
                 ? 'bg-white text-black border-white'
                 : 'bg-white/10 text-white/80 border-white/15 hover:bg-white/20'
@@ -130,7 +139,7 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
           >
             <ArrowDownAZ className="h-3.5 w-3.5" />
             A to Z
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -143,10 +152,13 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
           {popularProviders.map((p) => {
             const isSelected = selectedProvider.toLowerCase() === p.name.toLowerCase();
             return (
-              <button
+              <motion.button
                 key={p.id}
+                type="button"
+                whileTap={{ scale: 0.94 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 onClick={() => setSelectedProvider(p.name)}
-                className={`group relative flex flex-col items-center gap-2.5 rounded-2xl border p-4 text-center transition duration-300 ${
+                className={`group relative flex flex-col items-center gap-2.5 rounded-2xl border p-4 text-center transition duration-300 cursor-pointer ${
                   isSelected
                     ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20 scale-105'
                     : 'border-white/10 bg-white/[0.04] hover:border-white/25 hover:bg-white/[0.07]'
@@ -157,7 +169,7 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
                 </div>
                 <div className="text-xs font-bold text-white">{p.name}</div>
                 <div className="text-[10px] text-zinc-400">{p.count}+ titles</div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -172,10 +184,13 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
           {extendedProviders.map((p) => {
             const isSelected = selectedProvider.toLowerCase() === p.name.toLowerCase();
             return (
-              <button
+              <motion.button
                 key={p.id}
+                type="button"
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 onClick={() => setSelectedProvider(p.name)}
-                className={`flex flex-col items-center gap-1.5 rounded-xl border p-2.5 transition text-center ${
+                className={`flex flex-col items-center gap-1.5 rounded-xl border p-2.5 transition text-center cursor-pointer ${
                   isSelected
                     ? 'border-primary bg-primary/15'
                     : 'border-white/5 bg-white/[0.03] hover:border-white/20'
@@ -187,7 +202,7 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
                 <span className="text-[11px] font-medium text-white truncate max-w-full">
                   {p.name}
                 </span>
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -202,16 +217,26 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 sm:gap-4">
-          {providerMedia.map((item) => (
-            <MediaCard
-              key={item.id}
-              item={item}
-              onPlay={onPlay}
-              onOpenDetails={onOpenDetails}
-              isWatchlist={watchlist.includes(item.id)}
-              onToggleWatchlist={onToggleWatchlist}
-            />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {providerMedia.map((item) => (
+              <motion.div
+                key={`${selectedProvider}-${item.id}`}
+                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.92 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <MediaCard
+                  item={item}
+                  onPlay={onPlay}
+                  onOpenDetails={onOpenDetails}
+                  isWatchlist={watchlist.includes(item.id)}
+                  onToggleWatchlist={onToggleWatchlist}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </section>
     </div>

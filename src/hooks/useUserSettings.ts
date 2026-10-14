@@ -36,7 +36,7 @@ const STORAGE_KEYS = {
 } as const;
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
-  defaultServer: 'hdhub',
+  defaultServer: 'cinemaos',
   autoplayNext: true,
   defaultQuality: '1080p',
   pixelDrainRoute: 'normal',
