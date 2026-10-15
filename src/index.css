@@ -229,6 +229,14 @@ body {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Native touch feedback feel on interactive buttons, cards, and tabs */
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: scale(0.97);
+    transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.4, 1);
+  }
 }
 
 

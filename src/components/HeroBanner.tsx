@@ -114,8 +114,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* 1:1 CinemaOS Ambient Fixed Backdrop Glow */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      {/* Ambient Backdrop Glow: Contained to hero on mobile to prevent iOS fixed-layer black band glitches & muddy tints */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[85vh] md:fixed md:inset-0 -z-10 overflow-hidden" aria-hidden="true">
         {items.map((item, idx) => {
           const isActive = idx === currentIndex;
           const isNear = Math.abs(idx - currentIndex) <= 1 || 
@@ -140,13 +140,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 }
               }}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
-                isActive ? 'opacity-60' : 'opacity-0'
+                isActive ? 'opacity-35 md:opacity-60' : 'opacity-0'
               }`}
               style={{
                 filter: 'blur(48px) saturate(1.4)',
                 WebkitFilter: 'blur(48px) saturate(1.4)',
                 transform: 'translate3d(0, 0, 0) scale(1.15)',
-                opacity: isActive ? 0.6 : 0,
                 transition: 'opacity 1000ms ease',
                 contain: 'paint'
               }}
@@ -155,14 +154,13 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
         })}
       </div>
 
-      <div className="relative h-[95vh] w-full select-none lg:h-screen">
+      <div className="relative h-[min(68svh,560px)] w-full select-none lg:h-screen">
         {/* Background Ken Burns Container with mask */}
         <div 
-          className="absolute inset-x-0 top-0 overflow-hidden" 
+          className="absolute inset-x-0 top-0 overflow-hidden h-full lg:h-[calc(100%+20vh)]" 
           style={{
-            height: 'calc(100% + 20vh)',
-            maskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)'
+            maskImage: 'linear-gradient(to bottom, black 50%, transparent 98%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 98%)'
           }}
         >
           {items.map((item, idx) => {
@@ -215,6 +213,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           <div className="md:hidden absolute inset-x-0 bottom-0 z-20 h-[70%] bg-gradient-to-t from-[#060812] via-[#060812]/90 to-transparent pointer-events-none" />
         </div>
 
+        {/* Soft bottom gradient fade into page background */}
+        <div className="absolute inset-x-0 bottom-0 z-20 h-28 sm:h-36 bg-gradient-to-t from-[#060812] via-[#060812]/80 to-transparent pointer-events-none" />
+
         {/* Vertical Watermark */}
         <div 
           aria-hidden="true" 
@@ -223,13 +224,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           Streamverse
         </div>
 
-        {/* Content Container */}
+        {/* Content Container (Anchored cleanly with trimmed bottom dead space on mobile) */}
         <div 
-          className="relative z-10 flex h-full items-end"
-          style={{ paddingBottom: 'clamp(130px, 18vh, 170px)' }}
+          className="relative z-10 flex h-full items-end pb-5 sm:pb-8 lg:pb-[clamp(130px,18vh,170px)]"
         >
           <div className="w-full px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
-            <div className="flex max-w-xl flex-col gap-3 sm:gap-4 2xl:max-w-2xl">
+            <div className="flex max-w-xl flex-col gap-2.5 sm:gap-4 2xl:max-w-2xl">
               
               {/* Desktop Badge & Trending Row (Untouched for desktop >= md) */}
               <div 
@@ -246,13 +246,13 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 </span>
               </div>
 
-              {/* Mobile-Only Scoped Single Metadata Row (Cleaner, no competing brand chip, easy to scan) */}
+              {/* Mobile-Only Scoped Single Metadata Row (Clear 12px, high contrast, vibrant dot) */}
               <div 
                 className="flex md:hidden items-center gap-2 text-xs duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
                 style={{ animationDelay: '0ms' }}
               >
-                <span className="h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
-                <span className="text-[11px] font-semibold tracking-wider uppercase text-white/90">
+                <span className="h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)]" />
+                <span className="text-[12px] font-bold tracking-wide uppercase text-white drop-shadow-md">
                   {current.badge || `#${currentIndex + 1} Trending · ${current.media_type === 'tv' ? 'Series' : 'Movie'} · ${current.year || 2026}`}
                 </span>
               </div>
@@ -260,7 +260,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
               {/* Title or Title Logo */}
               {(current.logo_path || current.title_logo) && !logoError ? (
                 <div 
-                  className="h-20 w-full max-w-[260px] duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both sm:h-24 sm:max-w-sm lg:h-32 lg:max-w-lg" 
+                  className="h-16 sm:h-24 w-full max-w-[240px] sm:max-w-sm duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both lg:h-32 lg:max-w-lg" 
                   style={{ animationDelay: '90ms' }}
                 >
                   <img 
@@ -269,17 +269,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                     alt={current.title} 
                     loading="eager" 
                     className="object-contain transition-opacity duration-300 h-full w-full object-left-bottom" 
-                    style={{ filter: 'drop-shadow(rgba(0, 0, 0, 0.75) 0px 2px 10px) drop-shadow(rgba(0, 0, 0, 0.5) 0px 0px 2px)' }}
+                    style={{ filter: 'drop-shadow(rgba(0, 0, 0, 0.85) 0px 2px 10px) drop-shadow(rgba(0, 0, 0, 0.7) 0px 0px 4px)' }}
                     onError={() => setLogoError(true)}
                   />
                 </div>
               ) : (
                 <h1 
                   key={`title-${current.id}`}
-                  className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white drop-shadow-2xl duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both leading-none"
+                  className="text-2xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white drop-shadow-2xl duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both leading-none"
                   style={{ 
                     animationDelay: '90ms',
-                    filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.75))'
+                    filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.85)) drop-shadow(0 4px 20px rgba(0,0,0,0.75))'
                   }}
                 >
                   {current.title}
@@ -316,14 +316,14 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 className="flex md:hidden flex-wrap items-center gap-2 text-xs duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
                 style={{ animationDelay: '180ms' }}
               >
-                <div className="flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2.5 py-1 backdrop-blur-md shadow-sm">
+                <div className="flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2.5 py-1 backdrop-blur-md shadow-sm">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                   <span className="text-xs font-bold text-amber-300">{(current.vote_average || 8.3).toFixed(1)}</span>
                 </div>
                 {current.genres?.slice(0, 2).map((g) => (
                   <span 
                     key={g} 
-                    className="rounded-full border border-white/15 bg-black/35 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md"
+                    className="rounded-full border border-white/15 bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md"
                   >
                     {g}
                   </span>
@@ -332,7 +332,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
 
               {/* Description (Near-white on mobile for 4.5:1 WCAG contrast, preserved on desktop) */}
               <p 
-                className="line-clamp-2 text-sm leading-relaxed text-zinc-100 dark:text-white/95 md:text-gray-800 md:dark:text-white/80 drop-shadow-md duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both sm:line-clamp-3 lg:text-base" 
+                className="line-clamp-2 text-xs sm:text-sm leading-relaxed text-zinc-100 dark:text-white/95 md:text-gray-800 md:dark:text-white/80 drop-shadow-md duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both sm:line-clamp-3 lg:text-base" 
                 style={{ animationDelay: '260ms' }}
               >
                 {(current.overview || '').replace(/\s*\(Source:.*?\)\s*/gi, '').trim()}
@@ -340,13 +340,13 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
 
               {/* Action Buttons (Touch-friendly 44pt targets, dark blur on mobile, active:scale-95) */}
               <div 
-                className="flex items-center gap-2.5 pt-1 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both" 
+                className="flex items-center gap-2.5 pt-0.5 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both" 
                 style={{ animationDelay: '340ms' }}
               >
                 {/* Play Button */}
                 <button 
                   onClick={() => onPlay(current)}
-                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black shadow-lg transition hover:bg-white/85 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent]"
+                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full bg-white px-5 sm:px-6 text-sm font-bold text-black shadow-lg transition hover:bg-white/85 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent]"
                 >
                   <Play className="lucide lucide-play h-4 w-4 fill-current" />
                   Play
@@ -355,7 +355,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 {/* More Info */}
                 <button 
                   onClick={() => onOpenDetails(current)}
-                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-black/45 md:bg-white/15 px-5 text-sm font-semibold text-white md:text-gray-900 md:dark:text-white backdrop-blur-[20px] md:backdrop-blur-md transition hover:bg-white/25 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent]"
+                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-black/50 md:bg-white/15 px-4 sm:px-5 text-sm font-semibold text-white md:text-gray-900 md:dark:text-white backdrop-blur-[20px] md:backdrop-blur-md transition hover:bg-white/25 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent]"
                 >
                   <Info className="lucide lucide-info h-4 w-4" />
                   More Info
@@ -368,7 +368,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                   title={isSaved ? "Remove from Watchlist" : "Watch Later"}
                   aria-label={isSaved ? "Remove from Watchlist" : "Watch Later"}
                   className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border hover:text-accent-foreground h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border-white/20 backdrop-blur-[20px] md:backdrop-blur-md hover:bg-white/25 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent] ${
-                    isSaved ? 'bg-primary/25 text-primary border-primary/40' : 'bg-black/45 md:bg-white/15 text-white md:text-gray-900 md:dark:text-white'
+                    isSaved ? 'bg-primary/25 text-primary border-primary/40' : 'bg-black/50 md:bg-white/15 text-white md:text-gray-900 md:dark:text-white'
                   }`}
                 >
                   <Bookmark className={`lucide lucide-bookmark h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
@@ -377,7 +377,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
             </div>
 
             {/* Slider Progress Bars & Chevrons */}
-            <div className="mt-6 flex max-w-xl items-center gap-3">
+            <div className="mt-4 sm:mt-6 flex max-w-xl items-center gap-3">
               {/* Desktop Indicators: 10 progress bars (Untouched on desktop) */}
               <div className="hidden md:flex flex-1 gap-1.5">
                 {items.slice(0, 10).map((_, idx) => {
@@ -408,7 +408,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
               </div>
 
               {/* Mobile Indicators: Capped at 5 with wide solid active pill & tap targets */}
-              <div className="flex md:hidden items-center gap-2 py-1">
+              <div className="flex md:hidden items-center gap-2 py-1 mt-1 sm:mt-2">
                 {items.slice(0, 5).map((_, idx) => {
                   const isActive = idx === currentIndex;
                   return (

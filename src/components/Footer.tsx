@@ -19,7 +19,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <footer className="relative mx-3 mb-24 mt-12 overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-2xl sm:mx-4 lg:mb-4">
+    <footer className="relative mx-3 mt-10 overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-2xl sm:mx-4 sm:mt-12 mb-[calc(106px+env(safe-area-inset-bottom,0px))] lg:mb-4">
       {/* Top accent line */}
       <div className="h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
@@ -40,8 +40,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <span className="text-base font-black tracking-tight text-white">Streamverse</span>
           </a>
 
-          {/* Links */}
-          <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">
+          {/* Links: Clean 2-column on mobile, 4-column on tablet, flex row on desktop */}
+          <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap gap-2.5 sm:gap-x-5 sm:gap-y-2">
             {links.map((link) => (
               <a
                 key={link.label}
@@ -50,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   e.preventDefault();
                   onNavigate(link.route);
                 }}
-                className="text-sm text-white/60 transition-colors duration-200 hover:text-white active:opacity-75"
+                className="flex items-center min-h-[36px] text-sm text-white/60 transition-colors duration-200 hover:text-white active:opacity-75"
               >
                 {link.label}
               </a>

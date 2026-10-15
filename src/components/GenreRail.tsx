@@ -92,10 +92,10 @@ export const GenreRail: React.FC<GenreRailProps> = ({
 
   return (
     <section id="genres">
-      <section className="py-10">
+      <section className="py-4 sm:py-10">
         {/* Section Header */}
         <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div className="mb-4 sm:mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="flex items-center gap-2.5">
                 <div className="h-3.5 w-[3px] rounded-full bg-primary" aria-hidden="true" />
@@ -114,7 +114,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                 <button
                   type="button"
                   onClick={() => setMediaType('movie')}
-                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                     mediaType === 'movie'
                       ? 'text-black'
                       : 'text-white/70 hover:text-white'
@@ -135,7 +135,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                 <button
                   type="button"
                   onClick={() => setMediaType('tv')}
-                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                     mediaType === 'tv'
                       ? 'text-black'
                       : 'text-white/70 hover:text-white'
@@ -161,7 +161,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                   onClick={() => onNavigateGenre(selectedGenre)}
                   className="hidden items-center gap-1 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:flex"
                 >
-                  Browse {selectedGenre} <ArrowUpRight className="h-3.5 w-3.5" />
+                  Browse all <ArrowUpRight className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
@@ -188,7 +188,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                   transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                   onClick={() => setSelectedGenre(genre.name)}
                   aria-pressed={isSelected}
-                  className={`group relative aspect-[16/10] w-40 shrink-0 overflow-hidden rounded-2xl text-left transition-[transform,opacity,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] sm:w-48 lg:w-52 cursor-pointer border ${
+                  className={`group relative h-[84px] w-36 shrink-0 sm:h-auto sm:w-48 sm:aspect-[16/10] lg:w-52 overflow-hidden rounded-2xl text-left transition-[transform,opacity,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer border ${
                     isSelected
                       ? 'ring-2 ring-white ring-offset-2 ring-offset-[#060812] border-white/40 scale-[1.03] opacity-100 z-10'
                       : 'border-white/10 opacity-60 hover:opacity-90 hover:scale-[1.01]'
@@ -210,12 +210,12 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                       background: `linear-gradient(135deg, ${genre.color} 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.85) 100%)`
                     }}
                   />
-                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
-                  <span className="absolute bottom-3 left-3.5 right-3 text-base font-black leading-tight tracking-tight text-white drop-shadow-lg sm:text-lg">
+                  <div className="absolute inset-x-0 bottom-0 h-14 sm:h-16 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
+                  <span className="absolute bottom-2.5 left-3 right-2 text-sm font-black leading-tight tracking-tight text-white drop-shadow-lg sm:bottom-3 sm:left-3.5 sm:right-3 sm:text-lg">
                     {genre.name}
                   </span>
                   {isSelected && (
-                    <span className="absolute right-2.5 top-2.5 rounded-full bg-white px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-black shadow-md">
+                    <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-black shadow-md sm:right-2.5 sm:top-2.5">
                       Showing
                     </span>
                   )}
@@ -225,13 +225,18 @@ export const GenreRail: React.FC<GenreRailProps> = ({
           </div>
         </div>
 
-        {/* Sub-header with enhanced spacing */}
-        <div className="mt-8 sm:mt-10 flex items-center gap-2.5 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ background: currentGenreObj.dot }}
-          />
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
+        {/* Curated Genre Sub-Header (Standard Eyebrow + Heading Style) */}
+        <div className="mt-6 sm:mt-10 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: currentGenreObj.dot }}
+            />
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
+              Curated {selectedGenre}
+            </p>
+          </div>
+          <h3 className="mt-1 text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
             {selectedGenre}{' '}
             <span className="font-medium text-white/40">
               · {mediaType === 'tv' ? 'Series' : 'Movies'}
@@ -272,7 +277,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
               return (
                 <div
                   key={`${item.id}-${idx}`}
-                  className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
+                  className="w-[74vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
                 >
                   <div
                     role="button"
@@ -363,8 +368,8 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                         {item.title}
                       </h3>
                       <div className="mt-1 flex items-center gap-1.5">
-                        <span className="rounded-full bg-rose-600/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-rose-400">
-                          {item.media_type === 'tv' ? 'Series' : 'Movie'}
+                        <span className="rounded bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/90">
+                          {item.media_type === 'tv' ? 'SERIES' : 'MOVIE'}
                         </span>
                         <span className="text-[11px] text-zinc-400">{item.year || 2026}</span>
                         <span className="ml-auto flex items-center gap-0.5 text-[11px] text-zinc-400">

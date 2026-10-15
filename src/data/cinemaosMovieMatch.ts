@@ -129,7 +129,7 @@ export const movieTop10Items: MediaItem[] = [
     title: 'Spider-Man: Brand New Day',
     media_type: 'movie',
     year: 2026,
-    vote_average: 7.9,
+    vote_average: 8.4,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
     overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate.',
@@ -187,7 +187,7 @@ export const moviePopularItems: MediaItem[] = [
     title: 'Spider-Man: Brand New Day',
     media_type: 'movie',
     year: 2026,
-    vote_average: 7.9,
+    vote_average: 8.4,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/tanwf7KOwQ6dxZzehKsXkffIJOd.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
     overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate.',
@@ -274,17 +274,6 @@ export const moviePopularItems: MediaItem[] = [
 
 export const movieActionItems: MediaItem[] = [
   {
-    id: '969681',
-    title: 'Spider-Man: Brand New Day',
-    media_type: 'movie',
-    year: 2026,
-    vote_average: 7.9,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
-    overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate.',
-    genres: ['Action', 'Adventure', 'Sci-Fi']
-  },
-  {
     id: '1249289',
     title: 'Renegade Immortal: Battle of the Immortal Slayer',
     media_type: 'movie',
@@ -360,6 +349,17 @@ export const movieActionItems: MediaItem[] = [
     poster_path: 'https://image.tmdb.org/t/p/w780/AaV1YIdWKnjAIAOe8UUKBFm327v.jpg',
     overview: 'Maverick trains top naval aviators for a specialized mission unlike any before.',
     genres: ['Action', 'Drama']
+  },
+  {
+    id: '969681',
+    title: 'Spider-Man: Brand New Day',
+    media_type: 'movie',
+    year: 2026,
+    vote_average: 8.4,
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
+    poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
+    overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate.',
+    genres: ['Action', 'Adventure', 'Sci-Fi']
   }
 ];
 
@@ -697,7 +697,7 @@ export const movieUpcomingItems: MediaItem[] = [
     title: 'Spider-Man: Brand New Day',
     media_type: 'movie',
     year: 2026,
-    vote_average: 7.9,
+    vote_average: 8.4,
     backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
     overview: 'Peter Parker navigates life as a street-level protector.',

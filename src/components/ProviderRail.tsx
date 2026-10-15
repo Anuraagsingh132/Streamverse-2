@@ -136,7 +136,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterType('movie')}
-                className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-bold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                   filterType === 'movie'
                     ? 'text-black'
                     : 'text-white/70 hover:text-white'
@@ -157,7 +157,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterType('tv')}
-                className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-bold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                   filterType === 'tv'
                     ? 'text-black'
                     : 'text-white/70 hover:text-white'
@@ -181,10 +181,10 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
             <button
               type="button"
               onClick={onNavigateAll || (() => {})}
-              className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-white/90 backdrop-blur-xl transition hover:bg-white/15 hover:text-white cursor-pointer"
+              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold text-white/90 backdrop-blur-xl transition hover:bg-white/20 hover:text-white cursor-pointer [-webkit-tap-highlight-color:transparent]"
             >
-              <span>All</span>
-              <ArrowUpRight className="h-3.5 w-3.5 stroke-[2]" />
+              <span>Browse all</span>
+              <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.2]" />
             </button>
           </div>
         </div>
@@ -311,7 +311,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
               return (
                 <div
                   key={`${item.id}-${idx}`}
-                  className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
+                  className="w-[74vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
                 >
                   <div
                     onClick={() => onOpenDetails(item)}
@@ -394,8 +394,8 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
                         {item.title}
                       </h3>
                       <div className="mt-1 flex items-center gap-1.5">
-                        <span className="rounded-full bg-rose-600/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-rose-400">
-                          {item.media_type === 'tv' ? 'Series' : 'Movie'}
+                        <span className="rounded bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/90">
+                          {item.media_type === 'tv' ? 'SERIES' : 'MOVIE'}
                         </span>
                         <span className="text-[11px] text-zinc-400">{item.year || 2026}</span>
                         <span className="ml-auto flex items-center gap-0.5 text-[11px] text-zinc-400">

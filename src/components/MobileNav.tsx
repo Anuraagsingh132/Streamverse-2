@@ -105,10 +105,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       {/* Floating Bottom Tab Bar (Strictly Mobile Only: lg:hidden) */}
       <div 
         className="fixed inset-x-3 z-40 lg:hidden pointer-events-auto" 
-        style={{ bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))' }}
       >
         <nav 
-          className="relative flex h-[62px] items-center overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/85 shadow-[0_12px_40px_rgba(0,0,0,0.65)] backdrop-blur-2xl" 
+          className="relative flex h-[68px] items-center overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/90 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl" 
           aria-label="Mobile navigation"
         >
           {primaryTabs.map((item) => {
@@ -122,19 +122,19 @@ export const MobileNav: React.FC<MobileNavProps> = ({
             const isActive = isTabActive || isMoreActive;
 
             const content = (
-              <div className="relative flex flex-col items-center justify-center w-full h-full py-1">
+              <div className="relative flex flex-col items-center justify-center w-full h-full pt-1.5 pb-2">
                 <span className="relative z-20 flex items-center justify-center">
                   <Icon 
                     className={`transition-colors duration-200 ${
                       isActive ? 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'text-white/50'
                     }`}
-                    style={{ width: '20px', height: '20px' }}
-                    strokeWidth={isActive ? 2.2 : 1.6}
+                    style={{ width: '21px', height: '21px' }}
+                    strokeWidth={isActive ? 2.2 : 1.7}
                   />
                 </span>
                 <span 
-                  className={`relative z-20 mt-1 text-[10px] font-medium leading-none tracking-tight transition-colors duration-200 ${
-                    isActive ? 'text-white font-semibold' : 'text-white/45'
+                  className={`relative z-20 mt-1 text-[11px] font-medium leading-none tracking-tight transition-colors duration-200 ${
+                    isActive ? 'text-white font-semibold' : 'text-white/50'
                   }`}
                 >
                   {item.label}
@@ -145,7 +145,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                     layoutId="mobile-nav-pill"
                     transition={{ type: "spring", stiffness: 450, damping: 35 }}
                     aria-hidden="true" 
-                    className="pointer-events-none absolute inset-x-1.5 inset-y-1 z-10"
+                    className="pointer-events-none absolute inset-x-1.5 inset-y-1.5 z-10"
                   >
                     <div 
                       className="h-full w-full rounded-xl bg-white/[0.08] border border-white/10"

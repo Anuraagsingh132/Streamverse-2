@@ -157,7 +157,7 @@ export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
                   exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }}
                   transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
                   key={`${record.id}_${record.season || 0}_${record.episode || 0}`}
-                  className="group relative flex-none w-[78vw] sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
+                  className="group relative flex-none w-[74vw] sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
                 >
                   {/* 16:9 Landscape Card with Info on the Image */}
                   <div

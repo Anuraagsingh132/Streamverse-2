@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { motion } from 'motion/react';
-import { ArrowUpRight, Play, Plus, Check, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, Play, Plus, Check, Star, ChevronLeft, ChevronRight, Film, Tv } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { optimizeTmdbImage, FALLBACK_BACKDROP } from '../utils/imageUtils';
 
@@ -71,7 +71,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                 <button
                   type="button"
                   onClick={() => onTypeFilterChange('movie')}
-                  className={`relative rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                     typeFilter === 'movie'
                       ? 'text-black'
                       : 'text-white/70 hover:text-white'
@@ -84,12 +84,15 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                       transition={{ type: 'spring', stiffness: 450, damping: 35 }}
                     />
                   )}
-                  <span className="relative z-10">Movies</span>
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <Film className="h-3.5 w-3.5" />
+                    Movies
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onTypeFilterChange('tv')}
-                  className={`relative rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                     typeFilter === 'tv'
                       ? 'text-black'
                       : 'text-white/70 hover:text-white'
@@ -102,7 +105,10 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                       transition={{ type: 'spring', stiffness: 450, damping: 35 }}
                     />
                   )}
-                  <span className="relative z-10">TV Shows</span>
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <Tv className="h-3.5 w-3.5" />
+                    TV Shows
+                  </span>
                 </button>
               </div>
             )}
@@ -111,7 +117,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
               <button
                 type="button"
                 onClick={onBrowseAll}
-                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer"
+                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold text-white/90 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer [-webkit-tap-highlight-color:transparent]"
               >
                 <span>Browse all</span>
                 <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -160,7 +166,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
             return (
               <div 
                 key={`${item.id}-${idx}`} 
-                className="group/rank relative flex shrink-0 items-start pl-8 sm:pl-12 lg:pl-16"
+                className="group/rank relative flex shrink-0 items-start pl-12 sm:pl-12 lg:pl-16"
               >
                 {/* Giant Outlined Rank Number overlapping the card corner (1:1 with reference image) */}
                 <div 
@@ -179,7 +185,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                 </div>
 
                 {/* Card Container */}
-                <div className="relative z-10 w-[78vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]">
+                <div className="relative z-10 w-[74vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]">
                   <div 
                     role="button"
                     tabIndex={0}
