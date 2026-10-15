@@ -696,17 +696,6 @@ export const liveTopRatedShows: MediaItem[] = [
 
 export const liveActionMovies: MediaItem[] = [
   {
-    id: '969681',
-    title: 'Spider-Man: Brand New Day',
-    media_type: 'movie',
-    year: 2026,
-    vote_average: 7.9,
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
-    overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate.',
-    genres: ['Action', 'Adventure', 'Sci-Fi']
-  },
-  {
     id: '1368337',
     title: 'The Odyssey',
     media_type: 'movie',
@@ -803,6 +792,17 @@ export const liveActionMovies: MediaItem[] = [
     backdrop_path: 'https://image.tmdb.org/t/p/w780/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg',
     overview: 'After devastating events wiped out half of all life, the remaining Avengers assemble to undo Thanos’ actions.',
+    genres: ['Action', 'Adventure', 'Sci-Fi']
+  },
+  {
+    id: '969681',
+    title: 'Spider-Man: Brand New Day',
+    media_type: 'movie',
+    year: 2026,
+    vote_average: 8.4,
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
+    poster_path: 'https://image.tmdb.org/t/p/w780/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg',
+    overview: 'Peter Parker navigates life as a street-level protector in New York City with a clean slate.',
     genres: ['Action', 'Adventure', 'Sci-Fi']
   }
 ];

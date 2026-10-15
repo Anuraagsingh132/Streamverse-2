@@ -19,7 +19,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <footer className="relative mx-3 mt-10 overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-2xl sm:mx-4 sm:mt-12 mb-[calc(106px+env(safe-area-inset-bottom,0px))] lg:mb-4">
+    <footer 
+      className="relative mx-3 mt-10 overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-2xl sm:mx-4 sm:mt-12 lg:mb-4"
+      style={{ marginBottom: 'calc(106px + env(safe-area-inset-bottom, 0px))' }}
+    >
       {/* Top accent line */}
       <div className="h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
