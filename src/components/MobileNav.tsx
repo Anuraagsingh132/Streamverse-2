@@ -175,7 +175,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         className="liquid-glass-bar" 
         aria-label="Mobile navigation"
         style={{
-          transform: isVisible || isMoreOpen ? 'none' : 'translateY(100px)',
+          transform: isVisible || isMoreOpen ? 'translateX(-50%)' : 'translate(-50%, 100px)',
           opacity: isVisible || isMoreOpen ? 1 : 0,
           pointerEvents: isVisible || isMoreOpen ? 'auto' : 'none',
           transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
@@ -204,12 +204,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 className={`transition-colors duration-200 ${
                   isActive ? 'text-white' : 'text-white/[0.88]'
                 }`}
-                style={{ width: '26px', height: '26px' }}
+                style={{ width: '22px', height: '22px' }}
                 strokeWidth={2}
                 aria-hidden="true"
               />
               <span 
-                className={`mt-[3px] text-[12px] font-semibold leading-none tracking-tight transition-colors duration-200 ${
+                className={`mt-[2px] text-[11px] font-semibold leading-none tracking-tight transition-colors duration-200 ${
                   isActive ? 'text-white' : 'text-white/[0.88]'
                 }`}
               >
