@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   House, 
@@ -9,11 +8,11 @@ import {
   LayoutGrid,
   Volleyball, 
   Search, 
-  Tv2, 
-  Bookmark, 
-  Settings, 
-  X, 
-  ChevronRight 
+  Tv2,
+  Bookmark,
+  Settings,
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { getRouteHref } from '../utils/routeUtils';
 
@@ -30,13 +29,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 }) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [isPressed, setIsPressed] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Smooth scroll-direction reaction: hide gently on scroll down, snap back on scroll up
   useEffect(() => {
@@ -136,131 +129,108 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     }
   };
 
-  const getActiveIndex = () => {
-    if (isMoreOpen) return 4;
-    if (currentRoute === 'movie' || currentRoute === 'movies') return 1;
-    if (currentRoute === 'tv' || currentRoute === 'tv-shows') return 2;
-    if (currentRoute === 'anime' || currentRoute === 'anime-details') return 3;
-    if (
-      currentRoute === 'livesports' ||
-      currentRoute === 'providers' ||
-      currentRoute === 'watchlist' ||
-      currentRoute === 'settings'
-    ) {
-      return 4;
-    }
-    return 0; // Default to Home
-  };
-
-  const activeIndex = getActiveIndex();
-
-  const pressHandlers = {
-    onTouchStart: () => setIsPressed(true),
-    onTouchEnd: () => setIsPressed(false),
-    onTouchCancel: () => setIsPressed(false),
-    onMouseDown: () => setIsPressed(true),
-    onMouseUp: () => setIsPressed(false),
-    onMouseLeave: () => setIsPressed(false),
-  };
-
-  if (!mounted || typeof document === 'undefined') return null;
-
-  return createPortal(
+  return (
     <>
-      {/* Non-interactive Ambient Glow behind the bar for vibrant optical refraction */}
-      <div className="liquid-glass-ambient-glow" aria-hidden="true" />
-
-      {/* Apple Liquid Glass Floating Tab Bar (Strictly Mobile Only) */}
-      <nav 
-        className="liquid-glass-bar" 
-        aria-label="Mobile navigation"
-        style={{
-          transform: isVisible || isMoreOpen ? 'translateX(-50%)' : 'translate(-50%, 100px)',
-          opacity: isVisible || isMoreOpen ? 1 : 0,
-          pointerEvents: isVisible || isMoreOpen ? 'auto' : 'none',
-          transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+      {/* Apple Liquid Glass Floating Tab Bar (Strictly Mobile Only: lg:hidden) */}
+      <motion.div 
+        className="fixed z-40 lg:hidden pointer-events-auto" 
+        style={{ 
+          left: '14px', 
+          right: '14px', 
+          bottom: 'calc(10px + env(safe-area-inset-bottom, 0px))' 
         }}
+        animate={{ 
+          y: isVisible || isMoreOpen ? 0 : 88,
+          opacity: isVisible || isMoreOpen ? 1 : 0
+        }}
+        transition={{ type: 'spring', stiffness: 350, damping: 32 }}
       >
-        {/* Sliding Liquid Glass Active Lens */}
-        <div
-          className="liquid-glass-active-lens"
-          style={{
-            transform: `translateX(calc(${activeIndex} * 100%)) scale(${isPressed ? 1.06 : 1})`,
-            opacity: isPressed ? 1 : 0.92,
-          }}
-          aria-hidden="true"
-        />
+        <nav 
+          className="liquid-glass-bar" 
+          aria-label="Mobile navigation"
+        >
+          {/* Diagonal sheen reflection across the full glass pill */}
+          <div className="liquid-glass-sheen" aria-hidden="true" />
 
-        {/* 5 Primary Tabs */}
-        {primaryTabs.map((item, index) => {
-          const Icon = item.icon;
-          const isTabActive = !item.isAction && index === activeIndex;
-          const isMoreActive = item.isAction && (isMoreOpen || activeIndex === 4);
-          const isActive = isTabActive || isMoreActive;
+          {primaryTabs.map((item) => {
+            const Icon = item.icon;
+            const isTabActive = !item.isAction && (
+              currentRoute === item.route ||
+              (item.route === 'movie' && currentRoute === 'movies') ||
+              (item.route === 'anime' && currentRoute === 'anime-details')
+            );
+            const isMoreActive = item.isAction && isMoreOpen;
+            const isActive = isTabActive || isMoreActive;
 
-          const content = (
-            <div className="relative z-10 flex flex-col items-center justify-center w-full h-full select-none pointer-events-none">
-              <Icon 
-                className={`transition-colors duration-200 ${
-                  isActive ? 'text-white' : 'text-white/[0.88]'
-                }`}
-                style={{ width: '22px', height: '22px' }}
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-              <span 
-                className={`mt-[2px] text-[11px] font-semibold leading-none tracking-tight transition-colors duration-200 ${
-                  isActive ? 'text-white' : 'text-white/[0.88]'
-                }`}
-              >
-                {item.label}
-              </span>
-            </div>
-          );
+            const content = (
+              <div className="relative flex flex-col items-center justify-center w-full h-full pt-1 pb-1 z-10">
+                <span className="relative flex items-center justify-center">
+                  <Icon 
+                    className={`transition-colors duration-200 ${
+                      isActive ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]' : 'text-white/60'
+                    }`}
+                    style={{ width: '22px', height: '22px' }}
+                    strokeWidth={isActive ? 2.0 : 1.75}
+                  />
+                </span>
+                <span 
+                  className={`relative mt-1 text-[11px] leading-tight tracking-tight transition-colors duration-200 ${
+                    isActive ? 'text-white font-semibold' : 'text-white/60 font-medium'
+                  }`}
+                >
+                  {item.label}
+                </span>
 
-          if (item.isAction) {
+                {/* Sliding Glass Lens behind the active tab */}
+                {isActive && (
+                  <motion.div 
+                    layoutId="liquid-glass-lens"
+                    transition={{ type: "spring", stiffness: 420, damping: 30 }}
+                    aria-hidden="true" 
+                    className="pointer-events-none absolute inset-0 liquid-glass-lens -z-10"
+                  >
+                    {/* Top specular highlight edge on the lens */}
+                    <div className="absolute inset-x-3.5 top-0 h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-white/85 to-transparent" />
+                  </motion.div>
+                )}
+              </div>
+            );
+
+            if (item.isAction) {
+              return (
+                <button
+                  type="button"
+                  key={item.label}
+                  aria-label="More navigation options"
+                  aria-current={isActive ? 'page' : undefined}
+                  onClick={() => setIsMoreOpen(!isMoreOpen)}
+                  className="relative flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] active:scale-[0.96] transition-transform duration-100"
+                >
+                  {content}
+                </button>
+              );
+            }
+
             return (
-              <button
-                type="button"
+              <a
+                href={getRouteHref(item.route!)}
                 key={item.label}
-                aria-label="More navigation options"
+                aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                onClick={() => setIsMoreOpen(!isMoreOpen)}
-                {...pressHandlers}
-                className="relative z-10 flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] outline-none border-none bg-transparent p-0"
+                onTouchStart={() => prefetchMobileRoute(item.route!)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsMoreOpen(false);
+                  onNavigate(item.route!);
+                }}
+                className="relative flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] active:scale-[0.96] transition-transform duration-100"
               >
                 {content}
-              </button>
+              </a>
             );
-          }
-
-          return (
-            <a
-              href={getRouteHref(item.route!)}
-              key={item.label}
-              aria-label={item.label}
-              aria-current={isActive ? 'page' : undefined}
-              onTouchStart={() => {
-                prefetchMobileRoute(item.route!);
-                setIsPressed(true);
-              }}
-              onTouchEnd={() => setIsPressed(false)}
-              onTouchCancel={() => setIsPressed(false)}
-              onMouseDown={() => setIsPressed(true)}
-              onMouseUp={() => setIsPressed(false)}
-              onMouseLeave={() => setIsPressed(false)}
-              onClick={(e) => {
-                e.preventDefault();
-                setIsMoreOpen(false);
-                onNavigate(item.route!);
-              }}
-              className="relative z-10 flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] outline-none border-none bg-transparent p-0"
-            >
-              {content}
-            </a>
-          );
-        })}
-      </nav>
+          })}
+        </nav>
+      </motion.div>
 
       {/* Slide-Up "More" Sheet Modal for Overflow Items */}
       <AnimatePresence>
@@ -366,8 +336,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           </div>
         )}
       </AnimatePresence>
-    </>,
-    document.body
+    </>
   );
 };
 

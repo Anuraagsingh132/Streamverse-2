@@ -893,6 +893,11 @@ const AppContent: React.FC = () => {
       {/* Footer - Hidden on watch page */}
       {!isWatchRoute && <Footer onNavigate={handleNavigate} />}
 
+      {/* Mobile-Only Ambient Bottom Color Scrim for Liquid Glass Optical Refraction */}
+      {!isWatchRoute && (
+        <div className="liquid-glass-ambient-scrim" aria-hidden="true" />
+      )}
+
       {/* Floating Mobile Dock - Hidden on watch page */}
       {!isWatchRoute && (
         <MobileNav
