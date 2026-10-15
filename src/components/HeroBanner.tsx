@@ -28,6 +28,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   useEffect(() => {
     const prefersReducedMotion =
@@ -69,6 +70,31 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
     setCurrentIndex((prev) => (prev + 1) % items.length);
   };
 
+  // Mobile Touch Swipe Handlers (Paused auto-advance + haptic snap)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+    setIsPaused(true);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX !== null) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diffX = touchEndX - touchStartX;
+      if (Math.abs(diffX) > 40) {
+        if (diffX > 0) {
+          handlePrev();
+        } else {
+          handleNext();
+        }
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try { navigator.vibrate(12); } catch {}
+        }
+      }
+    }
+    setTouchStartX(null);
+    setIsPaused(false);
+  };
+
   // Up next items (next 3 in cycle)
   const upNextIndices = [
     (currentIndex + 1) % items.length,
@@ -85,6 +111,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
       onMouseLeave={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
       onBlurCapture={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* 1:1 CinemaOS Ambient Fixed Backdrop Glow */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
@@ -181,6 +209,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           <div className="absolute inset-0 z-20 bg-gradient-to-r from-white/80 via-white/30 to-transparent dark:from-black/85 dark:via-black/40 dark:to-transparent" />
           <div className="absolute inset-0 z-20 bg-gradient-to-b from-white/10 via-transparent to-transparent dark:from-black/40 dark:via-transparent dark:to-transparent" />
           <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 bg-gradient-to-t from-[#060812] via-[#060812]/80 to-transparent pointer-events-none" />
+
+          {/* Mobile-Only Scrims: Top Status Bar Scrim (~120px) & Enhanced Contrast Bottom Scrim */}
+          <div className="md:hidden absolute inset-x-0 top-0 z-20 h-[120px] bg-gradient-to-b from-black/60 via-black/25 to-transparent pointer-events-none" />
+          <div className="md:hidden absolute inset-x-0 bottom-0 z-20 h-[70%] bg-gradient-to-t from-[#060812] via-[#060812]/90 to-transparent pointer-events-none" />
         </div>
 
         {/* Vertical Watermark */}
@@ -198,9 +230,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
         >
           <div className="w-full px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
             <div className="flex max-w-xl flex-col gap-3 sm:gap-4 2xl:max-w-2xl">
-              {/* Badge & Trending Row */}
+              
+              {/* Desktop Badge & Trending Row (Untouched for desktop >= md) */}
               <div 
-                className="flex flex-wrap items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-800 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both dark:text-white/70"
+                className="hidden md:flex flex-wrap items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-800 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both dark:text-white/70"
                 style={{ animationDelay: '0ms' }}
               >
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-900 backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white">
@@ -210,6 +243,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 <span className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   {current.badge || `#${currentIndex + 1} Trending  ·  ${current.media_type === 'tv' ? 'Series' : 'Movie'}  ·  ${current.year || 2026}`}
+                </span>
+              </div>
+
+              {/* Mobile-Only Scoped Single Metadata Row (Cleaner, no competing brand chip, easy to scan) */}
+              <div 
+                className="flex md:hidden items-center gap-2 text-xs duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
+                style={{ animationDelay: '0ms' }}
+              >
+                <span className="h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
+                <span className="text-[11px] font-semibold tracking-wider uppercase text-white/90">
+                  {current.badge || `#${currentIndex + 1} Trending · ${current.media_type === 'tv' ? 'Series' : 'Movie'} · ${current.year || 2026}`}
                 </span>
               </div>
 
@@ -242,9 +286,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 </h1>
               )}
 
-              {/* Rating & Genres */}
+              {/* Desktop Rating & Genres (Untouched for desktop >= md) */}
               <div 
-                className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-800 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both dark:text-white/80 sm:text-sm" 
+                className="hidden md:flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-800 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both dark:text-white/80 sm:text-sm" 
                 style={{ animationDelay: '180ms' }}
               >
                 <span className="flex items-center gap-1.5">
@@ -267,15 +311,34 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 ))}
               </div>
 
-              {/* Description */}
+              {/* Mobile-Only Rating & Genres: Single Clean Rating Format (No redundant stars + percentage) */}
+              <div 
+                className="flex md:hidden flex-wrap items-center gap-2 text-xs duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
+                style={{ animationDelay: '180ms' }}
+              >
+                <div className="flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2.5 py-1 backdrop-blur-md shadow-sm">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  <span className="text-xs font-bold text-amber-300">{(current.vote_average || 8.3).toFixed(1)}</span>
+                </div>
+                {current.genres?.slice(0, 2).map((g) => (
+                  <span 
+                    key={g} 
+                    className="rounded-full border border-white/15 bg-black/35 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md"
+                  >
+                    {g}
+                  </span>
+                ))}
+              </div>
+
+              {/* Description (Near-white on mobile for 4.5:1 WCAG contrast, preserved on desktop) */}
               <p 
-                className="line-clamp-2 text-sm leading-relaxed text-gray-800 drop-shadow-lg duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both dark:text-white/80 sm:line-clamp-3 lg:text-base" 
+                className="line-clamp-2 text-sm leading-relaxed text-zinc-100 dark:text-white/95 md:text-gray-800 md:dark:text-white/80 drop-shadow-md duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both sm:line-clamp-3 lg:text-base" 
                 style={{ animationDelay: '260ms' }}
               >
                 {(current.overview || '').replace(/\s*\(Source:.*?\)\s*/gi, '').trim()}
               </p>
 
-              {/* Action Buttons */}
+              {/* Action Buttons (Touch-friendly 44pt targets, dark blur on mobile, active:scale-95) */}
               <div 
                 className="flex items-center gap-2.5 pt-1 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both" 
                 style={{ animationDelay: '340ms' }}
@@ -283,7 +346,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 {/* Play Button */}
                 <button 
                   onClick={() => onPlay(current)}
-                  className="flex h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black shadow-lg transition hover:bg-white/85"
+                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black shadow-lg transition hover:bg-white/85 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent]"
                 >
                   <Play className="lucide lucide-play h-4 w-4 fill-current" />
                   Play
@@ -292,7 +355,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 {/* More Info */}
                 <button 
                   onClick={() => onOpenDetails(current)}
-                  className="flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-5 text-sm font-semibold text-gray-900 backdrop-blur-md transition hover:bg-white/25 dark:text-white"
+                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-black/45 md:bg-white/15 px-5 text-sm font-semibold text-white md:text-gray-900 md:dark:text-white backdrop-blur-[20px] md:backdrop-blur-md transition hover:bg-white/25 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent]"
                 >
                   <Info className="lucide lucide-info h-4 w-4" />
                   More Info
@@ -304,8 +367,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                   onClick={() => onToggleWatchlist(current)}
                   title={isSaved ? "Remove from Watchlist" : "Watch Later"}
                   aria-label={isSaved ? "Remove from Watchlist" : "Watch Later"}
-                  className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border hover:text-accent-foreground h-11 w-11 rounded-full border-white/20 backdrop-blur-md hover:bg-white/25 ${
-                    isSaved ? 'bg-primary/25 text-primary border-primary/40' : 'bg-white/15 text-gray-900 dark:text-white'
+                  className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border hover:text-accent-foreground h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border-white/20 backdrop-blur-[20px] md:backdrop-blur-md hover:bg-white/25 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent] ${
+                    isSaved ? 'bg-primary/25 text-primary border-primary/40' : 'bg-black/45 md:bg-white/15 text-white md:text-gray-900 md:dark:text-white'
                   }`}
                 >
                   <Bookmark className={`lucide lucide-bookmark h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
@@ -315,7 +378,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
 
             {/* Slider Progress Bars & Chevrons */}
             <div className="mt-6 flex max-w-xl items-center gap-3">
-              <div className="flex flex-1 gap-1.5">
+              {/* Desktop Indicators: 10 progress bars (Untouched on desktop) */}
+              <div className="hidden md:flex flex-1 gap-1.5">
                 {items.slice(0, 10).map((_, idx) => {
                   const isActive = idx === currentIndex;
                   return (
@@ -343,7 +407,31 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 })}
               </div>
 
-              {/* Chevrons */}
+              {/* Mobile Indicators: Capped at 5 with wide solid active pill & tap targets */}
+              <div className="flex md:hidden items-center gap-2 py-1">
+                {items.slice(0, 5).map((_, idx) => {
+                  const isActive = idx === currentIndex;
+                  return (
+                    <button 
+                      key={`mob-${idx}`}
+                      type="button"
+                      onClick={() => goToSlide(idx)}
+                      aria-label={`Go to slide ${idx + 1}`} 
+                      className="flex h-9 min-h-[36px] min-w-[28px] items-center justify-center p-1 active:scale-90 transition-transform [-webkit-tap-highlight-color:transparent]"
+                    >
+                      <span 
+                        className={`h-1.5 rounded-full transition-all duration-300 ease-out ${
+                          isActive 
+                            ? 'w-7 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.7)]' 
+                            : 'w-2 bg-white/35 hover:bg-white/50'
+                        }`} 
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Chevrons (Desktop only) */}
               <div className="hidden items-center gap-1.5 sm:flex">
                 <button 
                   type="button"

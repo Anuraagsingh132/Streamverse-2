@@ -719,7 +719,7 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Main Page View with Animated Transitions */}
-      <main className="flex-1">
+      <main className={`flex-1 ${isWatchRoute ? '' : 'pb-[calc(76px+env(safe-area-inset-bottom,0px)+16px)] lg:pb-0'}`}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}

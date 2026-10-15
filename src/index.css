@@ -207,4 +207,29 @@ body {
   -webkit-backface-visibility: hidden;
 }
 
+/* Mobile PWA & iOS Native Feel Optimization (Strictly Scoped to Mobile Viewports) */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .overflow-y-auto, .overflow-x-auto, [data-scrollable="true"] {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+
 
