@@ -241,22 +241,26 @@ body {
 
 /* ======================================================================
    Missing Tailwind JIT Utilities
-   The CSS is pre-compiled (no Tailwind JIT). Any arbitrary-value class
-   used in components that isn't already in the compiled output must be
-   added here manually.
+   The CSS is pre-compiled (no Tailwind JIT). Base arbitrary classes are
+   defined first, followed by responsive media query blocks so that
+   responsive overrides (sm:, md:, lg:, xl:, 2xl:) properly take precedence
+   on desktop and larger screens.
    ====================================================================== */
 
-/* === Widths === */
+/* === Base Widths (Mobile First) === */
+.w-\[42vw\]{width:42vw}
 .w-\[74vw\]{width:74vw}
-.w-\[300px\]{width:300px}
-.w-\[330px\]{width:330px}
-.w-\[360px\]{width:360px}
+.w-\[78vw\]{width:78vw}
 .w-\[3px\]{width:3px}
 .w-\[58px\]{width:58px}
 .w-\[62px\]{width:62px}
 .w-\[72px\]{width:72px}
+.w-\[140px\]{width:140px}
+.w-\[300px\]{width:300px}
+.w-\[330px\]{width:330px}
+.w-\[360px\]{width:360px}
 
-/* === Heights === */
+/* === Base Heights === */
 .h-\[2px\]{height:2px}
 .h-\[42vw\]{height:42vw}
 .h-\[58px\]{height:58px}
@@ -272,7 +276,7 @@ body {
 .h-\[calc\(100\%\+20vh\)\]{height:calc(100% + 20vh)}
 .h-\[min\(68svh\2c 560px\)\]{height:min(68svh,560px)}
 
-/* === Min/Max sizing === */
+/* === Base Min/Max sizing === */
 .min-h-\[36px\]{min-height:36px}
 .min-h-\[40px\]{min-height:40px}
 .min-h-\[44px\]{min-height:44px}
@@ -283,28 +287,28 @@ body {
 .max-h-\[82vh\]{max-height:82vh}
 .max-w-\[240px\]{max-width:240px}
 
-/* === Aspect ratios === */
+/* === Base Aspect ratios === */
 .aspect-\[16\/9\]{aspect-ratio:16/9}
 .aspect-\[16\/10\]{aspect-ratio:16/10}
 
-/* === Background colors === */
+/* === Base Background colors === */
 .bg-\[\#060812\]{--tw-bg-opacity:1;background-color:#060812}
 .bg-\[\#0d1017\]{--tw-bg-opacity:1;background-color:#0d1017}
 
-/* === Gradient stops === */
+/* === Base Gradient stops === */
 .from-\[\#060812\]{--tw-gradient-from:#060812 var(--tw-gradient-from-position);--tw-gradient-to:rgb(6 8 18 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}
 .via-\[\#060812\]{--tw-gradient-to:rgb(6 8 18 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),#060812 var(--tw-gradient-via-position),var(--tw-gradient-to)}
 
-/* === Spacing === */
+/* === Base Spacing === */
 .space-y-16>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(4rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(4rem * var(--tw-space-y-reverse))}
 .space-y-20>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(5rem * var(--tw-space-y-reverse))}
 
-/* === Paddings === */
+/* === Base Paddings === */
 .pl-12{padding-left:3rem}
 .pl-16{padding-left:4rem}
 .pb-\[clamp\(130px\2c 18vh\2c 170px\)\]{padding-bottom:clamp(130px,18vh,170px)}
 
-/* === Opacity === */
+/* === Base Opacity === */
 .opacity-35{opacity:0.35}
 
 /* === Inset utilities === */
@@ -318,7 +322,7 @@ body {
 .rounded-\[20px\]{border-radius:20px}
 .rounded-\[22px\]{border-radius:22px}
 
-/* === Typography (text sizes used in metadata, labels, rank numbers) === */
+/* === Base Typography === */
 .text-\[9px\]{font-size:9px;line-height:1.2}
 .text-\[10px\]{font-size:10px;line-height:1.2}
 .text-\[11px\]{font-size:11px;line-height:1.3}
@@ -355,7 +359,7 @@ body {
 .shadow-\[0_0_10px_rgba\(244\2c 63\2c 94\2c 0\.7\)\]{box-shadow:0 0 10px rgba(244,63,94,0.7)}
 .shadow-\[0_0_22px_rgba\(255\2c 255\2c 255\2c 0\.2\)\]{box-shadow:0 0 22px rgba(255,255,255,0.2)}
 
-/* === Drop shadows (used on icons/text) === */
+/* === Drop shadows === */
 .drop-shadow-\[0_0_8px_rgba\(244\2c 63\2c 94\2c 0\.5\)\]{--tw-drop-shadow:drop-shadow(0 0 8px rgba(244,63,94,0.5));filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}
 
 /* === Backdrop filter === */
@@ -372,11 +376,146 @@ body {
 /* === Ring offset color === */
 .ring-offset-\[\#060812\]{--tw-ring-offset-color:#060812}
 
-/* === Responsive space-y variants === */
+/* ======================================================================
+   Responsive Breakpoints - Placed in Cascade Order to Override Base Widths
+   ====================================================================== */
+
+/* === sm: Breakpoint (min-width: 640px) === */
 @media (min-width: 640px) {
+  .sm\:w-\[160px\]{width:160px !important}
+  .sm\:w-\[170px\]{width:170px !important}
+  .sm\:w-\[280px\]{width:280px !important}
+  .sm\:w-\[300px\]{width:300px !important}
+  .sm\:w-\[320px\]{width:320px !important}
+  .sm\:h-\[163px\]{height:163px !important}
+  .sm\:h-56{height:14rem}
+  .sm\:h-auto{height:auto}
+  .sm\:text-\[145px\]{font-size:145px !important;line-height:1}
+  .sm\:text-sm{font-size:0.875rem;line-height:1.25rem}
+  .sm\:text-base{font-size:1rem;line-height:1.5rem}
+  .sm\:min-h-0{min-height:0}
+  .sm\:min-h-\[140px\]{min-height:140px}
+  .sm\:max-w-\[110px\]{max-width:110px}
+  .sm\:gap-4{gap:1rem}
+  .sm\:gap-4\.5{gap:1.125rem}
+  .sm\:gap-x-5{column-gap:1.25rem}
+  .sm\:gap-y-2{row-gap:0.5rem}
+  .sm\:py-10{padding-top:2.5rem;padding-bottom:2.5rem}
+  .sm\:py-4\.5{padding-top:1.125rem;padding-bottom:1.125rem}
+  .sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}
+  .sm\:px-7{padding-left:1.75rem;padding-right:1.75rem}
+  .sm\:px-8{padding-left:2rem;padding-right:2rem}
+  .sm\:pl-2{padding-left:0.5rem}
+  .sm\:pl-3{padding-left:0.75rem}
+  .sm\:pl-12{padding-left:3rem}
+  .sm\:pr-36{padding-right:9rem}
+  .sm\:pt-5{padding-top:1.25rem}
+  .sm\:pt-10{padding-top:2.5rem}
+  .sm\:pt-32{padding-top:8rem}
+  .sm\:pt-44{padding-top:11rem}
+  .sm\:pt-\[12vh\]{padding-top:12vh}
+  .sm\:pb-8{padding-bottom:2rem}
+  .sm\:mb-5{margin-bottom:1.25rem}
+  .sm\:mt-10{margin-top:2.5rem}
+  .sm\:mt-12{margin-top:3rem}
+  .sm\:-mt-12{margin-top:-3rem}
+  .sm\:-mt-20{margin-top:-5rem}
+  .sm\:ml-6{margin-left:1.5rem}
+  .sm\:bottom-24{bottom:6rem}
+  .sm\:left-3\.5{left:0.875rem}
+  .sm\:right-2\.5{right:0.625rem}
+  .sm\:right-3{right:0.75rem}
+  .sm\:p-5\.5{padding:1.375rem}
+  .sm\:p-10{padding:2.5rem}
+  .sm\:rounded-\[22px\]{border-radius:22px}
+  .sm\:rounded-full{border-radius:9999px}
+  .sm\:inline-block{display:inline-block}
+  .sm\:whitespace-nowrap{white-space:nowrap}
+  .sm\:aspect-\[16\/10\]{aspect-ratio:16/10}
+  .sm\:object-\[center_12\%\]{object-position:center 12%}
   .sm\:space-y-16>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(4rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(4rem * var(--tw-space-y-reverse))}
   .sm\:space-y-20>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(5rem * var(--tw-space-y-reverse))}
 }
+
+/* === md: Breakpoint (min-width: 768px) === */
+@media (min-width: 768px) {
+  .md\:w-\[150px\]{width:150px !important}
+  .md\:fixed{position:fixed}
+  .md\:inset-0{inset:0}
+  .md\:opacity-60{opacity:0.6}
+  .md\:bg-white\/15{background-color:hsla(0,0%,100%,.15)}
+  .md\:text-gray-800{color:rgb(31 41 55)}
+  .md\:text-gray-900{color:rgb(17 24 39)}
+  .md\:dark\:text-white{color:#fff}
+  .md\:dark\:text-white\/80{color:hsla(0,0%,100%,.8)}
+  .md\:backdrop-blur-md{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .md\:inline-flex{display:inline-flex}
+  .md\:text-left{text-align:left}
+  .md\:justify-start{justify-content:flex-start}
+  .md\:mx-0{margin-left:0;margin-right:0}
+  .md\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .md\:line-clamp-3{-webkit-line-clamp:3;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical}
+  .md\:-mt-24{margin-top:-6rem}
+}
+
+/* === lg: Breakpoint (min-width: 1024px) === */
+@media (min-width: 1024px) {
+  .lg\:w-\[160px\]{width:160px !important}
+  .lg\:w-\[180px\]{width:180px !important}
+  .lg\:w-\[190px\]{width:190px !important}
+  .lg\:w-\[330px\]{width:330px !important}
+  .lg\:w-\[350px\]{width:350px !important}
+  .lg\:h-screen{height:100vh !important}
+  .lg\:h-\[95vh\]{height:95vh !important}
+  .lg\:h-\[80dvh\]{height:80dvh !important}
+  .lg\:h-\[180px\]{height:180px !important}
+  .lg\:h-\[calc\(100\%\+20vh\)\]{height:calc(100% + 20vh) !important}
+  .lg\:text-\[170px\]{font-size:170px !important;line-height:1}
+  .lg\:px-10{padding-left:2.5rem;padding-right:2.5rem}
+  .lg\:px-\[43px\]{padding-left:43px;padding-right:43px}
+  .lg\:pl-6{padding-left:1.5rem}
+  .lg\:pl-16{padding-left:4rem}
+  .lg\:pr-6{padding-right:1.5rem}
+  .lg\:pb-\[clamp\(130px\2c 18vh\2c 170px\)\]{padding-bottom:clamp(130px,18vh,170px)}
+  .lg\:p-12{padding:3rem}
+  .lg\:left-10{left:2.5rem}
+  .lg\:right-10{right:2.5rem}
+  .lg\:bottom-64{bottom:16rem !important}
+  .lg\:max-w-\[340px\]{max-width:340px}
+  .lg\:max-w-none{max-width:none}
+  .lg\:flex-nowrap{flex-wrap:nowrap}
+  .lg\:border-white\/10{border-color:hsla(0,0%,100%,.1)}
+  .lg\:grid-cols-\[minmax\(0\2c 1\.1fr\)_minmax\(0\2c 0\.9fr\)\]{grid-template-columns:minmax(0,1.1fr) minmax(0,0.9fr)}
+  .lg\:object-\[center_15\%\]{object-position:center 15%}
+  .lg\:-mt-52{margin-top:-13rem}
+}
+
+/* === xl: Breakpoint (min-width: 1280px) === */
+@media (min-width: 1280px) {
+  .xl\:max-w-\[380px\]{max-width:380px}
+  .xl\:inline{display:inline}
+  .xl\:flex{display:flex}
+  .xl\:px-12{padding-left:3rem;padding-right:3rem}
+  .xl\:right-12{right:3rem}
+}
+
+/* === 2xl: Breakpoint (min-width: 1536px) === */
+@media (min-width: 1536px) {
+  .\32 xl\:w-\[210px\]{width:210px !important}
+  .\32 xl\:w-\[360px\]{width:360px !important}
+  .\32 xl\:h-\[197px\]{height:197px !important}
+  .\32 xl\:text-\[190px\]{font-size:190px !important;line-height:1}
+  .\32 xl\:px-14{padding-left:3.5rem;padding-right:3.5rem}
+  .\32 xl\:right-14{right:3.5rem}
+  .\32 xl\:-mt-72{margin-top:-18rem}
+}
+
+/* === 4xl: Breakpoint (min-width: 2560px) === */
+@media (min-width: 2560px) {
+  .\34 xl\:-mt-72{margin-top:-18rem}
+  .\34 xl\:bottom-80{bottom:20rem}
+}
+
 
 /* ======================================================================
    Apple Liquid Glass Tab Bar (Strictly Mobile Only)

@@ -159,8 +159,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
         <div 
           className="absolute inset-x-0 top-0 overflow-hidden h-full lg:h-[calc(100%+20vh)]" 
           style={{
-            maskImage: 'linear-gradient(to bottom, black 50%, transparent 98%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 98%)'
+            maskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)'
           }}
         >
           {items.map((item, idx) => {
@@ -213,9 +213,6 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           <div className="md:hidden absolute inset-x-0 bottom-0 z-20 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.9) 40%, transparent)' }} />
         </div>
 
-        {/* Soft bottom gradient fade into page background */}
-        <div className="absolute inset-x-0 bottom-0 z-20 h-28 sm:h-36 pointer-events-none" style={{ background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.8) 50%, transparent)' }} />
-
         {/* Vertical Watermark */}
         <div 
           aria-hidden="true" 
@@ -224,9 +221,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           Streamverse
         </div>
 
-        {/* Content Container (Anchored cleanly with trimmed bottom dead space on mobile) */}
+        {/* Content Container (Cleanly elevated on desktop with lg:pb-64) */}
         <div 
-          className="relative z-10 flex h-full items-end pb-5 sm:pb-8 lg:pb-[clamp(130px,18vh,170px)]"
+          className="relative z-10 flex h-full items-end pb-5 sm:pb-32 md:pb-36 lg:pb-64 4xl:pb-80"
         >
           <div className="w-full px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
             <div className="flex max-w-xl flex-col gap-2.5 sm:gap-4 2xl:max-w-2xl">
@@ -457,8 +454,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
 
           {/* Up Next Section on Right */}
           <div 
-            className="absolute right-5 hidden flex-col gap-2.5 lg:right-10 xl:right-12 xl:flex 2xl:right-14"
-            style={{ bottom: 'clamp(130px, 18vh, 170px)' }}
+            className="absolute right-5 hidden flex-col gap-2.5 sm:bottom-32 md:bottom-36 lg:bottom-64 lg:right-10 xl:right-12 xl:flex 2xl:right-14 4xl:bottom-80"
           >
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
               <span className="h-3.5 w-[3px] rounded-full bg-primary" />
