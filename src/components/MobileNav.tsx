@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   House, 
@@ -8,11 +9,11 @@ import {
   LayoutGrid,
   Volleyball, 
   Search, 
-  Tv2,
-  Bookmark,
-  Settings,
-  X,
-  ChevronRight
+  Tv2, 
+  Bookmark, 
+  Settings, 
+  X, 
+  ChevronRight 
 } from 'lucide-react';
 import { getRouteHref } from '../utils/routeUtils';
 
@@ -28,6 +29,41 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   onOpenSearch
 }) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isPressed, setIsPressed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Smooth scroll-direction reaction: hide gently on scroll down, snap back on scroll up
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+          if (currentY <= 60) {
+            setIsVisible(true);
+          } else if (currentY > lastScrollY.current + 8) {
+            // Scrolling down -> hide
+            setIsVisible(false);
+          } else if (currentY < lastScrollY.current - 8) {
+            // Scrolling up -> show
+            setIsVisible(true);
+          }
+          lastScrollY.current = currentY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // 5 Capped Primary Mobile Tabs with Labels
   const primaryTabs = [
@@ -100,96 +136,131 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     }
   };
 
-  return (
+  const getActiveIndex = () => {
+    if (isMoreOpen) return 4;
+    if (currentRoute === 'movie' || currentRoute === 'movies') return 1;
+    if (currentRoute === 'tv' || currentRoute === 'tv-shows') return 2;
+    if (currentRoute === 'anime' || currentRoute === 'anime-details') return 3;
+    if (
+      currentRoute === 'livesports' ||
+      currentRoute === 'providers' ||
+      currentRoute === 'watchlist' ||
+      currentRoute === 'settings'
+    ) {
+      return 4;
+    }
+    return 0; // Default to Home
+  };
+
+  const activeIndex = getActiveIndex();
+
+  const pressHandlers = {
+    onTouchStart: () => setIsPressed(true),
+    onTouchEnd: () => setIsPressed(false),
+    onTouchCancel: () => setIsPressed(false),
+    onMouseDown: () => setIsPressed(true),
+    onMouseUp: () => setIsPressed(false),
+    onMouseLeave: () => setIsPressed(false),
+  };
+
+  if (!mounted || typeof document === 'undefined') return null;
+
+  return createPortal(
     <>
-      {/* Floating Bottom Tab Bar (Strictly Mobile Only: lg:hidden) */}
-      <div 
-        className="fixed inset-x-3 z-40 lg:hidden pointer-events-auto" 
-        style={{ bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))' }}
+      {/* Non-interactive Ambient Glow behind the bar for vibrant optical refraction */}
+      <div className="liquid-glass-ambient-glow" aria-hidden="true" />
+
+      {/* Apple Liquid Glass Floating Tab Bar (Strictly Mobile Only) */}
+      <nav 
+        className="liquid-glass-bar" 
+        aria-label="Mobile navigation"
+        style={{
+          transform: isVisible || isMoreOpen ? 'none' : 'translateY(100px)',
+          opacity: isVisible || isMoreOpen ? 1 : 0,
+          pointerEvents: isVisible || isMoreOpen ? 'auto' : 'none',
+          transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+        }}
       >
-        <nav 
-          className="relative flex h-[68px] items-center overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/90 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl" 
-          aria-label="Mobile navigation"
-        >
-          {primaryTabs.map((item) => {
-            const Icon = item.icon;
-            const isTabActive = !item.isAction && (
-              currentRoute === item.route ||
-              (item.route === 'movie' && currentRoute === 'movies') ||
-              (item.route === 'anime' && currentRoute === 'anime-details')
-            );
-            const isMoreActive = item.isAction && isMoreOpen;
-            const isActive = isTabActive || isMoreActive;
+        {/* Sliding Liquid Glass Active Lens */}
+        <div
+          className="liquid-glass-active-lens"
+          style={{
+            transform: `translateX(calc(${activeIndex} * 100%)) scale(${isPressed ? 1.06 : 1})`,
+            opacity: isPressed ? 1 : 0.92,
+          }}
+          aria-hidden="true"
+        />
 
-            const content = (
-              <div className="relative flex flex-col items-center justify-center w-full h-full pt-1.5 pb-2">
-                <span className="relative z-20 flex items-center justify-center">
-                  <Icon 
-                    className={`transition-colors duration-200 ${
-                      isActive ? 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'text-white/50'
-                    }`}
-                    style={{ width: '21px', height: '21px' }}
-                    strokeWidth={isActive ? 2.2 : 1.7}
-                  />
-                </span>
-                <span 
-                  className={`relative z-20 mt-1 text-[11px] font-medium leading-none tracking-tight transition-colors duration-200 ${
-                    isActive ? 'text-white font-semibold' : 'text-white/50'
-                  }`}
-                >
-                  {item.label}
-                </span>
+        {/* 5 Primary Tabs */}
+        {primaryTabs.map((item, index) => {
+          const Icon = item.icon;
+          const isTabActive = !item.isAction && index === activeIndex;
+          const isMoreActive = item.isAction && (isMoreOpen || activeIndex === 4);
+          const isActive = isTabActive || isMoreActive;
 
-                {isActive && (
-                  <motion.div 
-                    layoutId="mobile-nav-pill"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                    aria-hidden="true" 
-                    className="pointer-events-none absolute inset-x-1.5 inset-y-1.5 z-10"
-                  >
-                    <div 
-                      className="h-full w-full rounded-xl bg-white/[0.08] border border-white/10"
-                      style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}
-                    />
-                    <div className="absolute inset-x-3 top-0 h-[2px] rounded-full bg-gradient-to-r from-transparent via-rose-500/80 to-transparent" />
-                  </motion.div>
-                )}
-              </div>
-            );
+          const content = (
+            <div className="relative z-10 flex flex-col items-center justify-center w-full h-full select-none pointer-events-none">
+              <Icon 
+                className={`transition-colors duration-200 ${
+                  isActive ? 'text-white' : 'text-white/[0.88]'
+                }`}
+                style={{ width: '26px', height: '26px' }}
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <span 
+                className={`mt-[3px] text-[12px] font-semibold leading-none tracking-tight transition-colors duration-200 ${
+                  isActive ? 'text-white' : 'text-white/[0.88]'
+                }`}
+              >
+                {item.label}
+              </span>
+            </div>
+          );
 
-            if (item.isAction) {
-              return (
-                <button
-                  type="button"
-                  key={item.label}
-                  aria-label="More navigation options"
-                  onClick={() => setIsMoreOpen(!isMoreOpen)}
-                  className="relative flex flex-1 h-full min-h-[44px] min-w-[44px] items-center justify-center active:scale-[0.96] transition-transform duration-100 cursor-pointer select-none [-webkit-tap-highlight-color:transparent]"
-                >
-                  {content}
-                </button>
-              );
-            }
-
+          if (item.isAction) {
             return (
-              <a
-                href={getRouteHref(item.route!)}
+              <button
+                type="button"
                 key={item.label}
-                aria-label={item.label}
-                onTouchStart={() => prefetchMobileRoute(item.route!)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsMoreOpen(false);
-                  onNavigate(item.route!);
-                }}
-                className="relative flex flex-1 h-full min-h-[44px] min-w-[44px] items-center justify-center active:scale-[0.96] transition-transform duration-100 cursor-pointer select-none [-webkit-tap-highlight-color:transparent]"
+                aria-label="More navigation options"
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => setIsMoreOpen(!isMoreOpen)}
+                {...pressHandlers}
+                className="relative z-10 flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] outline-none border-none bg-transparent p-0"
               >
                 {content}
-              </a>
+              </button>
             );
-          })}
-        </nav>
-      </div>
+          }
+
+          return (
+            <a
+              href={getRouteHref(item.route!)}
+              key={item.label}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
+              onTouchStart={() => {
+                prefetchMobileRoute(item.route!);
+                setIsPressed(true);
+              }}
+              onTouchEnd={() => setIsPressed(false)}
+              onTouchCancel={() => setIsPressed(false)}
+              onMouseDown={() => setIsPressed(true)}
+              onMouseUp={() => setIsPressed(false)}
+              onMouseLeave={() => setIsPressed(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                setIsMoreOpen(false);
+                onNavigate(item.route!);
+              }}
+              className="relative z-10 flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] outline-none border-none bg-transparent p-0"
+            >
+              {content}
+            </a>
+          );
+        })}
+      </nav>
 
       {/* Slide-Up "More" Sheet Modal for Overflow Items */}
       <AnimatePresence>
@@ -295,7 +366,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           </div>
         )}
       </AnimatePresence>
-    </>
+    </>,
+    document.body
   );
 };
 

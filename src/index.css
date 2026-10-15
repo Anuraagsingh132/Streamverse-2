@@ -378,3 +378,126 @@ body {
   .sm\:space-y-20>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(5rem * var(--tw-space-y-reverse))}
 }
 
+/* ======================================================================
+   Apple Liquid Glass Tab Bar (Strictly Mobile Only)
+   ====================================================================== */
+.liquid-glass-bar {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  height: 72px;
+  padding: 4px;
+  border-radius: 999px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  isolation: isolate;
+  z-index: 40;
+
+  background-color: rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.08);
+  backdrop-filter: blur(20px) saturate(180%) brightness(1.08);
+
+  border: none;
+  outline: none;
+
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.45),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 0 18px rgba(255, 255, 255, 0.07),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Diagonal sheen: soft white streak (15-18% opacity) near the right 20-25% of the bar */
+.liquid-glass-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(115deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 70%,
+    rgba(255, 255, 255, 0.17) 78%,
+    rgba(255, 255, 255, 0) 86%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 1px gradient rim via ::after (mask-composite): ~70% white top-left, ~8% middle, ~50% bottom-right */
+.liquid-glass-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.50) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Active lens: neutral rgba(255,255,255,.14) sliding pill */
+.liquid-glass-active-lens {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 5);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 1;
+  transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.5, 1), scale 0.15s ease, opacity 0.15s ease;
+  will-change: transform;
+}
+
+/* Ambient glow behind liquid glass bar for rich optical refraction */
+.liquid-glass-ambient-glow {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 500px;
+  height: 140px;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 80% at 50% 100%, rgba(225, 29, 72, 0.32) 0%, rgba(139, 92, 246, 0.22) 48%, rgba(6, 8, 18, 0) 80%);
+  filter: blur(36px);
+  -webkit-filter: blur(36px);
+  z-index: 35;
+}
+
+/* Page clearance for mobile navigation (bar height 72px + safe-area + 16px + bottom offset 8px) */
+.footer-mobile-spacer {
+  margin-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .liquid-glass-bar,
+  .liquid-glass-ambient-glow {
+    display: none !important;
+  }
+  .footer-mobile-spacer {
+    margin-bottom: 1rem !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass-bar {
+    background-color: rgba(30, 30, 36, 0.95) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .liquid-glass-ambient-glow {
+    display: none !important;
+  }
+}
+
+
