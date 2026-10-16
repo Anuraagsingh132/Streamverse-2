@@ -1015,7 +1015,7 @@ export const HDHubPlayer: React.FC<HDHubPlayerProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const altServer = serversList.find((s) => s.id !== currentServerId)?.id || 'cinemaos';
+                    const altServer = serversList.find((s) => s.id !== currentServerId)?.id || 'cinezo';
                     onSwitchServer(altServer);
                   }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold bg-primary text-black hover:brightness-110 transition active:scale-95 shadow-md cursor-pointer"

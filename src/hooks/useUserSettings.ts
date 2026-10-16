@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../utils/pixeldrain';
 
 export type VideoServerId =
+  | 'cinezo'
+  | 'framextv'
+  | 'cinemaos'
+  | 'flaxmovies'
   | 'hdhub'
   | 'pengu'
-  | 'cinemaos'
   | 'vidsrc-sh'
   | 'videasy'
   | 'vidfast'
@@ -36,7 +39,7 @@ const STORAGE_KEYS = {
 } as const;
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
-  defaultServer: 'vidsrc-sh',
+  defaultServer: 'cinezo',
   autoplayNext: true,
   defaultQuality: '1080p',
   pixelDrainRoute: 'normal',
@@ -59,19 +62,15 @@ export function validateSubtitleSize(raw: string | null | undefined): SubtitleSi
 
 export function getStoredUserSettings(): UserSettings {
   try {
-    let rawServer = localStorage.getItem(STORAGE_KEYS.defaultServer);
-    // Auto-migrate users away from legacy cinemaos.tech embed (prevents anti-devtool redirect loop)
-    if (rawServer === 'cinemaos') {
-      rawServer = 'vidsrc-sh';
-      try {
-        localStorage.setItem(STORAGE_KEYS.defaultServer, 'vidsrc-sh');
-      } catch {}
-    }
+    const rawServer = localStorage.getItem(STORAGE_KEYS.defaultServer);
 
     const validServers: VideoServerId[] = [
+      'cinezo',
+      'framextv',
+      'cinemaos',
+      'flaxmovies',
       'hdhub',
       'pengu',
-      'cinemaos',
       'vidsrc-sh',
       'videasy',
       'vidfast',

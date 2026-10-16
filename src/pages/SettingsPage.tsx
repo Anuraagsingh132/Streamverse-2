@@ -37,22 +37,40 @@ interface ServerOption {
 
 const SERVER_OPTIONS: ServerOption[] = [
   {
-    id: 'vidsrc-sh',
-    name: 'VidSrc (SH)',
-    badge: 'Default · Fast HD',
+    id: 'cinezo',
+    name: 'Cinezo Universal',
+    badge: 'Universal · Default',
     category: 'mirror',
-    protocol: 'Multi-Audio Embed',
-    ping: '~35ms ping',
-    desc: 'VidSrc high-speed global mirror with multi-language subtitle tracks, lossless audio, and rapid buffer start.'
+    protocol: 'Universal Embed',
+    ping: '~26ms ping',
+    desc: 'All-in-one universal streaming embed for Movies, TV shows, and Anime with instant buffer start.'
   },
   {
-    id: 'videasy',
-    name: 'Videasy',
-    badge: 'Mirror 1 · Adaptive',
+    id: 'framextv',
+    name: 'FramexTV',
+    badge: 'Fast HD',
     category: 'mirror',
-    protocol: 'Adaptive Embed',
-    ping: '~42ms ping',
-    desc: 'Videasy low-latency player with automatic resolution scaling from 360p up to 1080p.'
+    protocol: 'Fast CDN Mirror',
+    ping: '~28ms ping',
+    desc: 'FramexTV high-performance edge streaming network for movies and TV shows.'
+  },
+  {
+    id: 'cinemaos',
+    name: 'CinemaOS Embed',
+    badge: 'Official Mirror',
+    category: 'official',
+    protocol: 'Official Embed',
+    ping: '~28ms ping',
+    desc: 'CinemaOS official embed player with automatic server failover and built-in episode drawer.'
+  },
+  {
+    id: 'flaxmovies',
+    name: 'FlaxMovies',
+    badge: 'Fast HD',
+    category: 'mirror',
+    protocol: 'Fast CDN Mirror',
+    ping: '~30ms ping',
+    desc: 'High-speed FlaxMovies stream host with multi-resolution support for movies and TV episodes.'
   },
   {
     id: 'hdhub',
@@ -73,13 +91,22 @@ const SERVER_OPTIONS: ServerOption[] = [
     desc: 'High-availability Pengu cloud mirror with redundant fallback stream channels and lossless audio.'
   },
   {
-    id: 'cinemaos',
-    name: 'CinemaOS Embed',
-    badge: 'Backup Mirror',
-    category: 'official',
-    protocol: 'Official Embed',
-    ping: '~28ms ping',
-    desc: 'CinemaOS embed player with automatic server failover and built-in episode drawer.'
+    id: 'vidsrc-sh',
+    name: 'VidSrc (SH)',
+    badge: 'Fast HD',
+    category: 'mirror',
+    protocol: 'Multi-Audio Embed',
+    ping: '~35ms ping',
+    desc: 'VidSrc high-speed global mirror with multi-language subtitle tracks, lossless audio, and rapid buffer start.'
+  },
+  {
+    id: 'videasy',
+    name: 'Videasy',
+    badge: 'Mirror 1 · Adaptive',
+    category: 'mirror',
+    protocol: 'Adaptive Embed',
+    ping: '~42ms ping',
+    desc: 'Videasy low-latency player with automatic resolution scaling from 360p up to 1080p.'
   },
   {
     id: 'vidfast',
@@ -230,7 +257,7 @@ export const SettingsPage: React.FC = () => {
       return SERVER_OPTIONS.filter((s) => s.category === 'direct' || s.category === 'official');
     }
     if (serverFilter === 'mirror') {
-      return SERVER_OPTIONS.filter((s) => s.category === 'mirror');
+      return SERVER_OPTIONS.filter((s) => s.category === 'mirror' || s.category === 'official');
     }
     return SERVER_OPTIONS;
   }, [serverFilter]);
@@ -378,7 +405,7 @@ export const SettingsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredServers.map((srv) => {
                 const isSelected = settings.defaultServer === srv.id;
-                const isDefaultFastest = srv.id === 'hdhub';
+                const isDefaultFastest = srv.id === 'cinezo';
                 return (
                   <div
                     key={srv.id}
