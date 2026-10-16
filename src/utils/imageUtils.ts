@@ -26,10 +26,10 @@ export function optimizeTmdbImage(
 
   if (url.includes('image.tmdb.org/t/p/')) {
     if (target === 'poster') {
-      return url.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/');
+      return url.replace(/\/t\/p\/(original|w1280|w780|w500)\//, '/t/p/w342/');
     }
     if (target === 'card' || target === 'thumb') {
-      return url.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/');
+      return url.replace(/\/t\/p\/(original|w1280|w780|w500)\//, '/t/p/w342/');
     }
     return url.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/');
   }

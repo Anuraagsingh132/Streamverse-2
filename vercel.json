@@ -67,10 +67,6 @@
   ],
   "rewrites": [
     {
-      "source": "/api/pixeldrain-cdn/:id",
-      "destination": "/api/pixeldrain/:id?mode=cdn"
-    },
-    {
       "source": "/api/anime/logo",
       "destination": "https://cinemaos.tech/api/anime/logo"
     },

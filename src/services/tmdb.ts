@@ -1,6 +1,7 @@
 import { MediaItem, MediaType, CastMember, CrewMember, StudioOrNetwork, VideoItem, EpisodeItem, SeasonItem } from '../types/media';
 import { LRUCache, deduplicateInFlight } from '../utils/lruCache';
 import { safeSetStorageItem, safeGetStorageItem, clearMediaDiskCache } from '../utils/storageManager';
+import { CLOUDFLARE_WORKER_PROXY_URL } from '../utils/pixeldrain';
 
 export const TMDB_API_KEY = (import.meta.env?.VITE_TMDB_API_KEY as string) || '1cf50e6248dc270629e802686245c2c8';
 export const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -375,11 +376,17 @@ export function formatTmdbItem(raw: any, explicitType?: MediaType): MediaItem {
   let recommendations: MediaItem[] | undefined = undefined;
   if (raw.recommendations?.results) {
     recommendations = raw.recommendations.results.map((r: any) => formatTmdbItem(r, mediaType));
+  } else if (Array.isArray(raw.recommendations)) {
+    recommendations = raw.recommendations.map((r: any) => (r.title || r.name ? formatTmdbItem(r, mediaType) : r));
   }
 
   let similar: MediaItem[] | undefined = undefined;
   if (raw.similar?.results) {
     similar = raw.similar.results.map((r: any) => formatTmdbItem(r, mediaType));
+  } else if (Array.isArray(raw.similar)) {
+    similar = raw.similar.map((r: any) => (r.title || r.name ? formatTmdbItem(r, mediaType) : r));
+  } else if (recommendations && recommendations.length > 0) {
+    similar = recommendations;
   }
 
   let content_rating: string | undefined = undefined;
@@ -437,6 +444,26 @@ export async function getTrending(
   timeWindow: 'day' | 'week' = 'day',
   page: number = 1
 ): Promise<MediaItem[]> {
+  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+
+  if (bffBase && typeof fetch !== 'undefined' && page === 1) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`${bffBase}/api/media/trending?type=${type}&timeWindow=${timeWindow}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data?.results) && data.results.length > 0) {
+          return data.results.map((item: any) => formatTmdbItem(item, type === 'all' ? undefined : type));
+        }
+      }
+    } catch {
+      // Fallback silently to direct client-side fetch below
+    }
+  }
+
   try {
     const data = await fetchFromTmdb(`/trending/${type}/${timeWindow}`, { page });
     return (data.results || []).map((item: any) => formatTmdbItem(item, type === 'all' ? undefined : type));
@@ -482,6 +509,26 @@ export async function getHeroTrending(
 }
 
 export async function getTopRated(type: 'movie' | 'tv' = 'movie', page: number = 1): Promise<MediaItem[]> {
+  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+
+  if (bffBase && typeof fetch !== 'undefined' && page === 1) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`${bffBase}/api/media/top-rated?type=${type}&page=${page}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data?.results) && data.results.length > 0) {
+          return data.results.map((item: any) => formatTmdbItem(item, type));
+        }
+      }
+    } catch {
+      // Fallback silently to direct client-side fetch below
+    }
+  }
+
   try {
     const data = await fetchFromTmdb(`/${type}/top_rated`, { page });
     return (data.results || []).map((item: any) => formatTmdbItem(item, type));
@@ -492,6 +539,26 @@ export async function getTopRated(type: 'movie' | 'tv' = 'movie', page: number =
 }
 
 export async function getPopular(type: 'movie' | 'tv' = 'movie', page: number = 1): Promise<MediaItem[]> {
+  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+
+  if (bffBase && typeof fetch !== 'undefined' && page === 1) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`${bffBase}/api/media/popular?type=${type}&page=${page}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data?.results) && data.results.length > 0) {
+          return data.results.map((item: any) => formatTmdbItem(item, type));
+        }
+      }
+    } catch {
+      // Fallback silently to direct client-side fetch below
+    }
+  }
+
   try {
     const data = await fetchFromTmdb(`/${type}/popular`, { page });
     return (data.results || []).map((item: any) => formatTmdbItem(item, type));
@@ -598,8 +665,28 @@ export async function getAnime(page: number = 1): Promise<MediaItem[]> {
 
 export async function getMediaDetails(id: string | number, type: 'movie' | 'tv' | 'anime' = 'movie'): Promise<MediaItem> {
   const apiType = type === 'anime' ? 'tv' : type;
+  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+
+  if (bffBase && typeof fetch !== 'undefined' && (type === 'movie' || type === 'tv')) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`${bffBase}/api/media/details/${apiType}/${id}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const sanitized = await res.json();
+        if (sanitized && sanitized.id) {
+          return formatTmdbItem(sanitized, type);
+        }
+      }
+    } catch {
+      // Fallback silently to direct client-side fetch below
+    }
+  }
+
   const data = await fetchFromTmdb(`/${apiType}/${id}`, {
-    append_to_response: 'credits,videos,recommendations,similar,images,content_ratings,release_dates',
+    append_to_response: 'credits,videos,recommendations,images,content_ratings,release_dates',
     include_image_language: 'en,null'
   });
   const formatted = formatTmdbItem(data, type);

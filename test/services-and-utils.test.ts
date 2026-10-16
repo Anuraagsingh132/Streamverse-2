@@ -190,9 +190,9 @@ test('MediaFilters: mergeValidMediaWithFallback prioritizes live updated items a
 
 test('ImageUtils: optimizeTmdbImage adjusts dimensions according to aspect ratio', () => {
   const posterUrl = 'https://image.tmdb.org/t/p/original/test.jpg';
-  assert.strictEqual(optimizeTmdbImage(posterUrl, 'poster'), 'https://image.tmdb.org/t/p/w500/test.jpg');
+  assert.strictEqual(optimizeTmdbImage(posterUrl, 'poster'), 'https://image.tmdb.org/t/p/w342/test.jpg');
   assert.strictEqual(optimizeTmdbImage(posterUrl, 'backdrop'), 'https://image.tmdb.org/t/p/w780/test.jpg');
-  assert.strictEqual(optimizeTmdbImage(posterUrl, 'card'), 'https://image.tmdb.org/t/p/w500/test.jpg');
+  assert.strictEqual(optimizeTmdbImage(posterUrl, 'card'), 'https://image.tmdb.org/t/p/w342/test.jpg');
 
   // Fallback on null/undefined
   assert.strictEqual(optimizeTmdbImage(null), FALLBACK_BACKDROP);

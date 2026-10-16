@@ -116,7 +116,9 @@ export function formatPixelDrainUrl(
   route: PixelDrainRoute = getPixelDrainRoute()
 ): string {
   const customProxy =
-    typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined;
+    typeof import.meta !== 'undefined'
+      ? (import.meta.env?.VITE_WORKER_PROXY_URL ?? (import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined))
+      : undefined;
 
   if (customProxy) {
     const base = customProxy.replace(/\/$/, '');

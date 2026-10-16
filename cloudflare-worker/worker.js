@@ -44,6 +44,215 @@ function getAuthorizedOrigin(request, env) {
   return env?.FALLBACK_ORIGIN || 'https://streamverse.app';
 }
 
+const TMDB_DEFAULT_KEY = '1cf50e6248dc270629e802686245c2c8';
+
+async function fetchAndCacheTmdb(upstreamUrl, allowedOrigin, ttlSeconds = 900) {
+  try {
+    const res = await fetch(upstreamUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Streamverse-BFF/2.0'
+      }
+    });
+    if (!res.ok) {
+      return new Response(JSON.stringify({ error: `Upstream error ${res.status}` }), {
+        status: res.status,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': allowedOrigin,
+          'Vary': 'Origin'
+        }
+      });
+    }
+    const data = await res.json();
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Vary': 'Origin, Accept-Encoding',
+        'Cache-Control': `public, max-age=${ttlSeconds}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`
+      }
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err?.message || 'Upstream fetch failed' }), {
+      status: 502,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Vary': 'Origin'
+      }
+    });
+  }
+}
+
+async function fetchAndSanitizeDetails(upstreamUrl, mediaType, allowedOrigin, ttlSeconds = 900) {
+  try {
+    const res = await fetch(upstreamUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Streamverse-BFF/2.0'
+      }
+    });
+    if (!res.ok) {
+      return new Response(JSON.stringify({ error: `Upstream error ${res.status}` }), {
+        status: res.status,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': allowedOrigin,
+          'Vary': 'Origin'
+        }
+      });
+    }
+    const raw = await res.json();
+
+    const sanitized = {
+      id: raw.id,
+      title: raw.title || raw.name,
+      name: raw.name || raw.title,
+      original_title: raw.original_title,
+      original_name: raw.original_name,
+      overview: raw.overview,
+      backdrop_path: raw.backdrop_path,
+      poster_path: raw.poster_path,
+      tagline: raw.tagline,
+      vote_average: raw.vote_average,
+      vote_count: raw.vote_count,
+      release_date: raw.release_date,
+      first_air_date: raw.first_air_date,
+      runtime: raw.runtime,
+      episode_run_time: raw.episode_run_time,
+      status: raw.status,
+      media_type: mediaType,
+      genres: raw.genres || [],
+      credits: {
+        cast: (raw.credits?.cast || []).slice(0, 14).map((c) => ({
+          id: c.id,
+          name: c.name,
+          character: c.character,
+          profile_path: c.profile_path
+        })),
+        crew: (raw.credits?.crew || [])
+          .filter((c) => ['Director', 'Writer', 'Screenplay', 'Author', 'Story', 'Teleplay', 'Producer', 'Executive Producer'].includes(c.job))
+          .slice(0, 8)
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            job: c.job,
+            profile_path: c.profile_path
+          }))
+      },
+      created_by: raw.created_by,
+      videos: {
+        results: (raw.videos?.results || [])
+          .filter((v) => v.site === 'YouTube')
+          .slice(0, 8)
+          .map((v) => ({
+            id: v.id,
+            key: v.key,
+            name: v.name,
+            site: v.site,
+            type: v.type
+          }))
+      },
+      images: {
+        logos: (raw.images?.logos || [])
+          .filter((l) => l.iso_639_1 === 'en' || !l.iso_639_1)
+          .slice(0, 3)
+          .map((l) => ({
+            file_path: l.file_path,
+            iso_639_1: l.iso_639_1
+          }))
+      },
+      seasons: (raw.seasons || []).map((s) => ({
+        id: s.id,
+        season_number: s.season_number,
+        name: s.name,
+        episode_count: s.episode_count,
+        poster_path: s.poster_path
+      })),
+      recommendations: {
+        results: (raw.recommendations?.results || []).slice(0, 12).map((r) => ({
+          id: r.id,
+          title: r.title || r.name,
+          name: r.name || r.title,
+          poster_path: r.poster_path,
+          backdrop_path: r.backdrop_path,
+          vote_average: r.vote_average,
+          media_type: r.media_type || mediaType,
+          genre_ids: r.genre_ids,
+          release_date: r.release_date,
+          first_air_date: r.first_air_date
+        }))
+      },
+      release_dates: raw.release_dates,
+      content_ratings: raw.content_ratings
+    };
+
+    return new Response(JSON.stringify(sanitized), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Vary': 'Origin, Accept-Encoding',
+        'Cache-Control': `public, max-age=${ttlSeconds}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`
+      }
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err?.message || 'Details fetch failed' }), {
+      status: 502,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Vary': 'Origin'
+      }
+    });
+  }
+}
+
+async function handleMediaRequest(url, request, env, allowedOrigin) {
+  const apiKey = env?.TMDB_API_KEY || TMDB_DEFAULT_KEY;
+  const path = url.pathname;
+
+  if (path === '/api/media/trending') {
+    const type = url.searchParams.get('type') || 'all';
+    const timeWindow = url.searchParams.get('timeWindow') || 'day';
+    const upstreamUrl = `https://api.themoviedb.org/3/trending/${type}/${timeWindow}?api_key=${apiKey}&language=en-US`;
+    return fetchAndCacheTmdb(upstreamUrl, allowedOrigin, 900);
+  }
+
+  if (path === '/api/media/top-rated') {
+    const type = url.searchParams.get('type') || 'movie';
+    const page = url.searchParams.get('page') || '1';
+    const upstreamUrl = `https://api.themoviedb.org/3/${type}/top_rated?api_key=${apiKey}&language=en-US&page=${page}`;
+    return fetchAndCacheTmdb(upstreamUrl, allowedOrigin, 900);
+  }
+
+  if (path === '/api/media/popular') {
+    const type = url.searchParams.get('type') || 'movie';
+    const page = url.searchParams.get('page') || '1';
+    const upstreamUrl = `https://api.themoviedb.org/3/${type}/popular?api_key=${apiKey}&language=en-US&page=${page}`;
+    return fetchAndCacheTmdb(upstreamUrl, allowedOrigin, 900);
+  }
+
+  const detailsMatch = path.match(/^\/api\/media\/details\/(movie|tv)\/([0-9]+)$/);
+  if (detailsMatch) {
+    const [, mediaType, id] = detailsMatch;
+    const upstreamUrl = `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${apiKey}&append_to_response=credits,videos,recommendations,images,content_ratings,release_dates&include_image_language=en,null`;
+    return fetchAndSanitizeDetails(upstreamUrl, mediaType, allowedOrigin, 900);
+  }
+
+  return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
+    status: 404,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': allowedOrigin
+    }
+  });
+}
+
 async function handleRequest(request, env) {
   const allowedOrigin = getAuthorizedOrigin(request, env);
 
@@ -74,8 +283,14 @@ async function handleRequest(request, env) {
     });
   }
 
-  // 3. Extract and sanitize file ID
   const url = new URL(request.url);
+
+  // Check for media BFF endpoints
+  if (url.pathname.startsWith('/api/media/')) {
+    return handleMediaRequest(url, request, env, allowedOrigin);
+  }
+
+  // 3. Extract and sanitize file ID
   const parts = url.pathname.split('/').filter(Boolean);
   const rawId = parts[parts.length - 1]?.replace(/\?.*$/, '') || '';
   let id = '';
