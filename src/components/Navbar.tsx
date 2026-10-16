@@ -288,30 +288,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             </AnimatePresence>
           </motion.button>
 
-          {/* Discord Button */}
-          <a 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            href="https://discord.gg/38yFnFCJnA"
-            aria-label="Join Community on Discord"
-            title="Join Community on Discord"
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-full"
+          {/* Discord Button -> Navigates to Home Page */}
+          <motion.a 
+            href={getRouteHref('home')}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('home');
+            }}
+            whileTap={{ scale: 0.92 }}
+            aria-label="Streamverse Home"
+            title="Streamverse Home"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
           >
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              type="button"
-              aria-label="Join Community on Discord"
-              title="Join Community on Discord"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer"
+            <svg 
+              width="18" 
+              height="18" 
+              viewBox="0 0 15 15" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-[18px] w-[18px]"
             >
-              <svg 
-                width="18" 
-                height="18" 
-                viewBox="0 0 15 15" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-[18px] w-[18px]"
-              >
                 <path 
                   fillRule="evenodd" 
                   clipRule="evenodd" 
@@ -319,8 +315,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 fill="currentColor"
               />
             </svg>
-          </motion.button>
-        </a>
+          </motion.a>
 
         {/* Account Profile Button */}
         <motion.button
