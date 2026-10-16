@@ -115,7 +115,7 @@ export const MusicPage: React.FC = () => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 lg:pt-28 pb-16 space-y-8">
       <SEOHead
         title="Cinema Soundscapes & OSTs"
         description="Listen to iconic film soundtracks, anime opening themes, and orchestral motion picture scores on Streamverse."

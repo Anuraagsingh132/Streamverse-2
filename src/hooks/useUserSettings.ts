@@ -36,7 +36,7 @@ const STORAGE_KEYS = {
 } as const;
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
-  defaultServer: 'cinemaos',
+  defaultServer: 'vidsrc-sh',
   autoplayNext: true,
   defaultQuality: '1080p',
   pixelDrainRoute: 'normal',
@@ -59,7 +59,15 @@ export function validateSubtitleSize(raw: string | null | undefined): SubtitleSi
 
 export function getStoredUserSettings(): UserSettings {
   try {
-    const rawServer = localStorage.getItem(STORAGE_KEYS.defaultServer);
+    let rawServer = localStorage.getItem(STORAGE_KEYS.defaultServer);
+    // Auto-migrate users away from legacy cinemaos.tech embed (prevents anti-devtool redirect loop)
+    if (rawServer === 'cinemaos') {
+      rawServer = 'vidsrc-sh';
+      try {
+        localStorage.setItem(STORAGE_KEYS.defaultServer, 'vidsrc-sh');
+      } catch {}
+    }
+
     const validServers: VideoServerId[] = [
       'hdhub',
       'pengu',

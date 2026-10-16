@@ -4,7 +4,7 @@ import { MediaItem } from '../types/media';
 import { HeroBanner } from '../components/HeroBanner';
 import { ArrowUpRight, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import animeHeroSlides from '../data/animeHeroSlides.json';
-import { fetchAniListRail } from '../services/anilist';
+import { fetchAniListRail, fetchAniListHeroTrending } from '../services/anilist';
 
 let fallbackAnimeDataPromise: Promise<Record<string, any[]>> | null = null;
 function getFallbackAnimeData(): Promise<Record<string, any[]>> {
@@ -90,11 +90,38 @@ export const AnimePage: React.FC<AnimePageProps> = ({
   const [genreResults, setGenreResults] = useState<any[]>([]);
   const [isLoadingGenre, setIsLoadingGenre] = useState<boolean>(false);
   const [railsData, setRailsData] = useState<Record<string, any[]>>({});
-  const [heroSlides] = useState<any[]>(animeHeroSlides);
+  const [heroSlides, setHeroSlides] = useState<any[]>(animeHeroSlides);
  
   // Progressive background fetch for rails to keep UI snappy without 429 errors or lag
   useEffect(() => {
     let isMounted = true;
+
+    // Load live trending anime for Hero Banner
+    fetchAniListHeroTrending(8).then((liveHero) => {
+      if (isMounted && liveHero && liveHero.length > 0) {
+        const formattedSlides = liveHero.map((item: any) => {
+          const rawTitle = item.title;
+          const title = typeof rawTitle === 'string'
+            ? rawTitle
+            : rawTitle?.english || rawTitle?.userPreferred || rawTitle?.romaji || 'Anime';
+          const backdrop = item.bannerImage || item.coverImage?.extraLarge || item.coverImage?.large || '';
+          return {
+            id: String(item.id),
+            title,
+            overview: item.description ? item.description.replace(/<[^>]+>/g, '') : '',
+            backdropUrl: backdrop,
+            vote_average: item.averageScore ? Number((item.averageScore / 10).toFixed(1)) : 8.5,
+            year: item.startDate?.year || 2026,
+            genreNames: item.genres || ['Anime'],
+            badge: '#1 Trending · Anime'
+          };
+        }).filter((s: any) => Boolean(s.backdropUrl));
+
+        if (formattedSlides.length > 0) {
+          setHeroSlides(formattedSlides);
+        }
+      }
+    }).catch(() => {});
 
     // Load fallback anime data asynchronously in background
     getFallbackAnimeData().then((data) => {

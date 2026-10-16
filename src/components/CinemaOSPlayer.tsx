@@ -33,31 +33,18 @@ interface ServerOption {
 // Anime-specific streaming servers (MegaPlay Sub & Dub powered by AniList ID + Episode)
 const ANIME_SERVERS: ServerOption[] = [
   {
-    id: 'cinemaos',
-    name: 'CinemaOS',
-    badge: 'Server 1 · Official (Default)',
-    description: 'CinemaOS official embed player',
-    getUrl: (tmdbId, isTV, season, episode) => {
-      const cleanId = encodeURIComponent(tmdbId);
-      if (!isTV) {
-        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
-      }
-      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
-    }
-  },
-  {
     id: 'megaplay-sub',
     name: 'MegaPlay (Sub)',
-    badge: 'Anime · Subbed',
-    description: 'Fast HD Japanese audio with subtitles',
+    badge: 'Server 1 · Anime Subbed (Default)',
+    description: 'Fast HD Japanese audio with English subtitles',
     getUrl: (id, _isTV, _season, episode) =>
       `https://megaplay.buzz/stream/ani/${encodeURIComponent(id)}/${encodeURIComponent(episode)}/sub`
   },
   {
     id: 'megaplay-dub',
     name: 'MegaPlay (Dub)',
-    badge: 'Anime · English Dub',
-    description: 'English dubbed anime stream',
+    badge: 'Server 2 · English Dub',
+    description: 'English dubbed anime stream with multi-bitrate',
     getUrl: (id, _isTV, _season, episode) =>
       `https://megaplay.buzz/stream/ani/${encodeURIComponent(id)}/${encodeURIComponent(episode)}/dub`
   },
@@ -74,22 +61,48 @@ const ANIME_SERVERS: ServerOption[] = [
     badge: 'Direct & HLS · Fast',
     description: 'Pengu cloud streams fallback',
     getUrl: () => ''
-  }
-];
-
-// Configurable video streaming servers list for Movies and TV Shows
-const MOVIE_TV_SERVERS: ServerOption[] = [
+  },
   {
     id: 'cinemaos',
     name: 'CinemaOS',
-    badge: 'Server 1 · Official (Default)',
-    description: 'CinemaOS official embed player (Default)',
+    badge: 'Backup Mirror',
+    description: 'CinemaOS embed player',
     getUrl: (tmdbId, isTV, season, episode) => {
       const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
         return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
       }
       return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
+    }
+  }
+];
+
+// Configurable video streaming servers list for Movies and TV Shows
+const MOVIE_TV_SERVERS: ServerOption[] = [
+  {
+    id: 'vidsrc-sh',
+    name: 'VidSrc (SH)',
+    badge: 'Server 1 · Official (Default)',
+    description: 'VidSrc.sh high-speed multi-audio streaming embed',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://vidsrc.sh/embed/movie/${cleanId}`;
+      }
+      return `https://vidsrc.sh/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
+    id: 'videasy',
+    name: 'Videasy',
+    badge: 'Server 2 · Fast HD',
+    description: 'Videasy multi-quality adaptive streaming player',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://player.videasy.to/movie/${cleanId}`;
+      }
+      return `https://player.videasy.to/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
     }
   },
   {
@@ -105,32 +118,6 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
     badge: 'Direct & HLS · Fast',
     description: 'Pengu cloud streams with native HLS and multi-source mirrors',
     getUrl: () => ''
-  },
-  {
-    id: 'vidsrc-sh',
-    name: 'VidSrc (SH)',
-    badge: 'Mirror 1 · HD',
-    description: 'VidSrc.sh high-speed multi-audio streaming embed',
-    getUrl: (tmdbId, isTV, season, episode) => {
-      const cleanId = encodeURIComponent(tmdbId);
-      if (!isTV) {
-        return `https://vidsrc.sh/embed/movie/${cleanId}`;
-      }
-      return `https://vidsrc.sh/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
-    }
-  },
-  {
-    id: 'videasy',
-    name: 'Videasy',
-    badge: 'Mirror 2 · Fast',
-    description: 'Videasy multi-quality streaming player',
-    getUrl: (tmdbId, isTV, season, episode) => {
-      const cleanId = encodeURIComponent(tmdbId);
-      if (!isTV) {
-        return `https://player.videasy.to/movie/${cleanId}`;
-      }
-      return `https://player.videasy.to/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
-    }
   },
   {
     id: 'vidfast',
@@ -210,6 +197,19 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
       }
       return `https://vixsrc.to/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
     }
+  },
+  {
+    id: 'cinemaos',
+    name: 'CinemaOS',
+    badge: 'Mirror · Official',
+    description: 'CinemaOS official embed player',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://cinemaos.tech/player/${cleanId}?theme=ffffff`;
+      }
+      return `https://cinemaos.tech/player/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?theme=ffffff`;
+    }
   }
 ];
 
@@ -283,7 +283,8 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     if (item?.media_type === 'anime') {
       return 'megaplay-sub';
     }
-    return settings.defaultServer || 'cinemaos';
+    const current = settings.defaultServer;
+    return (!current || current === 'cinemaos') ? 'vidsrc-sh' : current;
   });
 
   const [prevItemIdForServer, setPrevItemIdForServer] = useState(item?.id);
@@ -292,7 +293,8 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     if (item?.media_type === 'anime') {
       setSelectedServerId((prev) => (prev === 'megaplay-dub' ? 'megaplay-dub' : 'megaplay-sub'));
     } else {
-      setSelectedServerId(settings.defaultServer || 'cinemaos');
+      const current = settings.defaultServer;
+      setSelectedServerId((!current || current === 'cinemaos') ? 'vidsrc-sh' : current);
     }
   }
 
@@ -647,7 +649,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
       {/* 100% Full-bleed Embed / Direct Player without anything pushing or cutting it */}
       <div className="absolute inset-0 w-full h-full bg-black">
         {isDirectPlayer ? (
-          <HDHubErrorBoundary onFallback={() => setSelectedServerId('cinemaos')}>
+          <HDHubErrorBoundary onFallback={() => setSelectedServerId('vidsrc-sh')}>
             <HDHubPlayer
               item={isAnime && resolvedAnimeTmdbId ? { ...item, tmdbId: resolvedAnimeTmdbId } : item}
               season={season}

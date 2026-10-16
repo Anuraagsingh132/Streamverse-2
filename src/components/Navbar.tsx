@@ -116,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header 
-      className="fixed left-1/2 top-3 sm:top-4 z-[100] -translate-x-1/2 rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-200"
+      className="hidden lg:block fixed left-1/2 top-4 z-[100] -translate-x-1/2 rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-200"
       style={{
         backgroundColor: 'rgba(10, 12, 20, 0.60)',
         backdropFilter: 'blur(20px) saturate(160%)',

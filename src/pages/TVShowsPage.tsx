@@ -21,7 +21,8 @@ import {
   getByGenre, 
   getTrending, 
   getAiringTodayTV, 
-  getOnTheAirTV 
+  getOnTheAirTV,
+  getHeroTrending 
 } from '../services/tmdb';
 
 import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
@@ -41,7 +42,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
   onToggleWatchlist,
   onNavigate
 }) => {
-  const [heroShowsList] = useState<MediaItem[]>(tvHeroItems);
+  const [heroShowsList, setHeroShowsList] = useState<MediaItem[]>(tvHeroItems);
   const [trendingShowsList, setTrendingShowsList] = useState<MediaItem[]>(tvTop10Items);
   const [popularShowsList, setPopularShowsList] = useState<MediaItem[]>(tvPopularItems);
   const [dramaShowsList, setDramaShowsList] = useState<MediaItem[]>(tvDramaItems);
@@ -53,6 +54,11 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
   // Progressive background fetch to enrich data from TMDB API while keeping valid backdrops
   useEffect(() => {
     let isMounted = true;
+
+    // Fetch live trending TV shows for Hero Banner
+    getHeroTrending('tv', 10)
+      .then(res => { if (isMounted && res?.length) setHeroShowsList(mergeValidMediaWithFallback(res, tvHeroItems, 10)); })
+      .catch(() => {});
 
     // Progressive asynchronous streaming: update each rail immediately upon arrival
     getTrending('tv', 'day')

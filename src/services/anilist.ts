@@ -263,8 +263,8 @@ async function executeAniListGraphQL(query: string, variables: Record<string, an
   return null;
 }
 
-// Bounded LRU caches (capped at 100 entries) & in-flight deduplication (T3-06)
-const detailsCache = new LRUCache<number, FullAniListAnimeDetails>(100);
+const ANILIST_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes fresh TTL
+const detailsCache = new LRUCache<number, { timestamp: number; data: FullAniListAnimeDetails }>(100);
 const inFlightDetails = new Map<string, Promise<FullAniListAnimeDetails | null>>();
 
 /**
@@ -279,6 +279,8 @@ export function clearAniListCache(itemId?: string | number): void {
   } else if (!itemId) {
     detailsCache.clear();
     inFlightDetails.clear();
+    railCache.clear();
+    inFlightRail.clear();
   }
   clearMediaDiskCache(itemId);
 }
@@ -287,16 +289,21 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
   const numericId = parseInt(id.toString(), 10);
   if (isNaN(numericId)) return null;
 
-  if (detailsCache.has(numericId)) {
-    return detailsCache.get(numericId)!;
+  const memCached = detailsCache.get(numericId);
+  if (memCached && Date.now() - memCached.timestamp < ANILIST_CACHE_TTL_MS) {
+    return memCached.data;
   }
 
   try {
     const cached = safeGetStorageItem(`anilist_details_${numericId}`);
     if (cached) {
       const parsed = JSON.parse(cached);
-      detailsCache.set(numericId, parsed);
-      return parsed;
+      if (parsed && typeof parsed.timestamp === 'number' && parsed.data) {
+        if (Date.now() - parsed.timestamp < ANILIST_CACHE_TTL_MS) {
+          detailsCache.set(numericId, parsed);
+          return parsed.data;
+        }
+      }
     }
   } catch {}
 
@@ -444,8 +451,9 @@ export async function fetchAniListAnimeDetails(id: number | string): Promise<Ful
       episodes_list
     };
 
-    detailsCache.set(numericId, result);
-    safeSetStorageItem(`anilist_details_${numericId}`, JSON.stringify(result), { prefix: 'anilist_', maxItems: 30 });
+    const entry = { timestamp: Date.now(), data: result };
+    detailsCache.set(numericId, entry);
+    safeSetStorageItem(`anilist_details_${numericId}`, JSON.stringify(entry), { prefix: 'anilist_', maxItems: 30, ttlMs: ANILIST_CACHE_TTL_MS });
 
       return result;
     } catch (error) {
@@ -491,7 +499,7 @@ query ($page: Int = 1, $perPage: Int = 20, $sort: [MediaSort], $status: MediaSta
 }
 `;
 
-const railCache = new LRUCache<string, any[]>(100);
+const railCache = new LRUCache<string, { timestamp: number; data: any[] }>(100);
 const inFlightRail = new Map<string, Promise<any[]>>();
 
 export async function fetchAniListRail(variables: {
@@ -502,16 +510,19 @@ export async function fetchAniListRail(variables: {
   perPage?: number;
 }): Promise<any[]> {
   const cacheKey = JSON.stringify(variables);
-  if (railCache.has(cacheKey)) {
-    return railCache.get(cacheKey)!;
+  const memCached = railCache.get(cacheKey);
+  if (memCached && Date.now() - memCached.timestamp < ANILIST_CACHE_TTL_MS) {
+    return memCached.data;
   }
   try {
     const cached = safeGetStorageItem(`anilist_rail_${cacheKey}`);
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        railCache.set(cacheKey, parsed);
-        return parsed;
+      if (parsed && typeof parsed.timestamp === 'number' && Array.isArray(parsed.data)) {
+        if (Date.now() - parsed.timestamp < ANILIST_CACHE_TTL_MS) {
+          railCache.set(cacheKey, parsed);
+          return parsed.data;
+        }
       }
     }
   } catch {}
@@ -528,8 +539,13 @@ export async function fetchAniListRail(variables: {
         if (!json) return [];
         const media = json?.data?.Page?.media || [];
         if (media.length > 0) {
-          railCache.set(cacheKey, media);
-          safeSetStorageItem(`anilist_rail_${cacheKey}`, JSON.stringify(media), { prefix: 'anilist_', maxItems: 30 });
+          const entry = { timestamp: Date.now(), data: media };
+          railCache.set(cacheKey, entry);
+          safeSetStorageItem(`anilist_rail_${cacheKey}`, JSON.stringify(entry), {
+            prefix: 'anilist_',
+            maxItems: 30,
+            ttlMs: ANILIST_CACHE_TTL_MS
+          });
         }
         return media;
       } catch (e) {
@@ -539,5 +555,12 @@ export async function fetchAniListRail(variables: {
     },
     inFlightRail
   );
+}
+
+export async function fetchAniListHeroTrending(perPage: number = 8): Promise<any[]> {
+  return fetchAniListRail({
+    sort: ['TRENDING_DESC'],
+    perPage
+  });
 }
 

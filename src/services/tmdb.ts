@@ -237,9 +237,9 @@ export const PROVIDER_NAME_TO_ID: Record<string, number> = {
 export function formatTmdbItem(raw: any, explicitType?: MediaType): MediaItem {
   const isMovie = explicitType
     ? explicitType === 'movie'
-    : !raw.first_air_date && !raw.name;
+    : raw.media_type === 'movie' || (!raw.first_air_date && !raw.name);
 
-  const mediaType: MediaType = explicitType || (isMovie ? 'movie' : 'tv');
+  const mediaType: MediaType = explicitType || (raw.media_type as MediaType) || (isMovie ? 'movie' : 'tv');
   const title = raw.title || raw.name || raw.original_title || raw.original_name || 'Untitled';
   const releaseDate = raw.release_date || raw.first_air_date;
   const year = releaseDate ? new Date(releaseDate).getFullYear() : undefined;
@@ -442,6 +442,41 @@ export async function getTrending(
     return (data.results || []).map((item: any) => formatTmdbItem(item, type === 'all' ? undefined : type));
   } catch (err) {
     console.warn(`TMDB getTrending failed (${type}/${timeWindow}):`, err);
+    return [];
+  }
+}
+
+export async function getHeroTrending(
+  type: 'movie' | 'tv' | 'all' = 'movie',
+  count: number = 8
+): Promise<MediaItem[]> {
+  try {
+    const trending = await getTrending(type, 'day');
+    const valid = trending.filter((item) => Boolean(item.backdrop_path && item.backdrop_path.trim() !== '')).slice(0, count);
+    if (valid.length === 0) return [];
+
+    const enriched = await Promise.all(
+      valid.map(async (item) => {
+        try {
+          const details = await getMediaDetails(item.id, item.media_type);
+          if (details) {
+            return {
+              ...item,
+              logo_path: details.logo_path || item.logo_path,
+              title_logo: details.title_logo || item.title_logo,
+              tagline: details.tagline || item.tagline,
+              content_rating: details.content_rating || item.content_rating
+            };
+          }
+        } catch {
+          // fallback to item
+        }
+        return item;
+      })
+    );
+    return enriched;
+  } catch (err) {
+    console.warn(`TMDB getHeroTrending failed (${type}):`, err);
     return [];
   }
 }

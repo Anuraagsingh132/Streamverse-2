@@ -21,7 +21,8 @@ import {
   getByGenre, 
   getTrending, 
   getNowPlayingMovies, 
-  getUpcomingMovies 
+  getUpcomingMovies,
+  getHeroTrending
 } from '../services/tmdb';
 
 import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
@@ -41,7 +42,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
   onToggleWatchlist,
   onNavigate
 }) => {
-  const [heroMoviesList] = useState<MediaItem[]>(movieHeroItems);
+  const [heroMoviesList, setHeroMoviesList] = useState<MediaItem[]>(movieHeroItems);
   const [trendingMoviesList, setTrendingMoviesList] = useState<MediaItem[]>(movieTop10Items);
   const [popularMoviesList, setPopularMoviesList] = useState<MediaItem[]>(moviePopularItems);
   const [actionMoviesList, setActionMoviesList] = useState<MediaItem[]>(movieActionItems);
@@ -53,6 +54,11 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
   // Progressive background fetch to enrich data from TMDB API while keeping valid backdrops
   useEffect(() => {
     let isMounted = true;
+
+    // Fetch live trending movies for Hero Banner
+    getHeroTrending('movie', 10)
+      .then(res => { if (isMounted && res?.length) setHeroMoviesList(mergeValidMediaWithFallback(res, movieHeroItems, 10)); })
+      .catch(() => {});
 
     // Progressive asynchronous streaming: update each rail immediately upon arrival
     getTrending('movie', 'day')

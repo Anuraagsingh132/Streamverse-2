@@ -14,7 +14,7 @@ import {
   liveTopRatedMovies, 
   liveTopRatedShows 
 } from '../data/cinemaosLiveMatch';
-import { getTrending, getTopRated } from '../services/tmdb';
+import { getTrending, getTopRated, getHeroTrending } from '../services/tmdb';
 import { mergeValidMediaWithFallback } from '../utils/mediaFilters';
 
 interface HomePageProps {
@@ -32,7 +32,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   onToggleWatchlist,
   onNavigate
 }) => {
-  const [heroItemsList] = useState<MediaItem[]>(liveHeroItems);
+  const [heroItemsList, setHeroItemsList] = useState<MediaItem[]>(liveHeroItems);
   const [moviesList, setMoviesList] = useState<MediaItem[]>(liveTop10Movies);
   const [showsList, setShowsList] = useState<MediaItem[]>(liveTop10Shows);
   const [topRatedFilter, setTopRatedFilter] = useState<'movie' | 'tv'>('movie');
@@ -42,6 +42,15 @@ export const HomePage: React.FC<HomePageProps> = ({
   // Progressive background fetch to enrich data from TMDB API while keeping valid backdrops
   useEffect(() => {
     let isMounted = true;
+
+    // Fetch live trending hero banner items
+    getHeroTrending('all', 10)
+      .then((res) => {
+        if (isMounted && res?.length) {
+          setHeroItemsList(mergeValidMediaWithFallback(res, liveHeroItems, 10));
+        }
+      })
+      .catch(() => {});
 
     getTrending('movie', 'day')
       .then((res) => {

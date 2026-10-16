@@ -24,7 +24,7 @@ export const GlassBackButton: React.FC<GlassBackButtonProps> = ({
       whileTap={{ scale: 0.92 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 shadow-lg ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/60 sm:bg-black/40 text-white backdrop-blur-xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.6)] transition-all hover:bg-white/20 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${className}`}
       title={label}
       aria-label={`${label} to previous page`}
     >

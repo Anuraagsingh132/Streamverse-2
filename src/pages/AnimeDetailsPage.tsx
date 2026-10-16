@@ -196,7 +196,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen bg-background text-foreground pb-36 sm:pb-32 lg:pb-16">
       <SEOHead
         title={`${d.title}${d.year ? ` (${d.year})` : ''} — Anime`}
         description={d.description || d.overview || `Watch ${d.title} anime online on Streamverse.`}
@@ -266,6 +266,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#060812] via-[#060812]/90 via-55% to-transparent sm:via-[#060812]/75 sm:via-45% lg:hidden" />
         </div>
 
         {/* Streamverse Vertical Watermark */}
@@ -277,11 +278,21 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
         </div>
 
         {/* Content Container aligned to bottom */}
-        <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
-          <GlassBackButton
-            onClick={handleBackClick}
-            className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
-          />
+        <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-12 pt-6 sm:px-8 sm:pb-10 sm:pt-16 lg:min-h-[100svh] lg:px-10 lg:pb-12 lg:pt-28 xl:px-12 2xl:px-14">
+          {/* Mobile Back Button: Dedicated row on mobile */}
+          <div className="mb-4 self-start lg:hidden">
+            <GlassBackButton
+              onClick={handleBackClick}
+              className="relative z-40"
+            />
+          </div>
+          {/* Desktop Back Button: Exact 1:1 original position */}
+          <div className="absolute left-5 top-20 z-30 hidden sm:left-8 lg:left-10 lg:block">
+            <GlassBackButton
+              onClick={handleBackClick}
+            />
+          </div>
+
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column (Meta & Synopsis) */}
             <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">
@@ -322,8 +333,8 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 </div>
               )}
 
-              {/* Ratings and Genres */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-white/80 sm:text-sm">
+              {/* Desktop Ratings and Genres (1:1 original layout) */}
+              <div className="hidden lg:flex lg:flex-wrap lg:items-center lg:gap-x-3 lg:gap-y-2 lg:text-sm lg:text-white/80">
                 <span className="flex items-center gap-1.5">
                   <span className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((s) => (
@@ -350,6 +361,41 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 ))}
               </div>
 
+              {/* Mobile Ratings and Genres */}
+              <div className="lg:hidden">
+                <div className="flex items-center gap-2.5 text-xs text-white/90 sm:text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`h-3.5 w-3.5 ${
+                            s <= Math.round(d.rating_percent / 20)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'fill-transparent text-white/30'
+                          }`}
+                        />
+                      ))}
+                    </span>
+                    <span className="font-bold text-white">{d.rating_percent}%</span>
+                    <span className="text-xs font-semibold text-white/70">({d.vote_count})</span>
+                  </div>
+                </div>
+
+                {d.genres && d.genres.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {d.genres.slice(0, 4).map((g) => (
+                      <span
+                        key={g}
+                        className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur-md text-white/90"
+                      >
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Synopsis */}
               <div className="relative text-xs leading-relaxed text-white/80 sm:text-sm">
                 <p className={descExpanded ? '' : 'line-clamp-3'}>
@@ -358,7 +404,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 {(d.description?.length || 0) > 180 && (
                   <button
                     onClick={() => setDescExpanded(!descExpanded)}
-                    className="mt-1 text-xs font-semibold text-white underline-offset-2 hover:underline"
+                    className="mt-1 text-xs font-semibold text-white underline-offset-2 hover:underline cursor-pointer"
                   >
                     {descExpanded ? 'Show less' : 'Read More'}
                   </button>
@@ -372,8 +418,83 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              {/* Mobile Action Controls */}
+              <div className="flex flex-col gap-2.5 pt-1 sm:hidden">
+                <div className="flex items-center gap-2.5">
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => handlePlayAnime(1)}
+                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-black shadow-lg active:bg-white/85 cursor-pointer"
+                  >
+                    <Play className="h-4 w-4 fill-black text-black" />
+                    Watch now
+                  </motion.button>
+
+                  {d.trailer_key && (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => setTrailerOpen(true)}
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-md active:bg-white/20 cursor-pointer"
+                    >
+                      <Clapperboard className="h-4 w-4" />
+                      Trailer
+                    </motion.button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-4 gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() => onToggleWatchlist(initialItem)}
+                    aria-label={isSaved ? 'In Watchlist' : 'Add to Watchlist'}
+                    className="flex flex-col items-center justify-center py-1.5 text-center text-white/80 transition active:text-white cursor-pointer"
+                  >
+                    <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-primary text-primary' : ''}`} />
+                    <span className="mt-1 text-[11px] font-medium tracking-tight">
+                      {isSaved ? 'Saved' : 'Watchlist'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    aria-label="Share"
+                    className="flex flex-col items-center justify-center py-1.5 text-center text-white/80 transition active:text-white cursor-pointer"
+                  >
+                    {copiedShare ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
+                    <span className="mt-1 text-[11px] font-medium tracking-tight">
+                      {copiedShare ? 'Copied' : 'Share'}
+                    </span>
+                  </button>
+
+                  <a
+                    href={d.anilist_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center py-1.5 text-center text-white/80 transition active:text-white cursor-pointer"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="mt-1 text-[11px] font-medium tracking-tight">AniList</span>
+                  </a>
+
+                  {d.mal_url ? (
+                    <a
+                      href={d.mal_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center py-1.5 text-center text-white/80 transition active:text-white cursor-pointer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      <span className="mt-1 text-[11px] font-medium tracking-tight">MAL</span>
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Desktop Action Controls */}
+              <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:pt-2">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.95 }}
@@ -451,18 +572,12 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 >
                   {copiedShare ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
                 </motion.button>
-
-                {copiedShare && (
-                  <span className="text-xs font-semibold text-green-400">
-                    Copied link!
-                  </span>
-                )}
               </div>
             </div>
 
-            {/* Right Column (Official Trailer Card) */}
+            {/* Desktop Right Column: Trailer Card (1:1 original) */}
             {d.trailer_key && (
-              <div className="w-full max-w-sm shrink-0 lg:max-w-[340px] xl:max-w-[380px]">
+              <div className="hidden lg:block w-full max-w-sm shrink-0 lg:max-w-[340px] xl:max-w-[380px]">
                 <div className="relative w-full rounded-3xl border border-white/10 bg-black/30 p-4 shadow-2xl backdrop-blur-xl">
                   <div
                     onClick={() => setTrailerOpen(true)}
@@ -490,6 +605,38 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                     <div className="mt-3 flex items-center justify-between text-xs text-white/70 transition group-hover:text-white">
                       <span>Watch trailer</span>
                       <ChevronRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Right Column: Trailer Card (Flattened on mobile) */}
+            {d.trailer_key && (
+              <div className="w-full max-w-sm shrink-0 lg:hidden">
+                <div className="relative w-full">
+                  <div
+                    onClick={() => setTrailerOpen(true)}
+                    className="group block cursor-pointer"
+                  >
+                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5 border border-white/10">
+                      <img
+                        src={d.trailer_thumbnail || `https://img.youtube.com/vi/${d.trailer_key}/hqdefault.jpg`}
+                        alt={d.title}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                      <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                        Official trailer
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-md transition-transform group-hover:scale-110">
+                          <Play className="ml-0.5 h-5 w-5 fill-white text-white" />
+                        </span>
+                      </span>
+                      <span className="absolute bottom-3 left-3 right-3 text-xs font-semibold text-white drop-shadow">
+                        {d.title}
+                      </span>
                     </div>
                   </div>
                 </div>

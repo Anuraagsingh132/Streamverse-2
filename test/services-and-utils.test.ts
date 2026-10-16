@@ -153,7 +153,7 @@ test('TMDB: formatTmdbItem formats movie and TV media items correctly', () => {
   assert.strictEqual(item.media_type, 'movie');
 });
 
-test('MediaFilters: mergeValidMediaWithFallback filters and preserves leading curated items', () => {
+test('MediaFilters: mergeValidMediaWithFallback prioritizes live updated items and falls back when needed', () => {
   const curatedFallback: MediaItem[] = [
     { id: 'c1', title: 'Curated 1', overview: '', backdrop_path: '/c1.jpg', poster_path: '', vote_average: 8, media_type: 'movie' },
     { id: 'c2', title: 'Curated 2', overview: '', backdrop_path: '/c2.jpg', poster_path: '', vote_average: 8, media_type: 'movie' },
@@ -170,11 +170,10 @@ test('MediaFilters: mergeValidMediaWithFallback filters and preserves leading cu
 
   const merged = mergeValidMediaWithFallback(incomingLive, curatedFallback, 10);
 
-  // Must preserve c1, c2, c3, c4 first
-  assert.strictEqual(merged[0].id, 'c1');
-  assert.strictEqual(merged[1].id, 'c2');
-  assert.strictEqual(merged[2].id, 'c3');
-  assert.strictEqual(merged[3].id, 'c4');
+  // Must prioritize live valid items first in their updated incoming order
+  assert.strictEqual(merged[0].id, 'c2');
+  assert.strictEqual(merged[1].id, 'l1');
+  assert.strictEqual(merged[2].id, 'l3');
 
   // Must deduplicate c2 and exclude l2_invalid (no backdrop)
   const ids = merged.map(m => m.id);
@@ -182,6 +181,11 @@ test('MediaFilters: mergeValidMediaWithFallback filters and preserves leading cu
   assert.ok(ids.includes('l3'));
   assert.ok(!ids.includes('l2_invalid'));
   assert.strictEqual(new Set(ids).size, ids.length);
+
+  // When live data is empty, must fall back cleanly
+  const fallbackOnly = mergeValidMediaWithFallback([], curatedFallback, 10);
+  assert.strictEqual(fallbackOnly[0].id, 'c1');
+  assert.strictEqual(fallbackOnly.length, 4);
 });
 
 test('ImageUtils: optimizeTmdbImage adjusts dimensions according to aspect ratio', () => {

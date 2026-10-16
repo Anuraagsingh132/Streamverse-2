@@ -83,6 +83,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState<boolean>(false);
   const [loadingEpisodes, setLoadingEpisodes] = useState<boolean>(false);
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
+  const [overviewExpanded, setOverviewExpanded] = useState<boolean>(false);
 
   const trailerRailRef = useRef<HTMLDivElement>(null);
   const moreLikeRailRef = useRef<HTMLDivElement>(null);
@@ -223,7 +224,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen text-white">
+    <div className="relative min-h-screen text-white pb-36 sm:pb-32 lg:pb-16">
       <SEOHead
         title={`${item.title}${releaseYear ? ` (${releaseYear})` : ''}`}
         description={item.overview || `Watch ${item.title} in HD on Streamverse.`}
@@ -293,6 +294,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#060812] via-[#060812]/90 via-55% to-transparent sm:via-[#060812]/75 sm:via-45% lg:hidden" />
         </div>
 
         {/* Vertical Watermark */}
@@ -304,11 +306,21 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         </div>
 
         {/* Hero Content Overlays */}
-        <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:min-h-[100svh] lg:px-10 lg:pb-12 xl:px-12 2xl:px-14">
-          <GlassBackButton
-            onClick={handleBackClick}
-            className="absolute left-5 top-20 z-30 sm:left-8 lg:left-10"
-          />
+        <div className="relative z-10 flex min-h-[90svh] flex-col justify-end px-5 pb-12 pt-6 sm:px-8 sm:pb-10 sm:pt-16 lg:min-h-[100svh] lg:px-10 lg:pb-12 lg:pt-28 xl:px-12 2xl:px-14">
+          {/* Mobile Back Button: Dedicated row on mobile */}
+          <div className="mb-4 self-start lg:hidden">
+            <GlassBackButton
+              onClick={handleBackClick}
+              className="relative z-40"
+            />
+          </div>
+          {/* Desktop Back Button: Exact 1:1 original position */}
+          <div className="absolute left-5 top-20 z-30 hidden sm:left-8 lg:left-10 lg:block">
+            <GlassBackButton
+              onClick={handleBackClick}
+            />
+          </div>
+
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column: Metadata, Logo, Overview, CTAs */}
             <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">
@@ -350,8 +362,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 <p className="text-sm italic text-white/85 tracking-wide md:text-base">{item.tagline}</p>
               )}
 
-              {/* Ratings & Genres */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-white/80 sm:text-sm">
+              {/* Desktop Ratings & Genres (1:1 original layout) */}
+              <div className="hidden lg:flex lg:flex-wrap lg:items-center lg:gap-x-3 lg:gap-y-2 lg:text-sm lg:text-white/80">
                 <span className="flex items-center gap-1.5">
                   <span className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -390,11 +402,73 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 ))}
               </div>
 
-              {/* Overview */}
-              <div className="max-w-xl">
+              {/* Mobile Ratings & Genres (Dedicated rows for uncramped mobile view) */}
+              <div className="lg:hidden">
+                <div className="flex items-center gap-2.5 text-xs text-white/90 sm:text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-3.5 w-3.5 ${
+                            star <= ratingStars
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'fill-transparent text-white/30'
+                          }`}
+                        />
+                      ))}
+                    </span>
+                    <span className="font-bold text-white">{votePercent}%</span>
+                    <span className="text-xs font-semibold text-white/70">({item.vote_count || 80})</span>
+                  </div>
+
+                  {item.imdbId && (
+                    <a
+                      href={`https://www.imdb.com/title/${item.imdbId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded bg-yellow-400 px-1.5 py-0.5 text-[11px] font-black text-black transition hover:bg-yellow-300 ml-1"
+                    >
+                      IMDb
+                    </a>
+                  )}
+                </div>
+
+                {item.genres && item.genres.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {item.genres.slice(0, 4).map((g) => (
+                      <span
+                        key={g}
+                        className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur-md text-white/90"
+                      >
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Overview (1:1 original) */}
+              <div className="hidden lg:block max-w-xl">
                 <p className="text-sm leading-relaxed text-white/80 line-clamp-3">
                   {item.overview}
                 </p>
+              </div>
+
+              {/* Mobile Overview (with More toggle) */}
+              <div className="max-w-xl lg:hidden">
+                <p className={`text-sm leading-relaxed text-white/85 ${overviewExpanded ? '' : 'line-clamp-3'}`}>
+                  {item.overview}
+                </p>
+                {(item.overview?.length || 0) > 140 && (
+                  <button
+                    type="button"
+                    onClick={() => setOverviewExpanded(!overviewExpanded)}
+                    className="mt-1 text-xs font-semibold text-white/90 underline-offset-4 hover:underline cursor-pointer"
+                  >
+                    {overviewExpanded ? 'Show less' : 'More'}
+                  </button>
+                )}
               </div>
 
               {/* Directed / Created by */}
@@ -405,9 +479,74 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 </span>
               </p>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                {/* Play CTA */}
+              {/* Mobile Action Controls */}
+              <div className="flex flex-col gap-2.5 pt-1 sm:hidden">
+                <div className="flex items-center gap-2.5">
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => onPlay({ ...item, episodes_list: episodes }, 1, selectedSeason)}
+                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-black shadow-lg active:bg-white/85 cursor-pointer"
+                  >
+                    <Play className="h-4 w-4 fill-current" />
+                    Play
+                  </motion.button>
+
+                  {officialTrailerKey && (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => {
+                        setActiveVideoKey(officialTrailerKey);
+                        setTrailerModalOpen(true);
+                      }}
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-md active:bg-white/20 cursor-pointer"
+                    >
+                      <Clapperboard className="h-4 w-4" />
+                      Trailer
+                    </motion.button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() => onToggleWatchlist(item)}
+                    aria-label={isSaved ? 'In Watchlist' : 'Add to Watchlist'}
+                    className="flex flex-col items-center justify-center py-1.5 text-center text-white/80 transition active:text-white cursor-pointer"
+                  >
+                    <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-rose-500 text-rose-500' : ''}`} />
+                    <span className="mt-1 text-[11px] font-medium tracking-tight">
+                      {isSaved ? 'Saved' : 'Watchlist'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    aria-label="Share"
+                    className="flex flex-col items-center justify-center py-1.5 text-center text-white/80 transition active:text-white cursor-pointer"
+                  >
+                    {copiedShare ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
+                    <span className="mt-1 text-[11px] font-medium tracking-tight">
+                      {copiedShare ? 'Copied' : 'Share'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onPlay({ ...item, episodes_list: episodes }, 1, selectedSeason)}
+                    aria-label="Download"
+                    className="flex flex-col items-center justify-center py-1.5 text-center text-white/80 transition active:text-white cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="mt-1 text-[11px] font-medium tracking-tight">Download</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Desktop Action Controls (1:1 original layout) */}
+              <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-2.5 sm:pt-1">
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.03 }}
@@ -420,23 +559,23 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   Play
                 </motion.button>
 
-                {/* Trailer CTA */}
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  onClick={() => {
-                    setActiveVideoKey(officialTrailerKey);
-                    setTrailerModalOpen(true);
-                  }}
-                  className="flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25 sm:px-5 cursor-pointer"
-                >
-                  <Clapperboard className="h-4 w-4" />
-                  <span className="hidden sm:inline">Trailer</span>
-                </motion.button>
+                {officialTrailerKey && (
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    onClick={() => {
+                      setActiveVideoKey(officialTrailerKey);
+                      setTrailerModalOpen(true);
+                    }}
+                    className="flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25 sm:px-5 cursor-pointer"
+                  >
+                    <Clapperboard className="h-4 w-4" />
+                    <span>Trailer</span>
+                  </motion.button>
+                )}
 
-                {/* Watch Later / Bookmark */}
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.08 }}
@@ -452,7 +591,6 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   <Bookmark className="h-4 w-4" />
                 </motion.button>
 
-                {/* Share */}
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.08 }}
@@ -466,7 +604,6 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   {copiedShare ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
                 </motion.button>
 
-                {/* Download */}
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.08 }}
@@ -482,8 +619,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               </div>
             </div>
 
-            {/* Right Column: Preview Card (Aside) */}
-            <aside className="w-full max-w-md shrink-0 duration-700 animate-in fade-in slide-in-from-right-4 lg:w-80 lg:max-w-none xl:w-96">
+            {/* Desktop Right Column: Preview Card (1:1 original layout with starring inside) */}
+            <aside className="hidden lg:block w-80 shrink-0 duration-700 animate-in fade-in slide-in-from-right-4 lg:max-w-none xl:w-96">
               <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-4 shadow-2xl backdrop-blur-xl">
                 {item.media_type === 'movie' ? (
                   /* Official Trailer Preview Card */
@@ -595,7 +732,122 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 )}
               </div>
             </aside>
+
+            {/* Mobile Right Column: Preview Card (Flattened, no nested borders) */}
+            <aside className="w-full max-w-md shrink-0 duration-700 animate-in fade-in slide-in-from-right-4 lg:hidden">
+              <div className="space-y-4">
+                {item.media_type === 'movie' ? (
+                  /* Official Trailer Preview Card */
+                  <div
+                    onClick={() => {
+                      setActiveVideoKey(officialTrailerKey);
+                      setTrailerModalOpen(true);
+                    }}
+                    className="group block cursor-pointer"
+                  >
+                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5 border border-white/10">
+                      <img
+                        alt={primaryTrailer?.name || `${item.title} trailer`}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        src={`https://img.youtube.com/vi/${officialTrailerKey}/hqdefault.jpg`}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                      <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                        Official trailer
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md transition group-hover:scale-110 group-hover:bg-white/25">
+                          <Play className="ml-0.5 h-5 w-5 fill-white text-white" />
+                        </span>
+                      </span>
+                      <div className="absolute inset-x-3 bottom-3">
+                        <p className="line-clamp-1 text-sm font-semibold text-white">
+                          {primaryTrailer ? primaryTrailer.name : `${item.title} Trailer`}
+                        </p>
+                        <p className="mt-0.5 text-xs text-white/60">
+                          +{Math.max(1, (item.videos?.length || 8) - 1)} more videos
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* TV Show Next Episode Preview Card */
+                  <div
+                    onClick={() => {
+                      const latestEp = episodes.length > 0 ? episodes[episodes.length - 1] : null;
+                      const nextEpNum = latestEp?.episode_number || episodes.length || 1;
+                      onPlay({ ...item, episodes_list: episodes }, nextEpNum, selectedSeason);
+                    }}
+                    className="group block cursor-pointer"
+                  >
+                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5 border border-white/10">
+                      <img
+                        alt={`${item.title} - ${episodes[0]?.name || 'Next episode'}`}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        src={episodes[0]?.still_path || item.backdrop_path}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                      <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                        Latest episode
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/15 backdrop-blur-md transition group-hover:scale-110 group-hover:bg-white/25">
+                          <Play className="ml-0.5 h-5 w-5 fill-white text-white" />
+                        </span>
+                      </span>
+                      <div className="absolute inset-x-3 bottom-3">
+                        <p className="line-clamp-1 text-sm font-semibold text-white">
+                          {episodes[episodes.length - 1]?.name || 'Dirt and Stars'}
+                        </p>
+                        <p className="mt-0.5 text-xs text-white/70">
+                          S{selectedSeason} · E{episodes.length || 8} · Available now
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </aside>
           </div>
+
+          {/* Dedicated Starring Cast Section (STRICTLY MOBILE ONLY: lg:hidden) */}
+          {item.cast && item.cast.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-xl lg:hidden sm:p-5">
+              <div className="mb-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UsersRound className="h-4 w-4 text-rose-500" />
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
+                    Starring Cast
+                  </p>
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
+                  {item.cast.length} actors
+                </span>
+              </div>
+              <div className="scrollbar-hide -mx-2 flex items-start gap-4 overflow-x-auto px-2 pb-1 pt-1 sm:gap-6">
+                {item.cast.slice(0, 10).map((actor) => (
+                  <div key={actor.id} className="flex w-16 shrink-0 flex-col items-center text-center sm:w-20">
+                    <div className="relative h-14 w-14 overflow-hidden rounded-full border border-white/15 bg-white/10 shadow-md ring-2 ring-black/40">
+                      <img
+                        alt={actor.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                        src={actor.profile_path || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                      />
+                    </div>
+                    <span className="mt-2 line-clamp-1 w-full text-xs font-semibold text-white">
+                      {actor.name}
+                    </span>
+                    <span className="line-clamp-1 w-full text-[10px] text-white/50" title={actor.character}>
+                      {actor.character}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Metadata Bar (1:1 with cinemaos.tech) */}
           <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 px-5 py-4 shadow-2xl backdrop-blur-xl sm:px-6">

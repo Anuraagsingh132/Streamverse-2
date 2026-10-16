@@ -63,7 +63,7 @@ export const ProvidersPage: React.FC<ProvidersPageProps> = ({
   }
 
   return (
-    <div className="relative min-h-screen pt-28 pb-16">
+    <div className="relative min-h-screen pt-8 sm:pt-16 lg:pt-28 pb-16">
       <SEOHead
         title="Streaming Providers - Watch by Platform"
         description="Browse films, television series, and anime by popular streaming networks and studios including Netflix, Disney+, Apple TV+, and more."

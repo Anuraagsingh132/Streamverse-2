@@ -138,11 +138,11 @@ export const PlayerErrorModal: React.FC<PlayerErrorModalProps> = ({
                   type="button"
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  onClick={() => onSwitchServer('cinemaos')}
+                  onClick={() => onSwitchServer('vidsrc-sh')}
                   className="sm:col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition border border-white/10 text-center cursor-pointer"
                 >
                   <Film className="h-3.5 w-3.5 text-primary" />
-                  <span>Switch back to CinemaOS Web Player (Instant)</span>
+                  <span>Switch to VidSrc HD Web Player (Instant)</span>
                 </motion.button>
               )}
             </div>

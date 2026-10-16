@@ -15,12 +15,14 @@ export function mergeValidMediaWithFallback(
   fallback: MediaItem[],
   maxItems: number = 15
 ): MediaItem[] {
-  if (!items || items.length === 0) return fallback;
+  if (!items || items.length === 0) return fallback.slice(0, maxItems);
   const valid = items.filter((i) => Boolean(i.backdrop_path && i.backdrop_path.trim() !== ''));
-  const leadingFallback = fallback.slice(0, 4);
+  if (valid.length === 0) return fallback.slice(0, maxItems);
+
+  // Fresh live updated items take full priority in their actual ranking order
   const merged = [
-    ...leadingFallback,
-    ...valid.filter((v) => !leadingFallback.some((f) => f.id === v.id))
+    ...valid,
+    ...fallback.filter((f) => !valid.some((v) => String(v.id) === String(f.id)))
   ];
   return merged.slice(0, maxItems);
 }

@@ -460,6 +460,7 @@ body {
 
 /* === lg: Breakpoint (min-width: 1024px) === */
 @media (min-width: 1024px) {
+  .lg\:block{display:block !important}
   .lg\:w-\[160px\]{width:160px !important}
   .lg\:w-\[180px\]{width:180px !important}
   .lg\:w-\[190px\]{width:190px !important}

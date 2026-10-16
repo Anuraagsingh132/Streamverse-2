@@ -37,13 +37,22 @@ interface ServerOption {
 
 const SERVER_OPTIONS: ServerOption[] = [
   {
-    id: 'cinemaos',
-    name: 'CinemaOS Official',
-    badge: 'Default · Official',
-    category: 'official',
-    protocol: 'Official Embed',
-    ping: '~28ms ping',
-    desc: 'CinemaOS official embed player with automatic server failover, built-in episode drawer, and ad-shielding.'
+    id: 'vidsrc-sh',
+    name: 'VidSrc (SH)',
+    badge: 'Default · Fast HD',
+    category: 'mirror',
+    protocol: 'Multi-Audio Embed',
+    ping: '~35ms ping',
+    desc: 'VidSrc high-speed global mirror with multi-language subtitle tracks, lossless audio, and rapid buffer start.'
+  },
+  {
+    id: 'videasy',
+    name: 'Videasy',
+    badge: 'Mirror 1 · Adaptive',
+    category: 'mirror',
+    protocol: 'Adaptive Embed',
+    ping: '~42ms ping',
+    desc: 'Videasy low-latency player with automatic resolution scaling from 360p up to 1080p.'
   },
   {
     id: 'hdhub',
@@ -64,22 +73,13 @@ const SERVER_OPTIONS: ServerOption[] = [
     desc: 'High-availability Pengu cloud mirror with redundant fallback stream channels and lossless audio.'
   },
   {
-    id: 'vidsrc-sh',
-    name: 'VidSrc (SH)',
-    badge: 'Mirror 1 · HD',
-    category: 'mirror',
-    protocol: 'Multi-Audio Embed',
-    ping: '~52ms ping',
-    desc: 'VidSrc high-speed global mirror with multi-language subtitle tracks and rapid buffer start.'
-  },
-  {
-    id: 'videasy',
-    name: 'Videasy',
-    badge: 'Mirror 2 · Fast',
-    category: 'mirror',
-    protocol: 'Adaptive Embed',
-    ping: '~48ms ping',
-    desc: 'Videasy low-latency player with automatic resolution scaling from 360p up to 1080p.'
+    id: 'cinemaos',
+    name: 'CinemaOS Embed',
+    badge: 'Backup Mirror',
+    category: 'official',
+    protocol: 'Official Embed',
+    ping: '~28ms ping',
+    desc: 'CinemaOS embed player with automatic server failover and built-in episode drawer.'
   },
   {
     id: 'vidfast',
@@ -246,7 +246,7 @@ export const SettingsPage: React.FC = () => {
   const activeServerName = SERVER_OPTIONS.find((s) => s.id === settings.defaultServer)?.name || settings.defaultServer;
 
   return (
-    <div className="relative min-h-screen overflow-hidden px-4 sm:px-6 lg:px-8 pt-28 pb-24">
+    <div className="relative min-h-screen overflow-hidden px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 lg:pt-28 pb-24">
       <SEOHead
         title="Settings & Playback Preferences | Streamverse"
         description="Configure your default video server, PixelDrain CDN stream routes, subtitle typography, and playback behavior on Streamverse."
