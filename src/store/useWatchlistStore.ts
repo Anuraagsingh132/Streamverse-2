@@ -138,15 +138,28 @@ export function useWatchlistStore() {
     if (!exists) {
       globalWatchlistItems = [normalizedItem, ...globalWatchlistItems];
       emitWatchlistChange();
+      try {
+        import('../services/analytics').then(({ trackWatchlistAction }) => {
+          trackWatchlistAction(normalizedItem, 'added');
+        });
+      } catch {}
     }
   }, []);
 
   const removeFromWatchlist = useCallback((id: string | number) => {
     const strId = String(id);
+    const existing = globalWatchlistItems.find(
+      (i) => String(i.id) === strId || (i.tmdbId && String(i.tmdbId) === strId)
+    );
     globalWatchlistItems = globalWatchlistItems.filter(
       (i) => String(i.id) !== strId && (!i.tmdbId || String(i.tmdbId) !== strId)
     );
     emitWatchlistChange();
+    try {
+      import('../services/analytics').then(({ trackWatchlistAction }) => {
+        trackWatchlistAction(existing || { id: strId }, 'removed');
+      });
+    } catch {}
   }, []);
 
   const toggleWatchlist = useCallback(

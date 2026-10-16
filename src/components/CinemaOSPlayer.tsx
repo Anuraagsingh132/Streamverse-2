@@ -20,6 +20,7 @@ import { resolveAnimeToTmdb } from '../services/animeResolver';
 import { purgeMediaItemCache } from '../utils/cacheManager';
 import { useContinueWatchingStore, savePlaybackRecord, getPlaybackRecord } from '../store/useContinueWatchingStore';
 import { dropdownMenuVariants, drawerVariants, modalBackdropVariants } from '../utils/motion';
+import { trackServerSelect } from '../services/analytics';
 
 interface ServerOption {
   id: string;
@@ -874,6 +875,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
                               key={srv.id}
                               type="button"
                               onClick={() => {
+                                trackServerSelect(item.id, item.title, srv.name, isTV ? 'tv' : 'movie', season, episode);
                                 setSelectedServerId(srv.id);
                                 setIsServerDropdownOpen(false);
                                 resetHideTimer();

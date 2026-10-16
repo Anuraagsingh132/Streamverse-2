@@ -16,6 +16,7 @@ import {
 import { MediaItem } from '../types/media';
 import { searchTmdb } from '../services/tmdb';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { trackSearchQuery, posthog } from '../services/analytics';
 
 interface SearchResultItem {
   key: string;
@@ -281,6 +282,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         console.error('Search failed:', err);
       } finally {
         setIsLoading(false);
+        if (query && query.trim()) {
+          trackSearchQuery(query.trim(), undefined, activeCategory);
+        }
       }
     }, 350);
 
@@ -290,6 +294,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const handleSelectItem = useCallback(
     (item: SearchResultItem) => {
       saveRecentSearch(query.trim() || item.title, activeCategory);
+      posthog.capture('search_result_selected', {
+        search_query: query.trim(),
+        selected_title: item.title,
+        media_id: String(item.id),
+        media_type: item.media_type,
+        category: activeCategory,
+      });
       if (item.media_type === 'manga') {
         window.open(`https://anilist.co/manga/${item.id}`, '_blank', 'noopener,noreferrer');
         onClose();

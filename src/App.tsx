@@ -21,6 +21,7 @@ import { useWatchlistStore } from './store/useWatchlistStore';
 import { getRouteHref } from './utils/routeUtils';
 import { pageMotionVariants } from './utils/motion';
 import { ArrowLeft, Home, Compass } from 'lucide-react';
+import { PostHogPageViewTracker, trackMediaDetailsOpen, trackMediaPlay } from './services/analytics';
 
 // Lazy-loaded route views
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -669,6 +670,7 @@ const AppContent: React.FC = () => {
 
   const handleOpenDetails = useCallback(
     (item: MediaItem) => {
+      trackMediaDetailsOpen(item, location.pathname);
       setSelectedItem(item);
       if (item.media_type === 'anime') {
         navigate(`/anime/${item.id}`);
@@ -676,11 +678,12 @@ const AppContent: React.FC = () => {
         navigate(`/${item.media_type === 'tv' ? 'tv' : 'movie'}/${item.id}`);
       }
     },
-    [navigate]
+    [navigate, location.pathname]
   );
 
   const handlePlay = useCallback(
     (item: MediaItem, episode: number = 1, season: number = 1) => {
+      trackMediaPlay(item, episode, season);
       setPlayingItem(item);
       if (item.media_type === 'movie') {
         navigate(`/watch/movie/${item.id}`);
@@ -928,6 +931,7 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <PostHogPageViewTracker />
       <AppContent />
     </BrowserRouter>
   );
