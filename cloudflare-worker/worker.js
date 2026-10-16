@@ -46,7 +46,73 @@ function getAuthorizedOrigin(request, env) {
 
 const TMDB_DEFAULT_KEY = '1cf50e6248dc270629e802686245c2c8';
 
-async function fetchAndCacheTmdb(upstreamUrl, allowedOrigin, ttlSeconds = 900) {
+// ==============================================================================
+// DUAL-TIER EDGE CACHE (L1 In-Isolate RAM + L2 Cloudflare Cache API)
+// ==============================================================================
+const L1_CACHE = new Map();
+const L1_MAX_ITEMS = 500;
+
+function setL1(key, data, ttlSeconds) {
+  if (L1_CACHE.size >= L1_MAX_ITEMS) {
+    const firstKey = L1_CACHE.keys().next().value;
+    L1_CACHE.delete(firstKey);
+  }
+  L1_CACHE.set(key, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
+}
+
+function getL1(key) {
+  const item = L1_CACHE.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expiresAt) {
+    L1_CACHE.delete(key);
+    return null;
+  }
+  return item.data;
+}
+
+function buildCachedResponse(data, allowedOrigin, ttlSeconds, cacheHeader) {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': allowedOrigin,
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Vary': 'Origin, Accept-Encoding',
+      'Cache-Control': `public, max-age=${ttlSeconds}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`,
+      'X-Edge-Cache': cacheHeader,
+      'CF-Cache-Status': cacheHeader.includes('HIT') ? 'HIT' : 'MISS',
+    },
+  });
+}
+
+async function fetchAndCacheTmdb(request, upstreamUrl, allowedOrigin, ttlSeconds = 900, ctx = null) {
+  const cacheKeyStr = request ? request.url : upstreamUrl;
+
+  // 1. Check L1 In-Isolate RAM (sub-millisecond)
+  const l1Hit = getL1(cacheKeyStr);
+  if (l1Hit) {
+    return buildCachedResponse(l1Hit, allowedOrigin, ttlSeconds, 'HIT-L1-RAM');
+  }
+
+  // 2. Check L2 Cloudflare Edge Cache API (2ms - 10ms)
+  let cfCache = null;
+  try {
+    cfCache = typeof caches !== 'undefined' ? caches.default : null;
+  } catch {}
+
+  const cfCacheKey = new Request(cacheKeyStr, { method: 'GET' });
+  if (cfCache) {
+    try {
+      const match = await cfCache.match(cfCacheKey);
+      if (match) {
+        const data = await match.json();
+        setL1(cacheKeyStr, data, ttlSeconds);
+        return buildCachedResponse(data, allowedOrigin, ttlSeconds, 'HIT-L2-CF');
+      }
+    } catch {}
+  }
+
+  // 3. Cache Miss: Fetch from upstream TMDB once
   try {
     const res = await fetch(upstreamUrl, {
       headers: {
@@ -65,16 +131,24 @@ async function fetchAndCacheTmdb(upstreamUrl, allowedOrigin, ttlSeconds = 900) {
       });
     }
     const data = await res.json();
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Access-Control-Allow-Origin': allowedOrigin,
-        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-        'Vary': 'Origin, Accept-Encoding',
-        'Cache-Control': `public, max-age=${ttlSeconds}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`
-      }
-    });
+
+    // Store in L1 RAM
+    setL1(cacheKeyStr, data, ttlSeconds);
+
+    // Build response with cache headers
+    const response = buildCachedResponse(data, allowedOrigin, ttlSeconds, 'MISS-ORIGIN');
+
+    // Store in L2 Cloudflare Cache asynchronously
+    if (cfCache) {
+      try {
+        const putPromise = cfCache.put(cfCacheKey, response.clone()).catch(() => {});
+        if (ctx && ctx.waitUntil) {
+          ctx.waitUntil(putPromise);
+        }
+      } catch {}
+    }
+
+    return response;
   } catch (err) {
     return new Response(JSON.stringify({ error: err?.message || 'Upstream fetch failed' }), {
       status: 502,
@@ -87,7 +161,34 @@ async function fetchAndCacheTmdb(upstreamUrl, allowedOrigin, ttlSeconds = 900) {
   }
 }
 
-async function fetchAndSanitizeDetails(upstreamUrl, mediaType, allowedOrigin, ttlSeconds = 900) {
+async function fetchAndSanitizeDetails(request, upstreamUrl, mediaType, allowedOrigin, ttlSeconds = 3600, ctx = null) {
+  const cacheKeyStr = request ? request.url : upstreamUrl;
+
+  // 1. Check L1 In-Isolate RAM (sub-millisecond)
+  const l1Hit = getL1(cacheKeyStr);
+  if (l1Hit) {
+    return buildCachedResponse(l1Hit, allowedOrigin, ttlSeconds, 'HIT-L1-RAM');
+  }
+
+  // 2. Check L2 Cloudflare Edge Cache API (2ms - 10ms)
+  let cfCache = null;
+  try {
+    cfCache = typeof caches !== 'undefined' ? caches.default : null;
+  } catch {}
+
+  const cfCacheKey = new Request(cacheKeyStr, { method: 'GET' });
+  if (cfCache) {
+    try {
+      const match = await cfCache.match(cfCacheKey);
+      if (match) {
+        const data = await match.json();
+        setL1(cacheKeyStr, data, ttlSeconds);
+        return buildCachedResponse(data, allowedOrigin, ttlSeconds, 'HIT-L2-CF');
+      }
+    } catch {}
+  }
+
+  // 3. Cache Miss: Fetch upstream from TMDB once, sanitize 1.2MB -> 20KB, and cache
   try {
     const res = await fetch(upstreamUrl, {
       headers: {
@@ -190,16 +291,23 @@ async function fetchAndSanitizeDetails(upstreamUrl, mediaType, allowedOrigin, tt
       content_ratings: raw.content_ratings
     };
 
-    return new Response(JSON.stringify(sanitized), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Access-Control-Allow-Origin': allowedOrigin,
-        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-        'Vary': 'Origin, Accept-Encoding',
-        'Cache-Control': `public, max-age=${ttlSeconds}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`
-      }
-    });
+    // Store in L1 RAM
+    setL1(cacheKeyStr, sanitized, ttlSeconds);
+
+    // Build response with cache headers
+    const response = buildCachedResponse(sanitized, allowedOrigin, ttlSeconds, 'MISS-ORIGIN');
+
+    // Store in L2 Cloudflare Cache asynchronously
+    if (cfCache) {
+      try {
+        const putPromise = cfCache.put(cfCacheKey, response.clone()).catch(() => {});
+        if (ctx && ctx.waitUntil) {
+          ctx.waitUntil(putPromise);
+        }
+      } catch {}
+    }
+
+    return response;
   } catch (err) {
     return new Response(JSON.stringify({ error: err?.message || 'Details fetch failed' }), {
       status: 502,
@@ -212,7 +320,7 @@ async function fetchAndSanitizeDetails(upstreamUrl, mediaType, allowedOrigin, tt
   }
 }
 
-async function handleMediaRequest(url, request, env, allowedOrigin) {
+async function handleMediaRequest(url, request, env, allowedOrigin, ctx = null) {
   const apiKey = env?.TMDB_API_KEY || TMDB_DEFAULT_KEY;
   const path = url.pathname;
 
@@ -220,28 +328,28 @@ async function handleMediaRequest(url, request, env, allowedOrigin) {
     const type = url.searchParams.get('type') || 'all';
     const timeWindow = url.searchParams.get('timeWindow') || 'day';
     const upstreamUrl = `https://api.themoviedb.org/3/trending/${type}/${timeWindow}?api_key=${apiKey}&language=en-US`;
-    return fetchAndCacheTmdb(upstreamUrl, allowedOrigin, 900);
+    return fetchAndCacheTmdb(request, upstreamUrl, allowedOrigin, 900, ctx);
   }
 
   if (path === '/api/media/top-rated') {
     const type = url.searchParams.get('type') || 'movie';
     const page = url.searchParams.get('page') || '1';
     const upstreamUrl = `https://api.themoviedb.org/3/${type}/top_rated?api_key=${apiKey}&language=en-US&page=${page}`;
-    return fetchAndCacheTmdb(upstreamUrl, allowedOrigin, 900);
+    return fetchAndCacheTmdb(request, upstreamUrl, allowedOrigin, 1800, ctx);
   }
 
   if (path === '/api/media/popular') {
     const type = url.searchParams.get('type') || 'movie';
     const page = url.searchParams.get('page') || '1';
     const upstreamUrl = `https://api.themoviedb.org/3/${type}/popular?api_key=${apiKey}&language=en-US&page=${page}`;
-    return fetchAndCacheTmdb(upstreamUrl, allowedOrigin, 900);
+    return fetchAndCacheTmdb(request, upstreamUrl, allowedOrigin, 1800, ctx);
   }
 
   const detailsMatch = path.match(/^\/api\/media\/details\/(movie|tv)\/([0-9]+)$/);
   if (detailsMatch) {
     const [, mediaType, id] = detailsMatch;
     const upstreamUrl = `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${apiKey}&append_to_response=credits,videos,recommendations,images,content_ratings,release_dates&include_image_language=en,null`;
-    return fetchAndSanitizeDetails(upstreamUrl, mediaType, allowedOrigin, 900);
+    return fetchAndSanitizeDetails(request, upstreamUrl, mediaType, allowedOrigin, 3600, ctx);
   }
 
   return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
@@ -253,7 +361,7 @@ async function handleMediaRequest(url, request, env, allowedOrigin) {
   });
 }
 
-async function handleRequest(request, env) {
+async function handleRequest(request, env, ctx) {
   const allowedOrigin = getAuthorizedOrigin(request, env);
 
   // 1. CORS Preflight
@@ -287,7 +395,7 @@ async function handleRequest(request, env) {
 
   // Check for media BFF endpoints
   if (url.pathname.startsWith('/api/media/')) {
-    return handleMediaRequest(url, request, env, allowedOrigin);
+    return handleMediaRequest(url, request, env, allowedOrigin, ctx);
   }
 
   // 3. Extract and sanitize file ID
@@ -429,7 +537,7 @@ async function handleRequest(request, env) {
 
 // Support both ES Module export and legacy Service Worker syntax
 export default {
-  async fetch(request, env, _ctx) {
-    return handleRequest(request, env);
+  async fetch(request, env, ctx) {
+    return handleRequest(request, env, ctx);
   },
 };
