@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const browseItems = [
     { label: 'Discover', route: 'discover', icon: Compass, description: 'Filter & explore titles' },
     { label: 'Providers', route: 'providers', icon: Tv2, description: 'Browse by streaming service' },
-    { label: 'Live Sports', route: 'livesports', icon: Radio, description: 'Live sports streams' },
+    { label: 'Live TV & Sports', route: 'livesports', icon: Radio, description: 'Live sports & 24/7 channels' },
     { label: 'Continue Watching', route: 'continue-watching', icon: History, description: 'Pick up where you left off' },
     { label: `Watchlist (${watchlistCount})`, route: 'watchlist', icon: Bookmark, description: 'Saved movies & shows' },
     { label: 'Settings', route: 'settings', icon: Settings, description: 'Preferences & appearance' },
@@ -99,10 +99,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       case 'anime':
         import('../pages/AnimePage');
         break;
+
+      case 'livesports':
+        import('../pages/LiveSportsPage');
+        break;
       case 'ai':
       case 'discover':
       case 'music':
-      case 'livesports':
+
       case 'providers':
       case 'watchlist':
       case 'continue-watching':

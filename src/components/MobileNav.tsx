@@ -79,8 +79,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       }
     },
     { 
-      label: 'Live Sports', 
-      description: 'Live match streams & events', 
+      label: 'Live TV & Sports', 
+      description: 'Live match streams & 24/7 TV', 
       icon: Volleyball, 
       route: 'livesports'
     },
@@ -119,6 +119,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         import('../pages/AnimePage');
         break;
       case 'livesports':
+        import('../pages/LiveSportsPage');
+        break;
       case 'providers':
       case 'watchlist':
         import('../pages/ComingSoonPage');

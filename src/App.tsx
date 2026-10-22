@@ -48,7 +48,7 @@ function getRouteKeyFromPath(pathname: string): string {
   if (pathname === '/anime' || pathname === '/anime/browse') return 'anime';
   if (pathname.startsWith('/anime/')) return 'anime-details';
   if (pathname.startsWith('/watch/')) return 'watch';
-  if (pathname === '/sports' || pathname === '/livesports') return 'livesports';
+  if (pathname === '/sports' || pathname === '/livesports' || pathname === '/live-tv' || pathname === '/livetv') return 'livesports';
   if (pathname === '/music') return 'music';
   if (pathname === '/providers') return 'providers';
   if (pathname === '/watchlist') return 'watchlist';
@@ -785,8 +785,10 @@ const AppContent: React.FC = () => {
                   }
                 />
                 <Route path="/anime/browse" element={<Navigate to="/anime" replace />} />
-                <Route path="/sports" element={<ComingSoonPage feature="sports" onNavigate={handleNavigate} />} />
-                <Route path="/livesports" element={<ComingSoonPage feature="sports" onNavigate={handleNavigate} />} />
+                <Route path="/sports" element={<LiveSportsPage />} />
+                <Route path="/live-tv" element={<Navigate to="/sports" replace />} />
+                <Route path="/livetv" element={<Navigate to="/sports" replace />} />
+                <Route path="/livesports" element={<Navigate to="/sports" replace />} />
                 <Route path="/music" element={<ComingSoonPage feature="music" onNavigate={handleNavigate} />} />
                 <Route path="/providers" element={<ComingSoonPage feature="providers" onNavigate={handleNavigate} />} />
                 <Route path="/watchlist" element={<ComingSoonPage feature="watchlist" onNavigate={handleNavigate} />} />

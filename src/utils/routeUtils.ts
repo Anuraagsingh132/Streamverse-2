@@ -22,6 +22,8 @@ export function getRouteHref(route: string): string {
       return '/providers';
     case 'livesports':
     case 'sports':
+    case 'live-tv':
+    case 'livetv':
       return '/sports';
     case 'music':
       return '/music';

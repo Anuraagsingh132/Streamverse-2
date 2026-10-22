@@ -13,6 +13,8 @@ import { MediaItem } from '../src/types/media';
 import { normalizeAnimeTitle } from '../src/services/animeResolver';
 import { computeScrubPosition } from '../src/components/player/useScrubberDrag';
 import { clampSubtitleOffset, validateSubtitleSize } from '../src/hooks/useUserSettings';
+import { getStreamStatus, getStreamCountdown, formatStreamTime, filterStreams } from '../src/services/liveTv';
+import { LiveStream } from '../src/types/liveTv';
 
 test('HDHub: parseAudioCodec correctly categorizes web compatibility', () => {
   // AAC / Web audio
@@ -507,3 +509,132 @@ test('CacheManager: purgeMediaItemCache clears disk & memory cache while protect
   }
 });
 
+test('LiveTV: getStreamStatus correctly evaluates 24/7 channels and match lifecycles', () => {
+  const nowSec = 1734300000;
+
+  // 1. 24/7 Channel
+  const linearChannel: LiveStream = {
+    id: 1,
+    name: '24/7 South Park',
+    uri_name: '247-south-park',
+    starts_at: 0,
+    ends_at: 0,
+    always_live: 1,
+    category_name: '24/7 Streams'
+  };
+  assert.strictEqual(getStreamStatus(linearChannel, nowSec), 'live');
+
+  // 2. Upcoming Match (starts in 1 hour)
+  const upcomingMatch: LiveStream = {
+    id: 2,
+    name: 'Pelicans at Pacers',
+    uri_name: 'nop-ind',
+    starts_at: nowSec + 3600,
+    ends_at: nowSec + 10800,
+    always_live: 0,
+    category_name: 'Basketball'
+  };
+  assert.strictEqual(getStreamStatus(upcomingMatch, nowSec), 'upcoming');
+
+  // 3. Live Match in Progress
+  const activeMatch: LiveStream = {
+    id: 3,
+    name: 'Real Madrid vs Man City',
+    uri_name: 'rm-mci',
+    starts_at: nowSec - 1800,
+    ends_at: nowSec + 5400,
+    always_live: 0,
+    category_name: 'Football'
+  };
+  assert.strictEqual(getStreamStatus(activeMatch, nowSec), 'live');
+
+  // 4. Ended Match
+  const endedMatch: LiveStream = {
+    id: 4,
+    name: 'Lakers vs Warriors',
+    uri_name: 'lal-gsw',
+    starts_at: nowSec - 10800,
+    ends_at: nowSec - 3600,
+    always_live: 0,
+    category_name: 'Basketball'
+  };
+  assert.strictEqual(getStreamStatus(endedMatch, nowSec), 'ended');
+});
+
+test('LiveTV: getStreamCountdown & formatStreamTime return accurate relative and time labels', () => {
+  const nowSec = 1734300000;
+
+  // 45 minutes in future
+  assert.strictEqual(getStreamCountdown(nowSec + 45 * 60, nowSec), 'in 45m');
+
+  // 2 hours 15 mins in future
+  assert.strictEqual(getStreamCountdown(nowSec + (2 * 3600 + 15 * 60), nowSec), 'in 2h 15m');
+
+  // 3 days in future
+  assert.strictEqual(getStreamCountdown(nowSec + (3 * 86400 + 2 * 3600), nowSec), 'in 3d 2h');
+
+  // Already started
+  assert.strictEqual(getStreamCountdown(nowSec - 100, nowSec), 'Live Now');
+
+  // 24/7 channel time format
+  assert.strictEqual(formatStreamTime(0), '24/7 Channel');
+});
+
+test('LiveTV: filterStreams filters by category, status, and query correctly', () => {
+  const nowSec = 1734300000;
+  const sampleStreams: LiveStream[] = [
+    {
+      id: 1,
+      name: '24/7 Family Guy',
+      tag: '24/7 channel',
+      source_tag: '24/7',
+      uri_name: '247-family-guy',
+      starts_at: 0,
+      ends_at: 0,
+      always_live: 1,
+      category_name: '24/7 Streams'
+    },
+    {
+      id: 2,
+      name: 'Arsenal vs Chelsea',
+      tag: 'Premier League',
+      source_tag: 'Sky Sports',
+      uri_name: 'ars-che',
+      starts_at: nowSec - 1800,
+      ends_at: nowSec + 5400,
+      always_live: 0,
+      category_name: 'Football'
+    },
+    {
+      id: 3,
+      name: 'Kansas City Chiefs at Denver Broncos',
+      tag: 'NFL',
+      source_tag: 'CBS',
+      uri_name: 'kc-den',
+      starts_at: nowSec + 7200,
+      ends_at: nowSec + 18000,
+      always_live: 0,
+      category_name: 'American Football'
+    }
+  ];
+
+  // Filter by category
+  const footballOnly = filterStreams(sampleStreams, { category: 'Football' });
+  assert.strictEqual(footballOnly.length, 1);
+  assert.strictEqual(footballOnly[0].name, 'Arsenal vs Chelsea');
+
+  // Filter 24/7 channels
+  const channels = filterStreams(sampleStreams, { category: '24/7 Channels' });
+  assert.strictEqual(channels.length, 1);
+  assert.strictEqual(channels[0].name, '24/7 Family Guy');
+
+  // Filter by query (case-insensitive substring)
+  const chiefsQuery = filterStreams(sampleStreams, { query: 'chiefs' });
+  assert.strictEqual(chiefsQuery.length, 1);
+  assert.strictEqual(chiefsQuery[0].name, 'Kansas City Chiefs at Denver Broncos');
+
+  // Filter by broadcaster source tag
+  const skySports = filterStreams(sampleStreams, { query: 'Sky Sports' });
+  assert.strictEqual(skySports.length, 1);
+  assert.strictEqual(skySports[0].name, 'Arsenal vs Chelsea');
+});

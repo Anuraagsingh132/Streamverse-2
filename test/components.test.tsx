@@ -52,7 +52,7 @@ describe('Component Testing Suite (TEST-02)', () => {
       );
 
       // Home link
-      expect(screen.getByLabelText(/Streamverse Home/i)).toBeInTheDocument();
+      expect(screen.getAllByLabelText(/Streamverse Home/i)[0]).toBeInTheDocument();
 
       // Nav link click (Movies)
       const moviesLink = screen.getByText('Movies');

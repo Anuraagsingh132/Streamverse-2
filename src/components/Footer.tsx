@@ -13,7 +13,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     { label: 'Anime', route: 'anime' },
     { label: 'Discover', route: 'discover' },
     { label: 'Providers', route: 'providers' },
-    { label: 'Live Sports', route: 'livesports' },
+    { label: 'Live TV & Sports', route: 'livesports' },
     { label: 'Watchlist', route: 'watchlist' },
     { label: 'Settings', route: 'settings' },
   ];
