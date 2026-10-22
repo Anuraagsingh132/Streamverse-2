@@ -318,7 +318,7 @@ export const LiveSportsPage: React.FC = () => {
   const shouldRenderGrid = isSearchActive || isFilteredSport || isFilteredStatus;
 
   return (
-    <div className="relative min-h-screen bg-[#060812] text-white">
+    <div className="relative min-h-screen text-white">
       <SEOHead
         title="Live Sports &amp; Live TV | Streamverse"
         description="Stream live football, cricket, NFL broadcasts, basketball, and continuous 24/7 TV networks in high definition on Streamverse."
@@ -336,7 +336,7 @@ export const LiveSportsPage: React.FC = () => {
 
       {/* Main Content Area Overlapping Hero with consistent spacing rhythm (1:1 with Movies page) */}
       <div 
-        className="relative z-10 space-y-14 sm:space-y-16 pb-20 bg-[#060812]"
+        className="relative z-10 space-y-14 sm:space-y-16 pb-20"
         style={{ marginTop: '-48px' }}
       >
         {/* Sport Category Icon Strip & Segmented Status Toggle (1:1 with Movies ProviderRail) */}

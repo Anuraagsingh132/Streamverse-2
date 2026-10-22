@@ -110,7 +110,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
 
       {/* Main Content Overlapping Hero with consistent 64-80px spacing rhythm */}
       <div 
-        className="relative z-10 space-y-16 sm:space-y-20 pb-16 bg-[#060812]"
+        className="relative z-10 space-y-16 sm:space-y-20 pb-16"
         style={{ marginTop: '-48px' }}
       >
         {/* Top 10 Today Row */}

@@ -152,7 +152,7 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
     <section
       aria-label="Featured Sports Broadcast"
       id="sports-hero"
-      className="relative w-full overflow-hidden bg-[#060812]"
+      className="relative w-full overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
