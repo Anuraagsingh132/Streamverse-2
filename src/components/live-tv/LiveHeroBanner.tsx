@@ -6,7 +6,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Tv,
-  Radio
+  Radio,
+  Clapperboard
 } from 'lucide-react';
 import { LiveStream } from '../../types/liveTv';
 import {
@@ -159,10 +160,40 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* 520-560px on desktop with 96px top padding and vertically centered text block */}
-      <div className="relative min-h-[500px] md:min-h-[540px] lg:h-[560px] w-full select-none pt-24 pb-8 flex items-center">
-        {/* Full-Bleed Backdrop Image Layer */}
-        <div className="absolute inset-0 overflow-hidden">
+      {/* Ambient Backdrop Glow: Matches Movies Hero (Contained to hero on mobile, creates deep rich atmosphere) */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[85vh] md:fixed md:inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        {items.map((item, idx) => {
+          const isActive = idx === currentIndex;
+          const highResBackdrop = getSportHeroBackdrop(item.category_name, item.name);
+          const bgUrl = item.poster && !item.poster.includes('-thumbnail') ? item.poster : highResBackdrop;
+          return (
+            <div
+              key={item.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                isActive ? 'opacity-30 dark:opacity-25' : 'opacity-0'
+              }`}
+              style={{
+                backgroundImage: `url(${bgUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center 20%',
+                filter: 'blur(80px) saturate(150%)',
+                transform: 'scale(1.2)'
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Main Hero Container: Matches Movies Hero height (lg:h-screen, giving expansive breathing room under navbar) */}
+      <div className="relative h-[min(68svh,560px)] sm:h-[75vh] lg:h-screen w-full select-none">
+        {/* Full-Bleed Backdrop Image Layer with Top Mask & Ken Burns Animation */}
+        <div 
+          className="absolute inset-x-0 top-0 overflow-hidden h-full lg:h-[calc(100%+20vh)]"
+          style={{
+            maskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)'
+          }}
+        >
           {items.map((item, idx) => {
             const isActive = idx === currentIndex;
             const isNear =
@@ -196,24 +227,35 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                     alt={item.name}
                     fetchPriority={isActive ? 'high' : 'auto'}
                     loading={isActive ? 'eager' : 'lazy'}
-                    className="h-full w-full object-cover object-center"
+                    className="h-full w-full object-cover object-top sm:object-center"
                   />
                 </div>
               </div>
             );
           })}
 
-          {/* Deep Solid Left-to-Right Scrim: Guarantees stadium boards NEVER look like strikethrough lines through text */}
+          {/* Gradients matching Movies hero: Deep left scrim + subtle top scrim + soft bottom fade */}
           <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-r from-[#060812] via-[#060812]/95 via-[#060812]/70 via-[#060812]/30 to-transparent" />
-          <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-t from-[#060812] via-[#060812]/60 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 z-20 h-44 pointer-events-none bg-gradient-to-t from-[#060812] to-transparent" />
+          <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 pointer-events-none" style={{ background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.8) 50%, transparent)' }} />
+
+          {/* Mobile-Only Scrims */}
+          <div className="md:hidden absolute inset-x-0 top-0 z-20 pointer-events-none" style={{ height: '120px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.25) 50%, transparent)' }} />
+          <div className="md:hidden absolute inset-x-0 bottom-0 z-20 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.9) 40%, transparent)' }} />
         </div>
 
-        {/* Vertically Centered Content Container with uniform margins */}
-        <div className="relative z-20 px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto w-full my-auto">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-            {/* Left Column: Badges, Title, Description, Buttons, Progress */}
-            <div className="flex w-full md:max-w-lg lg:max-w-[48%] xl:max-w-[520px] flex-col gap-3.5 z-30">
+        {/* Vertical Watermark */}
+        <div 
+          aria-hidden="true" 
+          className="pointer-events-none absolute right-3 top-1/2 z-10 hidden -translate-y-1/2 select-none text-[11px] font-black uppercase tracking-[0.6em] text-white/15 [writing-mode:vertical-rl] lg:block xl:right-5"
+        >
+          Streamverse
+        </div>
+
+        {/* Content Container: Cleanly elevated on desktop with items-end pb-5 sm:pb-32 md:pb-36 lg:pb-64 (1:1 with Movies hero) */}
+        <div className="relative z-10 flex h-full items-end pb-5 sm:pb-32 md:pb-36 lg:pb-64 4xl:pb-80">
+          <div className="w-full px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+            <div className="flex max-w-xl flex-col gap-2.5 sm:gap-4 2xl:max-w-2xl">
               {/* Badge Row (High contrast, bold pills) */}
               <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
                 {isLive ? (
@@ -236,38 +278,41 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                 </span>
               </div>
 
-              {/* Title: 44-54px, weight 800, tight tracking */}
+              {/* Title: 44-56px, weight 800+, tight tracking */}
               <h1
                 key={`hero-title-${current.id}`}
-                className="text-3xl sm:text-4xl lg:text-[46px] xl:text-[52px] font-extrabold tracking-tight text-white leading-[1.08] line-clamp-2 drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]"
+                className="text-2xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white drop-shadow-2xl duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both leading-tight"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.85)) drop-shadow(0 4px 20px rgba(0,0,0,0.75))'
+                }}
               >
                 {matchInfo.cleanTitle || cleanStreamTitle(current.name)}
               </h1>
 
-              {/* Description: Capped at max-w-xl so it NEVER collides with Up Next */}
-              <p className="text-sm sm:text-[15px] font-normal text-zinc-300 leading-relaxed drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] line-clamp-2">
+              {/* Description: Capped at max-w-xl */}
+              <p className="line-clamp-2 text-xs sm:text-sm lg:text-base leading-relaxed text-zinc-100 drop-shadow-md duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both max-w-xl">
                 {is247
                   ? `24/7 continuous linear high-definition broadcast network for ${cleanStreamTitle(current.name)}. Available without blackout restrictions.`
                   : `Live broadcast direct from ${provider.label} in crystal clear HD. Stadium relay feed on Streamverse.`}
               </p>
 
-              {/* Action Buttons (High contrast, bold borders) */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
+              {/* Action Buttons (1:1 styling with Movies hero buttons) */}
+              <div className="flex items-center gap-2.5 pt-1 duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both">
                 <button
                   type="button"
                   onClick={() => onPlay(current)}
-                  className="flex h-12 min-h-[48px] items-center justify-center gap-2 rounded-full bg-white px-7 text-sm font-bold text-black shadow-xl hover:bg-white/90 active:scale-95 transition cursor-pointer"
+                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full bg-white px-5 sm:px-6 text-sm font-bold text-black shadow-lg transition hover:bg-white/85 active:scale-95 select-none cursor-pointer"
                 >
-                  <Play className="h-4 w-4 fill-black text-black" />
+                  <Play className="lucide lucide-play h-4 w-4 fill-current" />
                   Watch Now
                 </button>
 
                 <button
                   type="button"
                   onClick={() => (onOpenDetails ? onOpenDetails(current) : setShowInfoModal(current))}
-                  className="flex h-12 min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/25 bg-white/15 px-6 text-sm font-semibold text-white backdrop-blur-xl hover:bg-white/25 hover:border-white/40 active:scale-95 transition cursor-pointer shadow-lg"
+                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-black/50 md:bg-white/15 px-4 sm:px-5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95 select-none cursor-pointer"
                 >
-                  <Info className="h-4 w-4 text-white" />
+                  <Info className="lucide lucide-info h-4 w-4" />
                   More Info
                 </button>
 
@@ -276,19 +321,20 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                   onClick={() => toggleBookmark(current)}
                   title={isSaved ? 'Remove from Saved' : 'Save for Later'}
                   aria-label={isSaved ? 'Remove from Saved' : 'Save for Later'}
-                  className={`flex h-12 w-12 min-h-[48px] min-w-[48px] items-center justify-center rounded-full border backdrop-blur-xl hover:scale-105 active:scale-95 transition cursor-pointer shadow-lg ${
+                  className={`inline-flex items-center justify-center h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border border-white/20 backdrop-blur-md hover:bg-white/25 active:scale-95 transition cursor-pointer ${
                     isSaved
-                      ? 'bg-rose-600 text-white border-rose-500'
-                      : 'border-white/25 bg-white/15 text-white hover:bg-white/25 hover:border-white/40'
+                      ? 'bg-primary/25 text-primary border-primary/40'
+                      : 'bg-black/50 md:bg-white/15 text-white'
                   }`}
                 >
-                  <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+                  <Bookmark className={`lucide lucide-bookmark h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
                 </button>
               </div>
 
-              {/* Carousel Progress Bar & Chevrons on a single neat baseline */}
-              <div className="mt-2 flex items-center gap-3 w-full max-w-[480px]">
-                <div className="flex flex-1 items-center gap-1.5 py-1">
+              {/* Slider Progress Bars & Chevrons on single neat baseline */}
+              <div className="mt-4 sm:mt-6 flex max-w-xl items-center gap-3">
+                {/* Desktop Indicators: 10 progress bars matching Movies Hero */}
+                <div className="hidden md:flex flex-1 gap-1.5">
                   {items.slice(0, 10).map((_, idx) => {
                     const isActive = idx === currentIndex;
                     return (
@@ -299,11 +345,11 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                         aria-label={`Go to slide ${idx + 1}`}
                         className="group h-5 flex-1 py-1.5 cursor-pointer"
                       >
-                        <span className="relative block h-1.5 overflow-hidden rounded-full bg-white/30 transition group-hover:bg-white/50">
+                        <span className="relative block h-1.5 overflow-hidden rounded-full bg-white/25 transition group-hover:bg-white/40">
                           {isActive && (
                             <span
                               key={`progress-${idx}`}
-                              className="absolute inset-0 origin-left bg-white shadow-sm"
+                              className="absolute inset-0 origin-left bg-rose-500 shadow-sm shadow-rose-500/50"
                               style={{
                                 animation: 'hero-progress 8000ms linear forwards',
                                 animationPlayState: isPaused ? 'paused' : 'running'
@@ -316,31 +362,60 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                   })}
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                {/* Mobile Indicators: Capped at 5 with wide solid active pill */}
+                <div className="flex md:hidden items-center gap-2 py-1 mt-1 sm:mt-2">
+                  {items.slice(0, 5).map((_, idx) => {
+                    const isActive = idx === currentIndex;
+                    return (
+                      <button
+                        key={`mob-${idx}`}
+                        type="button"
+                        onClick={() => setCurrentIndex(idx)}
+                        aria-label={`Go to slide ${idx + 1}`}
+                        className="flex h-9 min-h-[36px] min-w-[28px] items-center justify-center p-1 active:scale-90 transition-transform cursor-pointer"
+                      >
+                        <span
+                          className={`h-1.5 rounded-full transition-all duration-300 ease-out ${
+                            isActive
+                              ? 'w-7 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.7)]'
+                              : 'w-2 bg-white/35 hover:bg-white/50'
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Chevrons */}
+                <div className="hidden items-center gap-1.5 sm:flex">
                   <button
                     type="button"
                     onClick={handlePrev}
                     aria-label="Previous slide"
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95 cursor-pointer"
+                    title="Previous slide"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="lucide lucide-chevron-left h-4 w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={handleNext}
                     aria-label="Next slide"
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95 cursor-pointer"
+                    title="Next slide"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="lucide lucide-chevron-right h-4 w-4" />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Right-Side: 3 Borderless Horizontal Preview Cards in Dark Glass Panel */}
-            <div className="hidden xl:flex flex-col gap-2.5 shrink-0 self-end mb-1 rounded-2xl border border-white/10 bg-black/50 backdrop-blur-md p-3.5 shadow-2xl">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white">
-                <span className="h-3 w-1 rounded-full bg-rose-500" />
+            {/* Up Next Section on Right: 1:1 with Movies Hero Placement */}
+            <div 
+              className="absolute right-5 hidden flex-col gap-2.5 sm:bottom-32 md:bottom-36 lg:bottom-64 lg:right-10 xl:right-12 xl:flex 2xl:right-14 4xl:bottom-80"
+            >
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
+                <span className="h-3.5 w-[3px] rounded-full bg-primary" />
                 Up Next on Streamverse
               </div>
               <div className="flex gap-3">
@@ -349,25 +424,21 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                     key={`up-next-${item.id}-${pos}`}
                     type="button"
                     onClick={() => setCurrentIndex(idx)}
-                    className="group w-32 xl:w-36 text-left cursor-pointer"
+                    className="group w-36 text-left xl:w-44 cursor-pointer"
                   >
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 bg-[#12151E] shadow-lg">
-                      {item.poster ? (
+                    <div className="card-3d relative rounded-xl">
+                      <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-lg">
                         <img
-                          src={item.poster}
+                          src={item.poster || getSportHeroBackdrop(item.category_name, item.name)}
                           alt={cleanStreamTitle(item.name)}
                           loading="lazy"
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
                         />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-[#12151E] text-white/40">
-                          {item.always_live ? <Tv className="h-5 w-5" /> : <Radio className="h-5 w-5" />}
-                        </div>
-                      )}
-                      {/* Dark bottom gradient scrim on thumbnail */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+                      </div>
+                      <span className="card-3d-glare" aria-hidden="true" />
                     </div>
-                    <p className="mt-1.5 line-clamp-1 text-xs font-bold text-white transition-colors group-hover:text-rose-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                    <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-snug text-white/80 transition-colors group-hover:text-white">
                       {cleanStreamTitle(item.name)}
                     </p>
                   </button>

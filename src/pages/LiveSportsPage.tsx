@@ -334,8 +334,11 @@ export const LiveSportsPage: React.FC = () => {
         />
       )}
 
-      {/* Main Content Area with standardized 56-64px vertical rhythm and clean top spacing */}
-      <div className="relative z-10 pt-4 sm:pt-6 space-y-14 sm:space-y-16 pb-20 bg-[#060812]">
+      {/* Main Content Area Overlapping Hero with consistent spacing rhythm (1:1 with Movies page) */}
+      <div 
+        className="relative z-10 space-y-14 sm:space-y-16 pb-20 bg-[#060812]"
+        style={{ marginTop: '-48px' }}
+      >
         {/* Sport Category Icon Strip & Segmented Status Toggle (1:1 with Movies ProviderRail) */}
         {!loading && allStreams.length > 0 && (
           <LiveCategoryStrip
