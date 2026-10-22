@@ -16,6 +16,56 @@ import {
   cleanStreamTitle
 } from '../../services/liveTv';
 
+// High-resolution photographic arena/stadium backdrops for hero showcase
+const SPORT_HERO_BACKDROPS: Record<string, string> = {
+  football: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=2560&q=85',
+  cricket: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=2560&q=85',
+  basketball: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=2560&q=85',
+  'american football': 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?auto=format&fit=crop&w=2560&q=85',
+  'ice hockey': 'https://images.unsplash.com/photo-1580748141549-71748dbe0bdc?auto=format&fit=crop&w=2560&q=85',
+  combat: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&w=2560&q=85',
+  motorsports: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=2560&q=85',
+  darts: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=2560&q=85',
+  default: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=2560&q=85'
+};
+
+const getSportHeroBackdrop = (categoryName?: string, streamName?: string): string => {
+  const cat = (categoryName || '').toLowerCase();
+  const name = (streamName || '').toLowerCase();
+
+  if (cat.includes('ice hockey') || cat.includes('hockey') || name.includes('nhl')) {
+    return SPORT_HERO_BACKDROPS['ice hockey'];
+  }
+  if (cat.includes('american football') || cat.includes('nfl') || name.includes('nfl')) {
+    return SPORT_HERO_BACKDROPS['american football'];
+  }
+  if (cat.includes('cricket') || name.includes('cricket') || name.includes('willow')) {
+    return SPORT_HERO_BACKDROPS['cricket'];
+  }
+  if (cat.includes('basketball') || name.includes('nba')) {
+    return SPORT_HERO_BACKDROPS['basketball'];
+  }
+  if (cat.includes('football') || cat.includes('soccer')) {
+    return SPORT_HERO_BACKDROPS['football'];
+  }
+  if (
+    cat.includes('combat') ||
+    cat.includes('wrestling') ||
+    cat.includes('boxing') ||
+    cat.includes('mma') ||
+    cat.includes('ufc')
+  ) {
+    return SPORT_HERO_BACKDROPS['combat'];
+  }
+  if (cat.includes('motor') || cat.includes('racing') || cat.includes('rally')) {
+    return SPORT_HERO_BACKDROPS['motorsports'];
+  }
+  if (cat.includes('dart')) {
+    return SPORT_HERO_BACKDROPS['darts'];
+  }
+  return SPORT_HERO_BACKDROPS['default'];
+};
+
 interface LiveHeroBannerProps {
   items: LiveStream[];
   onPlay: (stream: LiveStream) => void;
@@ -129,6 +179,9 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
             if (!isNear) return null;
 
             const isChannel = item.always_live === 1 || item.always_live === true;
+            const highResBackdrop = getSportHeroBackdrop(item.category_name, item.name);
+            const isApiThumbnail =
+              item.poster?.includes('-thumbnail.jpg') || item.poster?.includes('/thumb/');
 
             return (
               <div
@@ -137,31 +190,33 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                   isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
-                {/* Full-bleed background imagery with Ken Burns motion */}
+                {/* Full-bleed high-res arena/stadium background with Ken Burns motion */}
                 <div
                   className="absolute inset-0"
                   style={{
                     animation: isActive ? 'hero-kenburns 12000ms ease-out forwards' : 'none'
                   }}
                 >
-                  {item.poster ? (
+                  <img
+                    src={!isChannel && item.poster && !isApiThumbnail ? item.poster : highResBackdrop}
+                    alt={item.name}
+                    fetchPriority={isActive ? 'high' : 'auto'}
+                    loading={isActive ? 'eager' : 'lazy'}
+                    className="h-full w-full object-cover object-center"
+                  />
+                </div>
+
+                {/* For channels & streams: Crisp logo centered on right at native crisp size, never stretched */}
+                {item.poster && (
+                  <div className="absolute right-12 lg:right-28 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center max-w-[340px] lg:max-w-[420px] max-h-[240px] pointer-events-none z-10">
                     <img
                       src={item.poster}
                       alt={item.name}
-                      fetchPriority={isActive ? 'high' : 'auto'}
                       loading={isActive ? 'eager' : 'lazy'}
-                      className="h-full w-full object-cover object-center"
+                      className="max-h-[170px] lg:max-h-[210px] w-auto max-w-full object-contain filter drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] opacity-60"
                     />
-                  ) : isChannel ? (
-                    <div className="h-full w-full bg-[#12151E] flex items-center justify-end pr-20">
-                      <span className="text-9xl font-black uppercase tracking-widest text-white/[0.05]">
-                        {cleanStreamTitle(item.name).slice(0, 4)}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="h-full w-full bg-[#12151E]" />
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             );
           })}
