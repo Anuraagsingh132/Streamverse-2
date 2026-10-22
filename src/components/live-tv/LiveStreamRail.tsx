@@ -11,6 +11,7 @@ interface LiveStreamRailProps {
   onPlay: (stream: LiveStream) => void;
   onBrowseAll?: () => void;
   compactChannel?: boolean;
+  featured?: boolean;
   unitLabel?: string; // 'matches' | 'channels' | 'broadcasts' | 'fixtures' | 'games'
 }
 
@@ -21,6 +22,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
   onPlay,
   onBrowseAll,
   compactChannel = false,
+  featured = false,
   unitLabel = 'matches'
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -45,71 +47,52 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
 
   if (!items || items.length === 0) return null;
 
-  const countDisplay = `${items.length} ${items.length === 1 ? unitLabel.replace(/es$|s$/, '') : unitLabel}`;
-
   return (
     <motion.section
-      className="py-5 select-none"
+      className="relative py-3 select-none"
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
-      {/* Section Header (1:1 with Movies design system) */}
+      {/* Cinematic Ambient Glow for Featured Rail */}
+      {featured && (
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 55% at 50% 20%, rgba(220, 38, 38, 0.12) 0%, rgba(10, 20, 24, 0.04) 55%, transparent 80%)'
+          }}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Section Header (Clean Movies Design System) */}
       <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            {/* White 2px Eyebrow Bar + 11px uppercase label with 0.14em tracking (max 2 items) */}
-            <div className="flex items-center gap-2">
-              <div className="h-3.5 w-[2px] rounded-full bg-white" aria-hidden="true" />
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/70">
-                {subtitle}
-              </p>
-            </div>
+            {/* Muted uppercase eyebrow */}
+            <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-500">
+              {subtitle}
+            </p>
 
-            {/* Title: 28px with 12px gap, 14px text at 50% white, dropping parentheses */}
-            <h2 className="mt-1 text-xl sm:text-2xl lg:text-[28px] font-bold tracking-tight text-white flex items-baseline flex-wrap">
-              <span>{title}</span>
-              <span className="ml-3 text-sm font-normal text-white/50 tracking-normal">
-                {countDisplay}
-              </span>
+            {/* Clean bold white section title */}
+            <h2 className="mt-1 text-xl sm:text-2xl font-bold text-white">
+              {title}
             </h2>
           </div>
 
-          {/* Right Header Controls: Navigation Chevrons + Browse all button */}
-          <div className="flex items-center gap-2">
-            {/* Header Arrow Buttons */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => scroll('left')}
-                aria-label={`Scroll ${title} left`}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white transition cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scroll('right')}
-                aria-label={`Scroll ${title} right`}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white transition cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Browse all button on right */}
-            {onBrowseAll && (
-              <button
-                type="button"
-                onClick={onBrowseAll}
-                className="group flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer ml-1"
-              >
-                <span>Browse all</span>
-                <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </button>
-            )}
-          </div>
+          {/* Minimal "Browse all ->" pill on the right */}
+          {onBrowseAll && (
+            <button
+              type="button"
+              onClick={onBrowseAll}
+              className="group flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer"
+            >
+              <span>Browse all</span>
+              <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -147,22 +130,48 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
             WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)'
           }}
         >
-          {items.map((stream) => (
-            <div
-              key={stream.id}
-              className={`shrink-0 snap-start ${
-                compactChannel
-                  ? 'w-[60vw] sm:w-[240px] lg:w-[260px]'
-                  : 'w-[72vw] sm:w-[320px] md:w-[340px] lg:w-[360px]'
-              }`}
-            >
-              <LiveStreamCard
-                stream={stream}
-                onPlay={onPlay}
-                compactChannel={compactChannel}
-              />
-            </div>
-          ))}
+          {items.map((stream, idx) => {
+            const rank = idx + 1;
+            return (
+              <div
+                key={stream.id}
+                className={`shrink-0 snap-start relative ${
+                  featured
+                    ? 'pl-10 sm:pl-12 lg:pl-14 w-[80vw] sm:w-[350px] md:w-[370px] lg:w-[390px]'
+                    : compactChannel
+                    ? 'w-[60vw] sm:w-[240px] lg:w-[260px]'
+                    : 'w-[72vw] sm:w-[320px] md:w-[340px] lg:w-[360px]'
+                }`}
+              >
+                {/* Giant Outlined Rank Number for Featured Highlights (Matching Top 10 Today) */}
+                {featured && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-0 top-0 flex h-[42vw] sm:h-[180px] lg:h-[200px] items-center select-none z-0"
+                  >
+                    <span
+                      className="font-black leading-none tracking-tighter text-transparent select-none text-[100px] sm:text-[135px] lg:text-[160px]"
+                      style={{
+                        WebkitTextStroke: '2px rgba(255, 255, 255, 0.38)',
+                        fontFamily:
+                          'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                      }}
+                    >
+                      {rank}
+                    </span>
+                  </div>
+                )}
+
+                <div className="relative z-10">
+                  <LiveStreamCard
+                    stream={stream}
+                    onPlay={onPlay}
+                    compactChannel={compactChannel}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </motion.section>

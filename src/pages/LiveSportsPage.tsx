@@ -1,19 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Search,
-  X,
-  Tv,
-  LayoutGrid,
-  Rows,
-  RefreshCw,
   AlertCircle,
-  Globe,
-  Trophy,
-  Flame,
-  Zap,
-  ShieldAlert,
-  Radio
+  Radio,
+  Search,
+  ArrowUpRight
 } from 'lucide-react';
 import {
   fetchLiveStreams,
@@ -24,6 +15,8 @@ import {
 import { LiveStream } from '../types/liveTv';
 import { SEOHead } from '../components/SEOHead';
 import { LiveHeroBanner } from '../components/live-tv/LiveHeroBanner';
+import { LiveCategoryStrip } from '../components/live-tv/LiveCategoryStrip';
+import { LiveNetworkStrip } from '../components/live-tv/LiveNetworkStrip';
 import { LiveStreamRail } from '../components/live-tv/LiveStreamRail';
 import { LiveStreamCard } from '../components/live-tv/LiveStreamCard';
 import { CinemaOSLivePlayer } from '../components/live-tv/CinemaOSLivePlayer';
@@ -40,12 +33,10 @@ export const LiveSportsPage: React.FC = () => {
   const [timeAgoText, setTimeAgoText] = useState<string>('just now');
   const [currentSec, setCurrentSec] = useState<number>(() => Math.floor(Date.now() / 1000));
 
-  // Filters & View State
+  // Filters & State
   const [selectedSport, setSelectedSport] = useState<string>('All');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'upcoming' | '24/7'>('all');
-  const [dayFilter, setDayFilter] = useState<'all' | 'today' | 'tomorrow' | 'week'>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'rails' | 'grid'>('rails');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'upcoming'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>(() => searchParams.get('q') || '');
 
   // Active Stream for CinemaOS Player
   const [selectedStream, setSelectedStream] = useState<LiveStream | null>(null);
@@ -59,8 +50,6 @@ export const LiveSportsPage: React.FC = () => {
       return [];
     }
   });
-
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Toggle bookmark handler
   const handleToggleBookmark = useCallback((stream: LiveStream) => {
@@ -90,18 +79,6 @@ export const LiveSportsPage: React.FC = () => {
     const timer = setInterval(updateLabel, 15000);
     return () => clearInterval(timer);
   }, [lastUpdated]);
-
-  // Global ⌘K / Ctrl+K keyboard shortcut to focus search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // Load streams from multi-mirror relay
   const loadStreams = useCallback(async (isManualRefresh = false) => {
@@ -187,7 +164,7 @@ export const LiveSportsPage: React.FC = () => {
     return [...priorityLive, ...priority247, ...priorityUpcoming].slice(0, 8);
   }, [allStreams, currentSec]);
 
-  // Content Rails with Deduplication & Sparse Rows Combined
+  // Content Rails with Deduplication & Sparse Rows Combined per Design Audit
   const railsData = useMemo(() => {
     const nowSec = currentSec;
 
@@ -206,8 +183,8 @@ export const LiveSportsPage: React.FC = () => {
       )
       .sort((a, b) => a.starts_at - b.starts_at);
 
-    // Combined Live & Starting Soon row (Live matches first, then upcoming)
-    const liveAndStartingSoon = [...liveMatches, ...startingSoonMatches];
+    // Featured Highlight row: Live matches first, followed by marquee starting soon matches
+    const liveAndStartingSoon = [...liveMatches, ...startingSoonMatches].slice(0, 10);
     const featuredIds = new Set(liveAndStartingSoon.map((s) => s.id));
 
     // Next upcoming match for empty live state banner
@@ -222,7 +199,7 @@ export const LiveSportsPage: React.FC = () => {
         s.source_tag?.toLowerCase().includes('willow')
     );
 
-    // 3. Football (Soccer) - strictly exclude items already featured above
+    // 3. Football (Soccer) - strictly exclude items already in featured top row
     const football = allStreams.filter(
       (s) =>
         s.category_name?.toLowerCase() === 'football' &&
@@ -255,7 +232,7 @@ export const LiveSportsPage: React.FC = () => {
         !featuredIds.has(s.id)
     );
 
-    // 7. Combat Sports (Wrestling, UFC, Boxing, MMA merged so no sparse rows)
+    // 7. Combat Sports (Wrestling, UFC, Boxing, MMA)
     const combatSports = allStreams.filter(
       (s) =>
         (s.category_name?.toLowerCase().includes('wrestling') ||
@@ -265,8 +242,8 @@ export const LiveSportsPage: React.FC = () => {
         !featuredIds.has(s.id)
     );
 
-    // 8. Darts & World Sports (Darts, Motorsports, Rugby, Golf) - Fox Footy moved to 24/7 channels
-    const dartsAndMore = allStreams.filter((s) => {
+    // 8. World Sports, Racing & Tournaments (Darts, Motorsports, Rugby, Golf, Australian Football)
+    const worldSportsBase = allStreams.filter((s) => {
       if (s.always_live || featuredIds.has(s.id)) return false;
       const cat = s.category_name?.toLowerCase() || '';
       const name = s.name?.toLowerCase() || '';
@@ -275,19 +252,40 @@ export const LiveSportsPage: React.FC = () => {
         cat.includes('dart') ||
         cat.includes('motor') ||
         cat.includes('rugby') ||
-        cat.includes('golf')
+        cat.includes('golf') ||
+        cat.includes('australian football')
       );
     });
 
-    // 9. 24/7 TV Networks & Channels (Linear channels with always_live, including Fox Footy)
-    const twentyFourSeven = allStreams.filter(
+    // Eliminate sparse rows: If combat sports has < 4 items, merge into world sports!
+    const shouldMergeCombat = combatSports.length > 0 && combatSports.length < 4;
+    const finalCombatSports = shouldMergeCombat ? [] : combatSports;
+    const worldSports = shouldMergeCombat
+      ? [...combatSports, ...worldSportsBase]
+      : worldSportsBase;
+
+    // 9. 24/7 TV Networks & Channels (Linear channels with always_live, including Fox Footy, Willow, Fox Cricket)
+    const rawTwentyFourSeven = allStreams.filter(
       (s) =>
         s.always_live === 1 ||
         s.always_live === true ||
         s.category_name?.toLowerCase().includes('24/7') ||
         s.tag?.toLowerCase().includes('24/7') ||
-        s.name?.toLowerCase().includes('fox footy')
+        s.name?.toLowerCase().includes('fox footy') ||
+        s.name?.toLowerCase().includes('willow') ||
+        s.name?.toLowerCase().includes('fox cricket')
     );
+
+    // Deduplicate 24/7 channels by name
+    const seenNames = new Set<string>();
+    const twentyFourSeven: LiveStream[] = [];
+    for (const ch of rawTwentyFourSeven) {
+      const key = ch.name.toLowerCase().trim();
+      if (!seenNames.has(key)) {
+        seenNames.add(key);
+        twentyFourSeven.push(ch);
+      }
+    }
 
     return {
       liveMatches,
@@ -299,53 +297,35 @@ export const LiveSportsPage: React.FC = () => {
       basketball,
       americanFootball,
       iceHockey,
-      combatSports,
-      dartsAndMore,
+      combatSports: finalCombatSports,
+      worldSports,
       twentyFourSeven
     };
   }, [allStreams, currentSec]);
 
-  // Filtered streams list for Grid or Search view (includes Day filter)
+  // Filtered streams list for Grid view (when specific category or status is selected)
   const filteredStreams = useMemo(() => {
     return filterStreams(allStreams, {
       category: selectedSport,
       query: searchQuery,
       status: statusFilter,
-      day: dayFilter
+      day: 'all'
     });
-  }, [allStreams, selectedSport, searchQuery, statusFilter, dayFilter]);
-
-  // Comprehensive Sport Categories with Icons (Row 2 Chips: 40px tall, 14px text, 16px icons)
-  const sportChips = useMemo(
-    () => [
-      { id: 'All', label: 'All Feeds', icon: Globe },
-      { id: 'Cricket', label: 'Cricket', icon: Trophy },
-      { id: 'Football', label: 'Football', icon: Flame },
-      { id: 'Basketball', label: 'Basketball', icon: Trophy },
-      { id: 'American Football', label: 'NFL', icon: Zap },
-      { id: 'Ice Hockey', label: 'Ice Hockey', icon: Zap },
-      { id: 'Combat Sports', label: 'Combat Sports', icon: ShieldAlert },
-      { id: 'Darts & World Sports', label: 'Darts & More', icon: Trophy },
-      { id: '24/7 Channels', label: '24/7 TV', icon: Tv }
-    ],
-    []
-  );
+  }, [allStreams, selectedSport, searchQuery, statusFilter]);
 
   const isSearchActive = searchQuery.trim().length > 0;
   const isFilteredSport = selectedSport !== 'All';
   const isFilteredStatus = statusFilter !== 'all';
-  const isFilteredDay = dayFilter !== 'all';
-  const shouldRenderGrid =
-    viewMode === 'grid' || isSearchActive || isFilteredSport || isFilteredStatus || isFilteredDay;
+  const shouldRenderGrid = isSearchActive || isFilteredSport || isFilteredStatus;
 
   return (
     <div className="relative min-h-screen bg-[#060812] text-white">
       <SEOHead
-        title="Live Sports & Live TV | Streamverse"
+        title="Live Sports &amp; Live TV | Streamverse"
         description="Stream live football, cricket, NFL broadcasts, basketball, and continuous 24/7 TV networks in high definition on Streamverse."
       />
 
-      {/* Hero Banner: 480-560px on desktop, vertically centered, no nav overlap */}
+      {/* Hero Showcase (480-560px, vertically centered, full bleed with vignette) */}
       {!loading && heroItems.length > 0 && !isSearchActive && (
         <LiveHeroBanner
           items={heroItems}
@@ -355,200 +335,38 @@ export const LiveSportsPage: React.FC = () => {
         />
       )}
 
-      {/* Main Content Area */}
-      <div className="relative z-10 space-y-6 sm:space-y-10 pb-24">
-        {/* Sticky Search and Filter Bar: 64px tall, blur background under nav */}
-        <div className="sticky top-16 z-30 bg-[#060812]/90 backdrop-blur-2xl border-b border-white/10 px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto w-full transition-all">
-          {/* Row 1: Search Box + Segmented Control + Icon Group */}
-          <div className="flex h-16 items-center justify-between gap-3 sm:gap-4">
-            {/* Left: Search box with flex: 1, min-width: 0 and ⌘K hint hidden on touch */}
-            <div className="relative flex-1 min-w-0 max-w-sm sm:max-w-md h-11 shrink">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search matches, teams, channels..."
-                className="w-full h-full rounded-full border border-white/15 bg-white/[0.06] pl-10 pr-12 text-sm text-white placeholder-white/40 backdrop-blur-xl focus:border-white/30 focus:bg-white/[0.1] focus:outline-none transition shadow-inner"
-              />
-              {searchQuery ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition cursor-pointer"
-                  aria-label="Clear search"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              ) : (
-                <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/50 hidden sm:inline-block">
-                  ⌘K
-                </kbd>
-              )}
-            </div>
+      {/* Main Content Area Overlapping Hero with consistent 64-80px vertical spacing rhythm */}
+      <div
+        className="relative z-10 space-y-16 sm:space-y-20 pb-20 bg-[#060812]"
+        style={{ marginTop: '-48px' }}
+      >
+        {/* Sport Category Icon Strip & Segmented Status Toggle (1:1 with Movies ProviderRail) */}
+        {!loading && allStreams.length > 0 && (
+          <LiveCategoryStrip
+            selectedSport={selectedSport}
+            onSelectSport={setSelectedSport}
+            statusFilter={statusFilter}
+            onSelectStatus={setStatusFilter}
+            liveCount={railsData.liveMatches.length}
+            upcomingCount={railsData.startingSoonMatches.length}
+            totalCount={allStreams.length}
+            onRefresh={() => loadStreams(true)}
+            refreshing={refreshing}
+            timeAgoText={timeAgoText}
+          />
+        )}
 
-            {/* Right: Controls with shrink-0 preventing clipping */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {/* Segmented Control for All / Live / Upcoming / 24/7 */}
-              <div className="hidden sm:flex items-center rounded-full border border-white/15 bg-white/[0.06] p-1 backdrop-blur-xl text-xs">
-                {/* All */}
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('all')}
-                  className={`rounded-full px-3 py-1 font-semibold transition cursor-pointer ${
-                    statusFilter === 'all'
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  All ({allStreams.length})
-                </button>
-
-                {/* Live with red dot */}
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('live')}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 font-bold transition cursor-pointer ${
-                    statusFilter === 'live'
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
-                  Live ({railsData.liveMatches.length})
-                </button>
-
-                {/* Upcoming */}
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('upcoming')}
-                  className={`rounded-full px-3 py-1 font-semibold transition cursor-pointer ${
-                    statusFilter === 'upcoming'
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  Upcoming ({railsData.startingSoonMatches.length})
-                </button>
-
-                {/* 24/7 */}
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('24/7')}
-                  className={`rounded-full px-3 py-1 font-semibold transition cursor-pointer ${
-                    statusFilter === '24/7'
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  24/7 ({railsData.twentyFourSeven.length})
-                </button>
-              </div>
-
-              {/* Day Filter (All Days / Today / Tomorrow / This Week) */}
-              <div className="hidden xl:flex items-center rounded-full border border-white/15 bg-white/[0.06] p-1 backdrop-blur-xl text-xs">
-                {(['all', 'today', 'tomorrow', 'week'] as const).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDayFilter(d)}
-                    className={`rounded-full px-2.5 py-1 font-semibold transition cursor-pointer capitalize ${
-                      dayFilter === d
-                        ? 'bg-white text-black shadow-md'
-                        : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    {d === 'all' ? 'All Days' : d === 'week' ? 'This Week' : d === 'today' ? 'Today' : 'Tomorrow'}
-                  </button>
-                ))}
-              </div>
-
-              {/* View Toggle and Refresh into Single Icon Group */}
-              <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2 py-1 backdrop-blur-xl">
-                {/* View toggle button */}
-                <button
-                  type="button"
-                  onClick={() => setViewMode(viewMode === 'rails' ? 'grid' : 'rails')}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:text-white transition cursor-pointer"
-                  title={viewMode === 'rails' ? 'Switch to Grid View' : 'Switch to Rails View'}
-                  aria-label="Toggle view mode"
-                >
-                  {viewMode === 'rails' ? (
-                    <LayoutGrid className="h-4 w-4" />
-                  ) : (
-                    <Rows className="h-4 w-4" />
-                  )}
-                </button>
-
-                <div className="h-4 w-[1px] bg-white/15" />
-
-                {/* "Updated 2m ago" label */}
-                <span className="text-[11px] font-medium text-white/50 pl-1 pr-1.5 hidden md:inline select-none">
-                  Updated {timeAgoText}
-                </span>
-
-                {/* Refresh button */}
-                <button
-                  type="button"
-                  onClick={() => loadStreams(true)}
-                  disabled={refreshing}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:text-white transition cursor-pointer disabled:opacity-50"
-                  title="Refresh stream feed"
-                  aria-label="Refresh"
-                >
-                  <RefreshCw
-                    className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-rose-400' : ''}`}
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 2: Sport Chips with 32px Right Edge Fade Mask */}
-          <div
-            className="flex items-center gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none"
-            style={{
-              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 32px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 32px), transparent 100%)'
-            }}
-            role="tablist"
-          >
-            {sportChips.map((chip) => {
-              const isSelected = selectedSport === chip.id;
-              const Icon = chip.icon;
-
-              return (
-                <button
-                  key={chip.id}
-                  role="tab"
-                  aria-selected={isSelected}
-                  onClick={() => setSelectedSport(chip.id)}
-                  className={`h-10 px-4 rounded-full flex items-center gap-2 text-sm shrink-0 transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-white text-black font-bold shadow-md'
-                      : 'bg-white/[0.06] border border-white/10 text-white/70 hover:text-white hover:bg-white/10 font-medium'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{chip.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Loading Skeletons in Exact Card Shape */}
+        {/* Loading Skeletons in 16:9 Card Shape */}
         {loading ? (
           <div className="space-y-12 px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto pt-6">
             {Array.from({ length: 3 }).map((_, r) => (
               <div key={r} className="space-y-4">
-                <div className="h-7 w-52 rounded-lg bg-white/10 animate-pulse" />
+                <div className="h-6 w-48 rounded-lg bg-white/10 animate-pulse" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {Array.from({ length: 4 }).map((_, c) => (
                     <div
                       key={c}
-                      className="aspect-[16/9] rounded-2xl bg-[#0f1424] border border-white/[0.08] animate-pulse"
+                      className="aspect-[16/9] rounded-2xl bg-[#12151E] border border-white/[0.06] animate-pulse"
                     />
                   ))}
                 </div>
@@ -574,17 +392,34 @@ export const LiveSportsPage: React.FC = () => {
             </button>
           </div>
         ) : shouldRenderGrid ? (
-          /* Grid View (When searching, category filter active, or grid mode toggled) */
-          <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto space-y-6 pt-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          /* Clean Filtered Grid View (When sport category or status toggle is active) */
+          <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto space-y-6 pt-2">
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 pb-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/50">
-                  {isSearchActive ? 'Search Results' : selectedSport}
+                <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-500">
+                  {selectedSport !== 'All'
+                    ? selectedSport
+                    : statusFilter !== 'all'
+                    ? `${statusFilter} streams`
+                    : 'Search results'}
                 </p>
-                <h2 className="text-2xl sm:text-[28px] font-bold text-white tracking-tight mt-0.5">
-                  {filteredStreams.length} {filteredStreams.length === 1 ? 'Broadcast' : 'Broadcasts'} Found
+                <h2 className="text-xl sm:text-2xl font-bold text-white mt-1">
+                  {filteredStreams.length} {filteredStreams.length === 1 ? 'Broadcast' : 'Broadcasts'} Available
                 </h2>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedSport('All');
+                  setStatusFilter('all');
+                  setSearchQuery('');
+                }}
+                className="group flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer"
+              >
+                <span>View All Rails</span>
+                <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
             </div>
 
             {filteredStreams.length === 0 ? (
@@ -592,15 +427,14 @@ export const LiveSportsPage: React.FC = () => {
                 <Search className="h-10 w-10 text-white/40 mx-auto" />
                 <h3 className="text-base font-bold text-white">No active broadcasts found</h3>
                 <p className="text-xs text-white/50 max-w-sm mx-auto">
-                  Try adjusting your search terms, changing the status filter, or selecting "All Feeds".
+                  Try adjusting your filter selection or switching to "All Feeds".
                 </p>
                 <button
                   type="button"
                   onClick={() => {
-                    setSearchQuery('');
                     setSelectedSport('All');
                     setStatusFilter('all');
-                    setDayFilter('all');
+                    setSearchQuery('');
                   }}
                   className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-xs font-semibold text-white hover:bg-white/20 transition cursor-pointer"
                 >
@@ -620,11 +454,11 @@ export const LiveSportsPage: React.FC = () => {
             )}
           </div>
         ) : (
-          /* Cinematic Rails View (Strictly deduplicated & sparse rows merged per audit) */
-          <div className="space-y-4 sm:space-y-8">
-            {/* Empty state banner when there are 0 live matches */}
+          /* Cinematic Rails View (Strictly deduplicated & sparse rows merged per design audit) */
+          <div className="space-y-16 sm:space-y-20">
+            {/* Empty state notice if 0 live matches right now */}
             {railsData.liveMatches.length === 0 && (
-              <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto">
+              <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto -mb-6">
                 <div className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md">
                   <div className="flex items-center gap-3">
                     <Radio className="h-5 w-5 text-white/40" />
@@ -632,8 +466,11 @@ export const LiveSportsPage: React.FC = () => {
                       <p className="text-sm font-semibold text-white">No live matches right now</p>
                       <p className="text-xs text-white/50">
                         {railsData.nextUpcomingMatch
-                          ? `Next scheduled fixture kicks off ${getStreamCountdown(railsData.nextUpcomingMatch.starts_at, currentSec)} (${railsData.nextUpcomingMatch.name})`
-                          : 'Explore 24/7 television channels or upcoming fixtures below.'}
+                          ? `Next scheduled fixture kicks off ${getStreamCountdown(
+                              railsData.nextUpcomingMatch.starts_at,
+                              currentSec
+                            )} (${railsData.nextUpcomingMatch.name})`
+                          : 'Explore 24/7 continuous channels or upcoming fixtures below.'}
                       </p>
                     </div>
                   </div>
@@ -650,23 +487,35 @@ export const LiveSportsPage: React.FC = () => {
               </div>
             )}
 
-            {/* 1. Live & Starting Soon: Combined row (Live first, then next 8 hours) */}
+            {/* 1. Live & Starting Soon: Featured Highlight Row (Similar to Top 10 Today on Movies) */}
             {railsData.liveAndStartingSoon.length > 0 && (
               <LiveStreamRail
-                title="Live & Starting Soon"
-                subtitle="LIVE RELAYS · NEXT 8 HOURS"
+                title="Live &amp; Starting Soon"
+                subtitle="LIVE MATCHES"
                 items={railsData.liveAndStartingSoon}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setStatusFilter('live')}
+                featured={true}
                 unitLabel="matches"
               />
             )}
 
-            {/* 2. Cricket Channels & Feeds (High audience priority) */}
+            {/* 2. 24/7 TV Networks: Horizontal Network Logo Squircle Strip (Matching Movies ProviderRail) */}
+            {railsData.twentyFourSeven.length > 0 && (
+              <LiveNetworkStrip
+                title="24/7 TV Networks"
+                subtitle="24/7 CHANNELS"
+                channels={railsData.twentyFourSeven}
+                onPlay={handleOpenStream}
+                onBrowseAll={() => setSelectedSport('24/7 Channels')}
+              />
+            )}
+
+            {/* 3. Cricket Channels & Feeds (Willow, Fox Cricket, tests) */}
             {railsData.cricket.length > 0 && (
               <LiveStreamRail
-                title="Cricket Channels & Feeds"
-                subtitle="WILLOW · FOX CRICKET"
+                title="Cricket Channels &amp; Feeds"
+                subtitle="CRICKET"
                 items={railsData.cricket}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('Cricket')}
@@ -674,11 +523,11 @@ export const LiveSportsPage: React.FC = () => {
               />
             )}
 
-            {/* 3. European & World Football */}
+            {/* 4. European & World Football */}
             {railsData.football.length > 0 && (
               <LiveStreamRail
-                title="European & World Football"
-                subtitle="PREMIER LEAGUE · CHAMPIONS LEAGUE"
+                title="European &amp; World Football"
+                subtitle="FOOTBALL"
                 items={railsData.football}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('Football')}
@@ -686,11 +535,11 @@ export const LiveSportsPage: React.FC = () => {
               />
             )}
 
-            {/* 4. Basketball */}
+            {/* 5. NBA & Basketball */}
             {railsData.basketball.length > 0 && (
               <LiveStreamRail
-                title="NBA & Basketball"
-                subtitle="REGULAR SEASON · EUROLEAGUE"
+                title="NBA &amp; Basketball"
+                subtitle="BASKETBALL"
                 items={railsData.basketball}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('Basketball')}
@@ -698,11 +547,11 @@ export const LiveSportsPage: React.FC = () => {
               />
             )}
 
-            {/* 5. NFL & American Football */}
+            {/* 6. NFL & American Football */}
             {railsData.americanFootball.length > 0 && (
               <LiveStreamRail
-                title="NFL & American Football"
-                subtitle="NATIONAL FOOTBALL LEAGUE"
+                title="NFL &amp; American Football"
+                subtitle="AMERICAN FOOTBALL"
                 items={railsData.americanFootball}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('American Football')}
@@ -710,11 +559,11 @@ export const LiveSportsPage: React.FC = () => {
               />
             )}
 
-            {/* 6. Ice Hockey */}
+            {/* 7. NHL & Ice Hockey */}
             {railsData.iceHockey.length > 0 && (
               <LiveStreamRail
-                title="NHL & Ice Hockey"
-                subtitle="NATIONAL HOCKEY LEAGUE"
+                title="NHL &amp; Ice Hockey"
+                subtitle="ICE HOCKEY"
                 items={railsData.iceHockey}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('Ice Hockey')}
@@ -722,11 +571,11 @@ export const LiveSportsPage: React.FC = () => {
               />
             )}
 
-            {/* 7. Combat Sports & Wrestling (WWE, UFC, Boxing merged together) */}
-            {railsData.combatSports.length > 0 && (
+            {/* 8. Combat Sports & Wrestling (Merged when >= 4 items) */}
+            {railsData.combatSports.length >= 4 && (
               <LiveStreamRail
-                title="Combat Sports & Wrestling"
-                subtitle="WWE · UFC · BOXING"
+                title="Combat Sports &amp; Wrestling"
+                subtitle="COMBAT SPORTS"
                 items={railsData.combatSports}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('Combat Sports')}
@@ -734,28 +583,15 @@ export const LiveSportsPage: React.FC = () => {
               />
             )}
 
-            {/* 8. Darts & World Sports */}
-            {railsData.dartsAndMore.length > 0 && (
+            {/* 9. World Sports & Championships (Darts, Motorsports, Rugby, Golf, Australian Football) */}
+            {railsData.worldSports.length > 0 && (
               <LiveStreamRail
-                title="Darts & World Sports"
-                subtitle="PDC WORLD SERIES · RUGBY"
-                items={railsData.dartsAndMore}
+                title="World Sports &amp; Championships"
+                subtitle="DARTS &amp; MORE"
+                items={railsData.worldSports}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('Darts & World Sports')}
                 unitLabel="events"
-              />
-            )}
-
-            {/* 9. 24/7 TV Networks & Cult Channels (Fox Footy, NFL Network, etc. with compactChannel=true) */}
-            {railsData.twentyFourSeven.length > 0 && (
-              <LiveStreamRail
-                title="24/7 TV Networks & Cult Channels"
-                subtitle="CONTINUOUS LINEAR BROADCASTS"
-                items={railsData.twentyFourSeven}
-                onPlay={handleOpenStream}
-                onBrowseAll={() => setStatusFilter('24/7')}
-                compactChannel={true}
-                unitLabel="channels"
               />
             )}
           </div>
