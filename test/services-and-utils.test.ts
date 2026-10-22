@@ -573,16 +573,16 @@ test('LiveTV: getStreamCountdown & formatStreamTime return accurate relative and
   const nowSec = 1734300000;
 
   // 45 minutes in future
-  assert.strictEqual(getStreamCountdown(nowSec + 45 * 60, nowSec), 'in 45m');
+  assert.strictEqual(getStreamCountdown(nowSec + 45 * 60, nowSec), 'In 45m');
 
   // 2 hours 15 mins in future
-  assert.strictEqual(getStreamCountdown(nowSec + (2 * 3600 + 15 * 60), nowSec), 'in 2h 15m');
+  assert.strictEqual(getStreamCountdown(nowSec + (2 * 3600 + 15 * 60), nowSec), 'In 2h 15m');
 
   // 3 days in future
-  assert.strictEqual(getStreamCountdown(nowSec + (3 * 86400 + 2 * 3600), nowSec), 'in 3d 2h');
+  assert.strictEqual(getStreamCountdown(nowSec + (3 * 86400 + 2 * 3600), nowSec), 'In 3d 2h');
 
   // Already started
-  assert.strictEqual(getStreamCountdown(nowSec - 100, nowSec), 'Live Now');
+  assert.strictEqual(getStreamCountdown(nowSec - 100, nowSec), 'Live');
 
   // 24/7 channel time format
   assert.strictEqual(formatStreamTime(0), '24/7 Channel');

@@ -193,6 +193,15 @@ export function getStreamStatus(stream: LiveStream, nowSeconds = Math.floor(Date
 }
 
 /**
+ * Strips redundant leading '24/7' labels from stream titles,
+ * e.g. "24/7 South Park" -> "South Park", "24/7 Family Guy" -> "Family Guy".
+ */
+export function cleanStreamTitle(name: string): string {
+  if (!name) return '';
+  return name.replace(/^(?:24\/7|24-7)\s*[:-]?\s*/i, '').trim();
+}
+
+/**
  * Retrieves the local user timezone abbreviation (e.g. IST, EDT, PST, UTC).
  */
 export function getUserTimeZoneAbbr(): string {
@@ -200,15 +209,19 @@ export function getUserTimeZoneAbbr(): string {
     const formatter = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' });
     const parts = formatter.formatToParts(new Date());
     const tzPart = parts.find((p) => p.type === 'timeZoneName');
-    return tzPart?.value || '';
+    const val = tzPart?.value || '';
+    if (val.includes('GMT+5:30') || val.includes('+05:30') || val.includes('GMT+5.5')) {
+      return 'IST';
+    }
+    return val;
   } catch {
-    return '';
+    return 'IST';
   }
 }
 
 /**
  * Formats start and end times into localized human readable string,
- * e.g. "Today, 8:00 PM IST", "Tomorrow, 3:30 AM IST", or "Sat, Oct 25 · 8:00 PM IST".
+ * e.g. "Today · 8:00 PM IST", "Tomorrow · 8:00 PM IST", or "Sat 24 Oct · 8:00 PM IST".
  */
 export function formatStreamTime(startsAt: number, _endsAt = 0, withTimezone = true): string {
   if (!startsAt || startsAt <= 0) return '24/7 Channel';
@@ -232,12 +245,13 @@ export function formatStreamTime(startsAt: number, _endsAt = 0, withTimezone = t
   const tz = withTimezone ? getUserTimeZoneAbbr() : '';
   const formattedTime = tz ? `${timeStr} ${tz}` : timeStr;
 
-  if (isToday) return `Today, ${formattedTime}`;
-  if (isTomorrow) return `Tomorrow, ${formattedTime}`;
+  if (isToday) return `Today · ${formattedTime}`;
+  if (isTomorrow) return `Tomorrow · ${formattedTime}`;
 
-  const weekday = date.toLocaleDateString([], { weekday: 'short' });
-  const monthDay = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  return `${weekday}, ${monthDay} · ${formattedTime}`;
+  const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' });
+  const dayNum = date.getDate();
+  const month = date.toLocaleDateString('en-GB', { month: 'short' });
+  return `${weekday} ${dayNum} ${month} · ${formattedTime}`;
 }
 
 export interface MatchTeams {
@@ -255,7 +269,7 @@ export interface MatchTeams {
 export function parseMatchTeams(name: string): MatchTeams {
   if (!name) return { isMatch: false, cleanTitle: '' };
 
-  let title = name.trim();
+  let title = cleanStreamTitle(name.trim());
   let score: string | undefined;
 
   // Extract score if present e.g. (98-91) or [2 - 1]
@@ -340,40 +354,64 @@ export function getStreamThemeColor(stream: LiveStream): string {
 }
 
 /**
- * Returns a human-friendly countdown string for upcoming events.
+ * Returns a human-friendly countdown string for upcoming events,
+ * e.g. "In 4h 12m", "In 45m", "In 2d 5h", or "Live".
  */
 export function getStreamCountdown(startsAt: number, nowSeconds = Math.floor(Date.now() / 1000)): string {
   if (!startsAt || startsAt <= 0) return '';
   const diffSec = startsAt - nowSeconds;
-  if (diffSec <= 0) return 'Live Now';
+  if (diffSec <= 0) return 'Live';
 
   const mins = Math.floor(diffSec / 60);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
 
-  if (days > 0) return `in ${days}d ${hours % 24}h`;
-  if (hours > 0) return `in ${hours}h ${mins % 60}m`;
-  return `in ${Math.max(1, mins)}m`;
+  if (days > 0) return `In ${days}d ${hours % 24}h`;
+  if (hours > 0) return `In ${hours}h ${mins % 60}m`;
+  return `In ${Math.max(1, mins)}m`;
 }
 
 /**
- * Filters a list of streams based on search query, category, and live status.
+ * Filters a list of streams based on search query, category, live status, and schedule day.
  */
 export function filterStreams(streams: LiveStream[], options: StreamFilterOptions): LiveStream[] {
-  const { category, query, status } = options;
+  const { category, query, status, day } = options;
   const nowSec = Math.floor(Date.now() / 1000);
   const q = query ? query.trim().toLowerCase() : '';
 
   return streams.filter((stream) => {
     // 1. Category Filter
     if (category && category !== 'All') {
-      if (category === '24/7 Streams' || category === '24/7 Channels') {
+      if (category === '24/7 Streams' || category === '24/7 Channels' || category === '24/7 TV') {
         const is247 =
           stream.always_live === 1 ||
           stream.always_live === true ||
           stream.category_name?.toLowerCase().includes('24/7') ||
           stream.tag?.toLowerCase().includes('24/7');
         if (!is247) return false;
+      } else if (category === 'Cricket') {
+        const isCricket =
+          stream.category_name?.toLowerCase().includes('cricket') ||
+          stream.name?.toLowerCase().includes('cricket') ||
+          stream.tag?.toLowerCase().includes('cricket') ||
+          stream.source_tag?.toLowerCase().includes('willow');
+        if (!isCricket) return false;
+      } else if (category === 'Combat Sports') {
+        const isCombat =
+          stream.category_name?.toLowerCase().includes('wrestling') ||
+          stream.category_name?.toLowerCase().includes('combat') ||
+          stream.category_name?.toLowerCase().includes('boxing') ||
+          stream.category_name?.toLowerCase().includes('mma');
+        if (!isCombat) return false;
+      } else if (category === 'Motorsports & More' || category === 'Darts & World Sports') {
+        const cat = stream.category_name?.toLowerCase() || '';
+        const isWorld =
+          cat.includes('dart') ||
+          cat.includes('motor') ||
+          cat.includes('rugby') ||
+          cat.includes('golf') ||
+          cat.includes('australian');
+        if (!isWorld) return false;
       } else if (stream.category_name?.toLowerCase() !== category.toLowerCase()) {
         return false;
       }
@@ -390,7 +428,37 @@ export function filterStreams(streams: LiveStream[], options: StreamFilterOption
       }
     }
 
-    // 3. Search Query Filter
+    // 3. Day Schedule Filter (All / Today / Tomorrow / This Week)
+    if (day && day !== 'all') {
+      // 24/7 channels stay visible under 'all'
+      if (stream.always_live === 1 || stream.always_live === true) {
+        return false;
+      }
+      if (stream.starts_at && stream.starts_at > 0) {
+        const streamDate = new Date(stream.starts_at * 1000);
+        const nowDate = new Date(nowSec * 1000);
+
+        const isToday =
+          streamDate.getDate() === nowDate.getDate() &&
+          streamDate.getMonth() === nowDate.getMonth() &&
+          streamDate.getFullYear() === nowDate.getFullYear();
+
+        const tomorrow = new Date(nowDate);
+        tomorrow.setDate(nowDate.getDate() + 1);
+        const isTomorrow =
+          streamDate.getDate() === tomorrow.getDate() &&
+          streamDate.getMonth() === tomorrow.getMonth() &&
+          streamDate.getFullYear() === tomorrow.getFullYear();
+
+        const diffDays = Math.floor((stream.starts_at - nowSec) / 86400);
+
+        if (day === 'today' && !isToday) return false;
+        if (day === 'tomorrow' && !isTomorrow) return false;
+        if (day === 'week' && (diffDays < 0 || diffDays > 7)) return false;
+      }
+    }
+
+    // 4. Search Query Filter
     if (q) {
       const nameMatch = stream.name?.toLowerCase().includes(q);
       const tagMatch = stream.tag?.toLowerCase().includes(q);

@@ -60,4 +60,5 @@ export interface StreamFilterOptions {
   category?: string;
   query?: string;
   status?: 'all' | 'live' | 'upcoming' | '24/7';
+  day?: 'all' | 'today' | 'tomorrow' | 'week';
 }
