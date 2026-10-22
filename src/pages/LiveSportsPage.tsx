@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
-  Radio,
   Search,
   ArrowUpRight
 } from 'lucide-react';
@@ -335,11 +334,8 @@ export const LiveSportsPage: React.FC = () => {
         />
       )}
 
-      {/* Main Content Area Overlapping Hero with consistent 64-80px vertical spacing rhythm */}
-      <div
-        className="relative z-10 space-y-16 sm:space-y-20 pb-20 bg-[#060812]"
-        style={{ marginTop: '-48px' }}
-      >
+      {/* Main Content Area with standardized 56-64px vertical rhythm and clean top spacing */}
+      <div className="relative z-10 pt-4 sm:pt-6 space-y-14 sm:space-y-16 pb-20 bg-[#060812]">
         {/* Sport Category Icon Strip & Segmented Status Toggle (1:1 with Movies ProviderRail) */}
         {!loading && allStreams.length > 0 && (
           <LiveCategoryStrip
@@ -358,7 +354,7 @@ export const LiveSportsPage: React.FC = () => {
 
         {/* Loading Skeletons in 16:9 Card Shape */}
         {loading ? (
-          <div className="space-y-12 px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto pt-6">
+          <div className="space-y-12 px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto pt-4">
             {Array.from({ length: 3 }).map((_, r) => (
               <div key={r} className="space-y-4">
                 <div className="h-6 w-48 rounded-lg bg-white/10 animate-pulse" />
@@ -366,7 +362,7 @@ export const LiveSportsPage: React.FC = () => {
                   {Array.from({ length: 4 }).map((_, c) => (
                     <div
                       key={c}
-                      className="aspect-[16/9] rounded-2xl bg-[#12151E] border border-white/[0.06] animate-pulse"
+                      className="aspect-[16/9] rounded-2xl bg-[#12151E] border border-white/10 animate-pulse"
                     />
                   ))}
                 </div>
@@ -375,7 +371,7 @@ export const LiveSportsPage: React.FC = () => {
           </div>
         ) : error && allStreams.length === 0 ? (
           /* Error State */
-          <div className="mx-5 sm:px-8 lg:px-12 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-12 text-center space-y-4 max-w-xl mx-auto my-16">
+          <div className="mx-6 sm:px-10 lg:px-14 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-12 text-center space-y-4 max-w-xl mx-auto my-16">
             <AlertCircle className="h-12 w-12 text-rose-500 mx-auto" />
             <div className="space-y-1">
               <h3 className="text-xl font-bold text-white">Relay Connection Unavailable</h3>
@@ -393,10 +389,10 @@ export const LiveSportsPage: React.FC = () => {
           </div>
         ) : shouldRenderGrid ? (
           /* Clean Filtered Grid View (When sport category or status toggle is active) */
-          <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto space-y-6 pt-2">
+          <div className="px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto space-y-6 pt-2">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 pb-4">
               <div>
-                <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-500">
+                <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-400">
                   {selectedSport !== 'All'
                     ? selectedSport
                     : statusFilter !== 'all'
@@ -415,7 +411,7 @@ export const LiveSportsPage: React.FC = () => {
                   setStatusFilter('all');
                   setSearchQuery('');
                 }}
-                className="group flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer"
+                className="group flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 hover:border-white/35 cursor-pointer shadow-sm"
               >
                 <span>View All Rails</span>
                 <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -426,7 +422,7 @@ export const LiveSportsPage: React.FC = () => {
               <div className="py-24 text-center space-y-3">
                 <Search className="h-10 w-10 text-white/40 mx-auto" />
                 <h3 className="text-base font-bold text-white">No active broadcasts found</h3>
-                <p className="text-xs text-white/50 max-w-sm mx-auto">
+                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
                   Try adjusting your filter selection or switching to "All Feeds".
                 </p>
                 <button
@@ -455,43 +451,21 @@ export const LiveSportsPage: React.FC = () => {
           </div>
         ) : (
           /* Cinematic Rails View (Strictly deduplicated & sparse rows merged per design audit) */
-          <div className="space-y-16 sm:space-y-20">
-            {/* Empty state notice if 0 live matches right now */}
-            {railsData.liveMatches.length === 0 && (
-              <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto -mb-6">
-                <div className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md">
-                  <div className="flex items-center gap-3">
-                    <Radio className="h-5 w-5 text-white/40" />
-                    <div>
-                      <p className="text-sm font-semibold text-white">No live matches right now</p>
-                      <p className="text-xs text-white/50">
-                        {railsData.nextUpcomingMatch
-                          ? `Next scheduled fixture kicks off ${getStreamCountdown(
-                              railsData.nextUpcomingMatch.starts_at,
-                              currentSec
-                            )} (${railsData.nextUpcomingMatch.name})`
-                          : 'Explore 24/7 continuous channels or upcoming fixtures below.'}
-                      </p>
-                    </div>
-                  </div>
-                  {railsData.nextUpcomingMatch && (
-                    <button
-                      type="button"
-                      onClick={() => handleOpenStream(railsData.nextUpcomingMatch!)}
-                      className="hidden sm:inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition cursor-pointer"
-                    >
-                      View Next Fixture
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 1. Live & Starting Soon: Featured Highlight Row (Similar to Top 10 Today on Movies) */}
+          <div className="space-y-14 sm:space-y-16">
+            {/* 1. Live & Starting Soon: Featured Highlight Row (Merged empty banner directly into rail subtitle) */}
             {railsData.liveAndStartingSoon.length > 0 && (
               <LiveStreamRail
                 title="Live &amp; Starting Soon"
-                subtitle="LIVE MATCHES"
+                subtitle={
+                  railsData.liveMatches.length > 0
+                    ? `${railsData.liveMatches.length} MATCHES LIVE NOW`
+                    : railsData.nextUpcomingMatch
+                    ? `NEXT FIXTURE IN ${getStreamCountdown(
+                        railsData.nextUpcomingMatch.starts_at,
+                        currentSec
+                      ).toUpperCase()}`
+                    : 'UPCOMING BROADCASTS'
+                }
                 items={railsData.liveAndStartingSoon}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setStatusFilter('live')}
@@ -504,15 +478,15 @@ export const LiveSportsPage: React.FC = () => {
             {railsData.twentyFourSeven.length > 0 && (
               <LiveNetworkStrip
                 title="24/7 TV Networks"
-                subtitle="24/7 CHANNELS"
+                subtitle="24/7 LINEAR CHANNELS"
                 channels={railsData.twentyFourSeven}
                 onPlay={handleOpenStream}
                 onBrowseAll={() => setSelectedSport('24/7 Channels')}
               />
             )}
 
-            {/* 3. Cricket Channels & Feeds (Willow, Fox Cricket, tests) */}
-            {railsData.cricket.length > 0 && (
+            {/* 3. Cricket Channels & Feeds (Rendered only when >= 4 fixtures to prevent sparse 2-card rows) */}
+            {railsData.cricket.length >= 4 && (
               <LiveStreamRail
                 title="Cricket Channels &amp; Feeds"
                 subtitle="CRICKET"

@@ -50,6 +50,11 @@ export const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
     ? 'Channel'
     : stream.category_name || 'Live Sports';
 
+  // Format short kickoff time for the thumbnail pill
+  const shortTime = formattedTime.includes('·')
+    ? formattedTime.split('·')[1].trim()
+    : formattedTime;
+
   return (
     <div
       role="button"
@@ -57,11 +62,11 @@ export const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
       aria-label={`Watch ${displayTitle}`}
       onClick={() => onPlay(stream)}
       onKeyDown={handleKeyDown}
-      className="group block cursor-pointer select-none transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-2xl w-full"
+      className="group block cursor-pointer select-none transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-2xl w-full"
     >
       {/* 16:9 Aspect Ratio (or 16:10 for compact channels), 16px radius, unified dark slate #12151E */}
       <div
-        className={`relative w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12151E] shadow-lg transition-colors group-hover:border-white/20 ${
+        className={`relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#12151E] shadow-xl transition-all duration-300 group-hover:border-white/30 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.6)] ${
           compactChannel ? 'aspect-[16/10]' : 'aspect-[16/9]'
         }`}
       >
@@ -108,27 +113,27 @@ export const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
               </span>
             </div>
           ) : matchInfo.isMatch ? (
-            /* Match Card: Dual team pattern Logo - VS - Logo with subtle VS divider */
+            /* Match Card: Dual team pattern Logo - VS - Logo with bold VS divider */
             <div className="flex h-full w-full items-center justify-center px-4 gap-3 bg-[#12151E]">
               {/* Team 1 */}
               <div className="flex flex-col items-center text-center w-20">
-                <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-md backdrop-blur-md">
-                  <span className="text-sm font-black tracking-wider text-white">
+                <div className="flex h-16 w-16 sm:h-18 sm:w-18 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] shadow-lg backdrop-blur-md">
+                  <span className="text-base sm:text-lg font-black tracking-wider text-white">
                     {getInitials(matchInfo.team1)}
                   </span>
                 </div>
-                <span className="mt-1.5 text-[11px] font-semibold text-white/80 truncate w-full">
+                <span className="mt-1.5 text-xs font-semibold text-white/90 truncate w-full">
                   {matchInfo.team1}
                 </span>
               </div>
 
-              {/* Clean VS Divider */}
+              {/* Clean Bold VS Divider */}
               <div className="flex flex-col items-center justify-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-black uppercase tracking-widest text-zinc-200 bg-white/10 border border-white/20 px-2.5 py-1 rounded-full shadow-md">
                   VS
                 </span>
                 {matchInfo.score && (
-                  <span className="mt-1 text-[11px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded">
+                  <span className="mt-1 text-xs font-bold text-white bg-black/60 px-2 py-0.5 rounded shadow">
                     {matchInfo.score}
                   </span>
                 )}
@@ -136,12 +141,12 @@ export const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
 
               {/* Team 2 */}
               <div className="flex flex-col items-center text-center w-20">
-                <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-md backdrop-blur-md">
-                  <span className="text-sm font-black tracking-wider text-white">
+                <div className="flex h-16 w-16 sm:h-18 sm:w-18 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] shadow-lg backdrop-blur-md">
+                  <span className="text-base sm:text-lg font-black tracking-wider text-white">
                     {getInitials(matchInfo.team2)}
                   </span>
                 </div>
-                <span className="mt-1.5 text-[11px] font-semibold text-white/80 truncate w-full">
+                <span className="mt-1.5 text-xs font-semibold text-white/90 truncate w-full">
                   {matchInfo.team2}
                 </span>
               </div>
@@ -152,7 +157,7 @@ export const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
               <span className="text-base sm:text-lg font-bold tracking-tight text-white line-clamp-2 px-2">
                 {displayTitle}
               </span>
-              <span className="mt-1 text-[11px] text-zinc-400 font-medium">
+              <span className="mt-1 text-xs text-zinc-300 font-medium">
                 {stream.category_name}
               </span>
             </div>
@@ -162,18 +167,24 @@ export const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
         {/* Smooth Vignette Overlay */}
         <div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
-        {/* Top-Left: Minimalist Status Badge */}
+        {/* Top-Left: Prominent Pill on Thumbnail (LIVE / Time / 24/7) */}
         {isLive && !is247 ? (
           <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-rose-600/90 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+            <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-rose-600 px-3 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
               LIVE
             </span>
           </div>
         ) : is247 ? (
           <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-black/60 border border-white/10 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-md">
+            <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-black/80 border border-white/20 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-md">
               24/7
+            </span>
+          </div>
+        ) : formattedTime ? (
+          <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
+            <span className="inline-flex h-6 items-center rounded-full bg-black/80 border border-white/20 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-md">
+              {shortTime}
             </span>
           </div>
         ) : null}
@@ -186,16 +197,17 @@ export const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
         </div>
       </div>
 
-      {/* Strictly 2 Lines Below Each Card (Matching Movies Typography) */}
-      <div className="mt-2 px-0.5 space-y-0.5">
-        {/* Line 1: Event/Match Title */}
-        <p className="text-sm font-semibold text-white truncate group-hover:text-rose-400 transition-colors">
+      {/* 2-Line High-Contrast Metadata Container Below Card Thumbnail */}
+      <div className="mt-2.5 px-0.5 space-y-1">
+        <p className="text-[14px] sm:text-[15px] font-bold text-white line-clamp-2 leading-snug group-hover:text-rose-400 transition-colors drop-shadow-sm min-h-[2.5rem]">
           {displayTitle}
         </p>
-
-        {/* Line 2: League Name • Start Time */}
-        <p className="text-xs text-zinc-400 truncate">
-          {leagueName} • {is247 ? 'Linear Network' : formattedTime}
+        <p className="text-xs sm:text-[13px] text-zinc-300 font-medium truncate flex items-center gap-1.5">
+          <span>{leagueName}</span>
+          <span className="text-zinc-500">•</span>
+          <span className={isLive && !is247 ? 'text-rose-400 font-semibold' : 'text-zinc-300'}>
+            {isLive ? (is247 ? '24/7 Stream' : 'Live Now') : formattedTime}
+          </span>
         </p>
       </div>
     </div>

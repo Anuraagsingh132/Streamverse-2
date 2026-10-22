@@ -12,7 +12,7 @@ interface LiveStreamRailProps {
   onBrowseAll?: () => void;
   compactChannel?: boolean;
   featured?: boolean;
-  unitLabel?: string; // 'matches' | 'channels' | 'broadcasts' | 'fixtures' | 'games'
+  unitLabel?: string;
 }
 
 export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
@@ -22,8 +22,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
   onPlay,
   onBrowseAll,
   compactChannel = false,
-  featured = false,
-  unitLabel = 'matches'
+  featured = false
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +48,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
 
   return (
     <motion.section
-      className="relative py-3 select-none"
+      className="relative py-2 select-none"
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
@@ -67,17 +66,17 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
         />
       )}
 
-      {/* Section Header (Clean Movies Design System) */}
-      <div className="px-5 sm:px-8 lg:px-12 max-w-[1600px] mx-auto">
+      {/* Section Header (Uniform max-w-[1600px] px-6 sm:px-10 lg:px-14) */}
+      <div className="px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            {/* Muted uppercase eyebrow */}
-            <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-500">
+            {/* High-contrast uppercase eyebrow */}
+            <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-300">
               {subtitle}
             </p>
 
             {/* Clean bold white section title */}
-            <h2 className="mt-1 text-xl sm:text-2xl font-bold text-white">
+            <h2 className="mt-1 text-xl sm:text-2xl font-bold text-white tracking-tight">
               {title}
             </h2>
           </div>
@@ -87,7 +86,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
             <button
               type="button"
               onClick={onBrowseAll}
-              className="group flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer"
+              className="group flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 hover:border-white/35 active:scale-95 cursor-pointer shadow-sm"
             >
               <span>Browse all</span>
               <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -103,7 +102,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
           type="button"
           onClick={() => scroll('left')}
           aria-label={`Scroll ${title} left`}
-          className="absolute left-2 lg:left-4 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/80 text-white border border-white/20 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black shadow-2xl cursor-pointer"
+          className="absolute left-3 lg:left-6 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/85 text-white border border-white/25 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black hover:border-white/40 shadow-2xl cursor-pointer"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -113,7 +112,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
           type="button"
           onClick={() => scroll('right')}
           aria-label={`Scroll ${title} right`}
-          className="absolute right-2 lg:right-4 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/80 text-white border border-white/20 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black shadow-2xl cursor-pointer"
+          className="absolute right-3 lg:right-6 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/85 text-white border border-white/25 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black shadow-2xl cursor-pointer"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -121,13 +120,15 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
         {/* Scroll Container with 48px Right Fade and Clean Gutter */}
         <div
           ref={scrollRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto px-5 sm:px-8 lg:px-12 pb-4 scrollbar-none snap-x snap-mandatory max-w-[1600px] mx-auto scroll-pl-5 sm:scroll-pl-8 lg:scroll-pl-12"
+          className="flex gap-4 sm:gap-6 overflow-x-auto px-6 sm:px-10 lg:px-14 pb-4 scrollbar-none snap-x snap-mandatory max-w-[1600px] mx-auto scroll-pl-6 sm:scroll-pl-10 lg:scroll-pl-14"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
-            maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)'
+            maskImage:
+              'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)'
           }}
         >
           {items.map((stream, idx) => {
@@ -137,10 +138,10 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
                 key={stream.id}
                 className={`shrink-0 snap-start relative ${
                   featured
-                    ? 'pl-10 sm:pl-12 lg:pl-14 w-[80vw] sm:w-[350px] md:w-[370px] lg:w-[390px]'
+                    ? 'pl-10 sm:pl-12 lg:pl-14 w-[76vw] sm:w-[320px] md:w-[340px] lg:w-[360px]'
                     : compactChannel
                     ? 'w-[60vw] sm:w-[240px] lg:w-[260px]'
-                    : 'w-[72vw] sm:w-[320px] md:w-[340px] lg:w-[360px]'
+                    : 'w-[76vw] sm:w-[320px] md:w-[340px] lg:w-[360px]'
                 }`}
               >
                 {/* Giant Outlined Rank Number for Featured Highlights (Matching Top 10 Today) */}
@@ -152,7 +153,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
                     <span
                       className="font-black leading-none tracking-tighter text-transparent select-none text-[100px] sm:text-[135px] lg:text-[160px]"
                       style={{
-                        WebkitTextStroke: '2px rgba(255, 255, 255, 0.38)',
+                        WebkitTextStroke: '2px rgba(255, 255, 255, 0.45)',
                         fontFamily:
                           'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                       }}

@@ -8,6 +8,7 @@ import { MediaCard } from '../src/components/MediaCard';
 import { MediaRail } from '../src/components/MediaRail';
 import { SearchModal } from '../src/components/SearchModal';
 import { ComingSoonPage } from '../src/pages/ComingSoonPage';
+import { Footer } from '../src/components/Footer';
 import { MediaItem } from '../src/types/media';
 
 const mockMovie: MediaItem = {
@@ -271,6 +272,25 @@ describe('Component Testing Suite (TEST-02)', () => {
       const exploreBtn = screen.getByRole('button', { name: /Explore Trending Movies/i });
       fireEvent.click(exploreBtn);
       expect(onNavigate).toHaveBeenCalledWith('movie');
+    });
+  });
+
+  describe('Footer Component', () => {
+    it('renders brand, grouped navigation sections (Browse & Account), and handles clicks', () => {
+      const onNavigate = vi.fn();
+      render(<Footer onNavigate={onNavigate} />);
+      expect(screen.getByText('Streamverse')).toBeInTheDocument();
+      expect(screen.getByText('Browse')).toBeInTheDocument();
+      expect(screen.getByText('Account')).toBeInTheDocument();
+      const sportsLink = screen.getByText('Live TV & Sports');
+      expect(sportsLink).toBeInTheDocument();
+      fireEvent.click(sportsLink);
+      expect(onNavigate).toHaveBeenCalledWith('livesports');
+      const watchlistLink = screen.getByText('Watchlist');
+      expect(watchlistLink).toBeInTheDocument();
+      fireEvent.click(watchlistLink);
+      expect(onNavigate).toHaveBeenCalledWith('watchlist');
+      expect(screen.getByText(/Streamverse does not host any files on its servers/i)).toBeInTheDocument();
     });
   });
 });
