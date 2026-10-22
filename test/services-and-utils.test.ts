@@ -13,7 +13,15 @@ import { MediaItem } from '../src/types/media';
 import { normalizeAnimeTitle } from '../src/services/animeResolver';
 import { computeScrubPosition } from '../src/components/player/useScrubberDrag';
 import { clampSubtitleOffset, validateSubtitleSize } from '../src/hooks/useUserSettings';
-import { getStreamStatus, getStreamCountdown, formatStreamTime, filterStreams } from '../src/services/liveTv';
+import {
+  getStreamStatus,
+  getStreamCountdown,
+  formatStreamTime,
+  filterStreams,
+  parseMatchTeams,
+  getProviderBadge,
+  getStreamThemeColor
+} from '../src/services/liveTv';
 import { LiveStream } from '../src/types/liveTv';
 
 test('HDHub: parseAudioCodec correctly categorizes web compatibility', () => {
@@ -637,4 +645,60 @@ test('LiveTV: filterStreams filters by category, status, and query correctly', (
   const skySports = filterStreams(sampleStreams, { query: 'Sky Sports' });
   assert.strictEqual(skySports.length, 1);
   assert.strictEqual(skySports[0].name, 'Arsenal vs Chelsea');
+});
+
+
+test('LiveTV: parseMatchTeams extracts teams, score, and title cleanly', () => {
+  // Versus format with score
+  const match1 = parseMatchTeams('Pelicans at Pacers (98-91)');
+  assert.strictEqual(match1.isMatch, true);
+  assert.strictEqual(match1.team1, 'Pelicans');
+  assert.strictEqual(match1.team2, 'Pacers');
+  assert.strictEqual(match1.score, '98-91');
+  assert.strictEqual(match1.cleanTitle, 'Pelicans at Pacers');
+
+  // vs format without score
+  const match2 = parseMatchTeams('Arsenal vs Chelsea');
+  assert.strictEqual(match2.isMatch, true);
+  assert.strictEqual(match2.team1, 'Arsenal');
+  assert.strictEqual(match2.team2, 'Chelsea');
+  assert.strictEqual(match2.score, undefined);
+  assert.strictEqual(match2.cleanTitle, 'Arsenal vs Chelsea');
+
+  // Linear channel title
+  const channel = parseMatchTeams('Fox Cricket 501 HD');
+  assert.strictEqual(channel.isMatch, false);
+  assert.strictEqual(channel.cleanTitle, 'Fox Cricket 501 HD');
+});
+
+test('LiveTV: getProviderBadge maps recognizable broadcaster brands', () => {
+  const sky = getProviderBadge('Sky Sports Main Event');
+  assert.strictEqual(sky.short, 'SKY');
+  assert.strictEqual(sky.label, 'Sky Sports');
+
+  const willow = getProviderBadge('Willow Cricket HD');
+  assert.strictEqual(willow.short, 'WIL');
+  assert.strictEqual(willow.label, 'Willow Cricket');
+
+  const espn = getProviderBadge('ESPN+ Live');
+  assert.strictEqual(espn.short, 'ESPN');
+});
+
+test('LiveTV: getStreamThemeColor returns category and colors fallback', () => {
+  const cricketStream: LiveStream = {
+    id: 10,
+    name: 'India vs Australia',
+    uri_name: 'ind-aus',
+    starts_at: 1734300000,
+    ends_at: 1734320000,
+    always_live: 0,
+    category_name: 'Cricket'
+  };
+  assert.strictEqual(getStreamThemeColor(cricketStream), '#10b981');
+
+  const customColorStream: LiveStream = {
+    ...cricketStream,
+    colors: ['#ff0055']
+  };
+  assert.strictEqual(getStreamThemeColor(customColorStream), '#ff0055');
 });
