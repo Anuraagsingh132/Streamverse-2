@@ -165,7 +165,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen bg-[#060812] text-white pt-10 sm:pt-20 lg:pt-32 pb-24 overflow-hidden select-none">
+    <div className="relative min-h-screen bg-black text-white pt-10 sm:pt-20 lg:pt-32 pb-24 overflow-hidden select-none">
       <SEOHead
         title="AI Smart Discovery & Search"
         description="Discover movies, TV shows, and anime tailored to your mood, themes, and natural language prompts."

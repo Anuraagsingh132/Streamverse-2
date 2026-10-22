@@ -206,11 +206,11 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           {/* Gradients */}
           <div className="absolute inset-0 z-20 bg-gradient-to-r from-white/80 via-white/30 to-transparent dark:from-black/85 dark:via-black/40 dark:to-transparent" />
           <div className="absolute inset-0 z-20 bg-gradient-to-b from-white/10 via-transparent to-transparent dark:from-black/40 dark:via-transparent dark:to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 pointer-events-none" style={{ background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.8) 50%, transparent)' }} />
+          <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 50%, transparent)' }} />
 
           {/* Mobile-Only Scrims: Top Status Bar Scrim (~120px) & Enhanced Contrast Bottom Scrim */}
           <div className="md:hidden absolute inset-x-0 top-0 z-20 pointer-events-none" style={{ height: '120px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.25) 50%, transparent)' }} />
-          <div className="md:hidden absolute inset-x-0 bottom-0 z-20 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.9) 40%, transparent)' }} />
+          <div className="md:hidden absolute inset-x-0 bottom-0 z-20 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 40%, transparent)' }} />
         </div>
 
         {/* Vertical Watermark */}

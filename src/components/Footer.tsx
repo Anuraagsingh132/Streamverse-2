@@ -24,7 +24,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
   return (
     <footer 
-      className="relative mt-20 border-t border-white/10 bg-[#060812]/90 backdrop-blur-2xl footer-mobile-spacer"
+      className="relative mt-20 border-t border-white/10 bg-black/60 backdrop-blur-2xl footer-mobile-spacer"
     >
       {/* Top ambient highlight line */}
       <div className="h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />

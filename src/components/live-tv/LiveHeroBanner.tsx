@@ -170,7 +170,7 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
             <div
               key={item.id}
               className={`absolute inset-0 transition-opacity duration-1000 ${
-                isActive ? 'opacity-30 dark:opacity-25' : 'opacity-0'
+                isActive ? 'opacity-40' : 'opacity-0'
               }`}
               style={{
                 backgroundImage: `url(${bgUrl})`,
@@ -235,13 +235,13 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
           })}
 
           {/* Gradients matching Movies hero: Deep left scrim + subtle top scrim + soft bottom fade */}
-          <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-r from-[#060812] via-[#060812]/95 via-[#060812]/70 via-[#060812]/30 to-transparent" />
+          <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-r from-black via-black/95 via-black/70 via-black/30 to-transparent" />
           <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-black/60 via-transparent to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 pointer-events-none" style={{ background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.8) 50%, transparent)' }} />
+          <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 50%, transparent)' }} />
 
           {/* Mobile-Only Scrims */}
           <div className="md:hidden absolute inset-x-0 top-0 z-20 pointer-events-none" style={{ height: '120px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.25) 50%, transparent)' }} />
-          <div className="md:hidden absolute inset-x-0 bottom-0 z-20 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, #060812, rgba(6,8,18,0.9) 40%, transparent)' }} />
+          <div className="md:hidden absolute inset-x-0 bottom-0 z-20 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 40%, transparent)' }} />
         </div>
 
         {/* Vertical Watermark */}

@@ -274,7 +274,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
         <div className="flex w-full flex-col gap-0">
           
           {/* Sticky Genre Pills Filter Bar */}
-          <div className="sticky top-14 z-20 w-full bg-[#060812]/90 backdrop-blur-md border-b border-white/5 py-1.5">
+          <div className="sticky top-14 z-20 w-full bg-black/60 backdrop-blur-md border-b border-white/5 py-1.5">
             <div className="scrollbar-hide flex gap-2 overflow-x-auto px-5 py-1.5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
               {GENRES.map((genre) => {
                 const isSelected = selectedGenre === genre;

@@ -190,7 +190,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                   aria-pressed={isSelected}
                   className={`group relative h-[84px] w-36 shrink-0 sm:h-auto sm:w-48 sm:aspect-[16/10] lg:w-52 overflow-hidden rounded-2xl text-left transition-[transform,opacity,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer border ${
                     isSelected
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-[#060812] border-white/40 scale-[1.03] opacity-100 z-10'
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black border-white/40 scale-[1.03] opacity-100 z-10'
                       : 'border-white/10 opacity-60 hover:opacity-90 hover:scale-[1.01]'
                   }`}
                   style={{

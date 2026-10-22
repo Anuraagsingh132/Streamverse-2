@@ -207,7 +207,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
               <span
                 className={`relative flex h-[58px] w-[58px] sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-[20px] sm:rounded-[22px] transition-all duration-300 ${
                   isSelected
-                    ? 'scale-105 ring-2 ring-white ring-offset-2 ring-offset-[#060812] border-white/40 bg-black opacity-100 shadow-[0_0_22px_rgba(255,255,255,0.2)]'
+                    ? 'scale-105 ring-2 ring-white ring-offset-2 ring-offset-black border-white/40 bg-black opacity-100 shadow-[0_0_22px_rgba(255,255,255,0.2)]'
                     : 'border border-white/10 bg-black opacity-75 hover:scale-105 hover:opacity-100 hover:border-white/25'
                 }`}
               >
@@ -243,7 +243,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
       {/* Active Provider Sub-Header Card (Subtle, Refined Border) */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 mt-4">
         <div
-          className="relative overflow-hidden flex items-center justify-between rounded-2xl border border-white/10 bg-[#0d1017]/85 p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 shadow-lg"
+          className="relative overflow-hidden flex items-center justify-between rounded-2xl border border-white/10 bg-black/50 p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 shadow-lg"
           style={{
             backgroundImage: `linear-gradient(90deg, ${currentProviderObj.color.replace('0.55', '0.12').replace('0.35', '0.08')} 0%, transparent 45%)`
           }}

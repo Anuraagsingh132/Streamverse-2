@@ -577,7 +577,7 @@ body {
   bottom: 0;
   height: 180px;
   pointer-events: none;
-  background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(225, 29, 72, 0.16) 0%, rgba(147, 51, 234, 0.12) 40%, rgba(6, 8, 18, 0) 80%);
+  background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(225, 29, 72, 0.16) 0%, rgba(147, 51, 234, 0.12) 40%, rgba(0, 0, 0, 0) 80%);
   filter: blur(32px);
   z-index: 10;
 }
