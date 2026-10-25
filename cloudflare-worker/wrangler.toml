@@ -3,5 +3,5 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-ALLOWED_ORIGIN_PATTERNS = "localhost,127.0.0.1,streamverse.app,streamverse.vercel.app"
+ALLOWED_ORIGIN_PATTERNS = "localhost,127.0.0.1,streamverse.app,streamverse.vercel.app,anuraag.studio"
 FALLBACK_ORIGIN = "https://streamverse.app"

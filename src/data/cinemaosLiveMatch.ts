@@ -111,8 +111,8 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 8.0,
     badge: '#9 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/kX6ZX4GL7km04332caiOVapR2lb.png',
-    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
-    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=640&q=75',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=75',
     overview: 'Odysseus, the legendary King of Ithaca, embarks on a long and perilous journey home following the Trojan War. Throughout his voyage, he is forced to confront the whims of gods, mythological monsters, and trials that stretch both his cunning and his humanity to the breaking point.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -188,8 +188,8 @@ export const liveTop10Movies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 7.4,
-    backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1280&q=80',
-    poster_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+    backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=640&q=75',
+    poster_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=400&q=75',
     overview: 'A mayoral candidate and his wife must make an impossible moral compromise when their son is kidnapped in Los Angeles.',
     genres: ['Crime', 'Drama', 'Thriller']
   },
@@ -199,8 +199,8 @@ export const liveTop10Movies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 7.8,
-    backdrop_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1280&q=80',
-    poster_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
+    backdrop_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=640&q=75',
+    poster_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=75',
     overview: 'A world-class stunt driver and military team race against time in high-powered customized tactical vehicles across hostile territory.',
     genres: ['Action', 'Adventure', 'Thriller']
   },
@@ -210,8 +210,8 @@ export const liveTop10Movies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 7.2,
-    backdrop_path: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=1280&q=80',
-    poster_path: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=800&q=80',
+    backdrop_path: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=640&q=75',
+    poster_path: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=400&q=75',
     overview: 'The Lambert family is pulled back into The Further when an ancient malevolence seeks a permanent vessel in the living world.',
     genres: ['Horror', 'Mystery', 'Thriller']
   },
@@ -254,8 +254,8 @@ export const liveTop10Movies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 8.0,
-    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
-    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=640&q=75',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=75',
     overview: 'Odysseus embarks on a long and perilous journey home following the Trojan War.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -701,8 +701,8 @@ export const liveActionMovies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 8.0,
-    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80',
-    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=640&q=75',
+    poster_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=75',
     overview: 'Odysseus embarks on a long and perilous journey home following the Trojan War.',
     genres: ['Adventure', 'Action', 'Fantasy']
   },
@@ -826,7 +826,7 @@ export const liveGenreConfigs: GenreConfig[] = [
   {
     name: 'Adventure',
     id: 12,
-    img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=75',
     gradient: 'linear-gradient(135deg, rgba(245,158,11,0.85) 0%, rgba(245,158,11,0.35) 45%, rgba(0,0,0,0.75) 100%)',
     glowColor: 'rgba(245,158,11,0.6)'
   },
@@ -875,7 +875,7 @@ export const liveGenreConfigs: GenreConfig[] = [
   {
     name: 'Fantasy',
     id: 14,
-    img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+    img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=75',
     gradient: 'linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(139,92,246,0.35) 45%, rgba(0,0,0,0.75) 100%)',
     glowColor: 'rgba(139,92,246,0.6)'
   },

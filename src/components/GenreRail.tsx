@@ -198,9 +198,12 @@ const GenreRailComponent: React.FC<GenreRailProps> = ({
                   }}
                 >
                   <img
-                    alt={genre.name}
-                    loading="eager"
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
                     decoding="async"
+                    width={208}
+                    height={130}
                     className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full brightness-105"
                     src={genre.image}
                   />
@@ -238,7 +241,7 @@ const GenreRailComponent: React.FC<GenreRailProps> = ({
           </div>
           <h3 className="mt-1 text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
             {selectedGenre}{' '}
-            <span className="font-medium text-white/40">
+            <span className="font-medium text-zinc-400">
               · {mediaType === 'tv' ? 'Series' : 'Movies'}
             </span>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-rose-500" />}
@@ -303,12 +306,14 @@ const GenreRailComponent: React.FC<GenreRailProps> = ({
                       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
                         <img
                           alt={item.title}
-                          loading={idx < 3 ? "eager" : "lazy"}
+                          loading="lazy"
                           decoding="async"
+                          width={500}
+                          height={281}
                           className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full"
                           src={
                             (item.backdrop_path || item.poster_path)?.includes('image.tmdb.org/t/p/')
-                              ? (item.backdrop_path || item.poster_path)!.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/')
+                              ? (item.backdrop_path || item.poster_path)!.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/')
                               : (item.backdrop_path || item.poster_path || FALLBACK_BACKDROP)
                           }
                           onError={(e) => {

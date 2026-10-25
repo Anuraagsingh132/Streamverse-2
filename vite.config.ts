@@ -5,7 +5,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   build: {
-    sourcemap: false,
+    target: 'es2022',
+    sourcemap: true,
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
@@ -13,6 +14,9 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('@sentry')) {
               return 'vendor-sentry';
+            }
+            if (id.includes('posthog')) {
+              return 'vendor-posthog';
             }
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
@@ -36,6 +40,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/api/media': {
+        target: 'https://lively-bar-b4aa.anuraagsingh10a.workers.dev',
+        changeOrigin: true,
+        secure: true
+      },
       '/api/anime/logo': {
         target: 'https://cinemaos.tech',
         changeOrigin: true,

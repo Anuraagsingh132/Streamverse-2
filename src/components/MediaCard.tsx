@@ -51,6 +51,8 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
             alt={item.title}
             loading="lazy"
             decoding="async"
+            width={500}
+            height={281}
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 blur-0"
             src={imageSrc}
             onError={(e) => {

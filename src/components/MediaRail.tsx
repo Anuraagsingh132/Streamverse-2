@@ -138,8 +138,10 @@ const MediaRailComponent: React.FC<MediaRailProps> = ({
                     >
                       <img
                         alt={item.title}
-                        loading={idx < 3 ? "eager" : "lazy"}
+                        loading="lazy"
                         decoding="async"
+                        width={posterAspect ? 342 : 500}
+                        height={posterAspect ? 513 : 281}
                         className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full"
                         src={optimizeTmdbImage(
                           posterAspect

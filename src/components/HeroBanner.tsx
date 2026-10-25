@@ -132,6 +132,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
             <img decoding="async" 
               key={`glow-${item.id}`} 
               alt="" 
+              aria-hidden="true" 
+              width={300}
+              height={169}
+              loading={isActive ? "eager" : "lazy"} 
               src={thumb} 
               onError={(e) => {
                 const target = e.currentTarget;
@@ -185,8 +189,16 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                   <img 
                     alt={item.title} 
                     decoding="async" 
+                    width={1280}
+                    height={720}
                     fetchPriority={isActive ? "high" : "auto"}
                     loading={isActive ? "eager" : "lazy"}
+                    srcSet={
+                      item.backdrop_path?.includes('image.tmdb.org/t/p/')
+                        ? `${item.backdrop_path.replace(/\/t\/p\/(original|w\d+)\//, '/t/p/w780/')} 780w, ${item.backdrop_path.replace(/\/t\/p\/(original|w\d+)\//, '/t/p/w1280/')} 1280w`
+                        : undefined
+                    }
+                    sizes="100vw"
                     className="object-cover object-top h-full w-full" 
                     src={item.backdrop_path} 
                     onError={(e) => {
@@ -362,7 +374,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                   onClick={() => onToggleWatchlist(current)}
                   title={isSaved ? "Remove from Watchlist" : "Watch Later"}
                   aria-label={isSaved ? "Remove from Watchlist" : "Watch Later"}
-                  className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border hover:text-accent-foreground h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border-white/20 backdrop-blur-[20px] md:backdrop-blur-md hover:bg-white/25 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent] ${
+                  className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-[background-color,border-color,opacity,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border hover:text-accent-foreground h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border-white/20 backdrop-blur-[20px] md:backdrop-blur-md hover:bg-white/25 active:scale-95 select-none cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                     isSaved ? 'bg-primary/25 text-primary border-primary/40' : 'bg-black/50 md:bg-white/15 text-white md:text-gray-900 md:dark:text-white'
                   }`}
                 >

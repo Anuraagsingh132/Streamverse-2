@@ -53,6 +53,8 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
             alt={item.title}
             loading="lazy"
             decoding="async"
+            width={342}
+            height={513}
             className="h-full w-full object-cover transition-[transform,filter] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/card:scale-[1.04] lg:group-hover/card:brightness-50"
             src={optimizedPosterSrc}
             onError={(e) => {

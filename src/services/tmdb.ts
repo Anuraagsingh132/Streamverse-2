@@ -12,6 +12,17 @@ const cache = new LRUCache<string, { timestamp: number; data: any }>(100);
 const inFlightPromises = new Map<string, Promise<any>>();
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes fresh TTL
 
+function getBffBase(): string | undefined {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WORKER_PROXY_URL) {
+    return import.meta.env.VITE_WORKER_PROXY_URL;
+  }
+  if (typeof window !== 'undefined') {
+    return '';
+  }
+  return typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined;
+}
+
+
 /**
  * Purges cached TMDB requests from both bounded in-memory LRU cache and persistent disk storage.
  * If itemId is passed, clears all endpoints corresponding to that specific movie/show/season.
@@ -444,10 +455,9 @@ export async function getTrending(
   timeWindow: 'day' | 'week' = 'day',
   page: number = 1
 ): Promise<MediaItem[]> {
-  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
-    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+  const bffBase = getBffBase();
 
-  if (bffBase && typeof fetch !== 'undefined' && page === 1) {
+  if (bffBase !== undefined && typeof fetch !== 'undefined' && page === 1) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -509,10 +519,9 @@ export async function getHeroTrending(
 }
 
 export async function getTopRated(type: 'movie' | 'tv' = 'movie', page: number = 1): Promise<MediaItem[]> {
-  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
-    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+  const bffBase = getBffBase();
 
-  if (bffBase && typeof fetch !== 'undefined' && page === 1) {
+  if (bffBase !== undefined && typeof fetch !== 'undefined' && page === 1) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -539,10 +548,9 @@ export async function getTopRated(type: 'movie' | 'tv' = 'movie', page: number =
 }
 
 export async function getPopular(type: 'movie' | 'tv' = 'movie', page: number = 1): Promise<MediaItem[]> {
-  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
-    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+  const bffBase = getBffBase();
 
-  if (bffBase && typeof fetch !== 'undefined' && page === 1) {
+  if (bffBase !== undefined && typeof fetch !== 'undefined' && page === 1) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -665,10 +673,9 @@ export async function getAnime(page: number = 1): Promise<MediaItem[]> {
 
 export async function getMediaDetails(id: string | number, type: 'movie' | 'tv' | 'anime' = 'movie'): Promise<MediaItem> {
   const apiType = type === 'anime' ? 'tv' : type;
-  const bffBase = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_WORKER_PROXY_URL : undefined) ||
-    (typeof import.meta !== 'undefined' && import.meta.env?.PROD ? CLOUDFLARE_WORKER_PROXY_URL : undefined);
+  const bffBase = getBffBase();
 
-  if (bffBase && typeof fetch !== 'undefined' && (type === 'movie' || type === 'tv')) {
+  if (bffBase !== undefined && typeof fetch !== 'undefined' && (type === 'movie' || type === 'tv')) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);

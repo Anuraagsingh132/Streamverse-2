@@ -216,9 +216,12 @@ const ProviderRailComponent: React.FC<ProviderRailProps> = ({
                 }`}
               >
                 <img
-                  alt={p.name}
+                  alt=""
+                  aria-hidden="true"
                   loading="lazy"
                   decoding="async"
+                  width={64}
+                  height={64}
                   className="h-full w-full object-cover"
                   src={p.logo}
                 />
@@ -255,7 +258,10 @@ const ProviderRailComponent: React.FC<ProviderRailProps> = ({
           <div className="flex items-center gap-3.5">
             <span className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black border border-white/10 shadow-inner">
               <img
-                alt={selectedProvider}
+                alt=""
+                aria-hidden="true"
+                width={48}
+                height={48}
                 className="h-full w-full object-cover"
                 src={currentProviderObj.logo}
               />
@@ -332,12 +338,14 @@ const ProviderRailComponent: React.FC<ProviderRailProps> = ({
                       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
                         <img
                           alt={item.title}
-                          loading={idx < 3 ? "eager" : "lazy"}
+                          loading="lazy"
                           decoding="async"
+                          width={500}
+                          height={281}
                           className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full"
                           src={
                             (item.backdrop_path || item.poster_path)?.includes('image.tmdb.org/t/p/')
-                              ? (item.backdrop_path || item.poster_path)!.replace(/\/t\/p\/(original|w1280)\//, '/t/p/w780/')
+                              ? (item.backdrop_path || item.poster_path)!.replace(/\/t\/p\/(original|w1280|w780)\//, '/t/p/w500/')
                               : (item.backdrop_path || item.poster_path || FALLBACK_BACKDROP)
                           }
                           onError={(e) => {

@@ -11,9 +11,18 @@ export function initSentry(): void {
   const dsn = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SENTRY_DSN : undefined;
   const isProd = typeof import.meta !== 'undefined' ? import.meta.env?.PROD : false;
 
+  const isValidDsn = Boolean(
+    dsn && typeof dsn === 'string' && dsn.startsWith('http') && !dsn.includes('placeholder')
+  );
+
+  if (!isValidDsn) {
+    // Only initialize when an actual, valid Sentry DSN is configured
+    return;
+  }
+
   Sentry.init({
-    dsn: dsn || (isProd ? 'https://placeholder@o0.ingest.sentry.io/0' : undefined),
-    enabled: Boolean(dsn) || isProd,
+    dsn,
+    enabled: true,
     environment: isProd ? 'production' : 'development',
     release: 'streamverse@2.0.0',
     tracesSampleRate: isProd ? 0.2 : 1.0,
@@ -52,14 +61,20 @@ export function initSentry(): void {
  */
 export function captureException(error: unknown, context?: Record<string, any>): void {
   console.error('[Streamverse Exception]:', error, context);
-  Sentry.captureException(error, {
-    extra: context
-  });
+  const dsn = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SENTRY_DSN : undefined;
+  if (dsn && !dsn.includes('placeholder')) {
+    Sentry.captureException(error, {
+      extra: context
+    });
+  }
 }
 
 /**
  * Captures an informational or warning observability message.
  */
 export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): void {
-  Sentry.captureMessage(message, level);
+  const dsn = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SENTRY_DSN : undefined;
+  if (dsn && !dsn.includes('placeholder')) {
+    Sentry.captureMessage(message, level);
+  }
 }

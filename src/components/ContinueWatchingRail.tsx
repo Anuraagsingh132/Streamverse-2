@@ -161,6 +161,8 @@ const ContinueWatchingRailComponent: React.FC<ContinueWatchingRailProps> = ({
                       alt={record.title}
                       loading="lazy"
                       decoding="async"
+                      width={500}
+                      height={281}
                       className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
                       onError={(e) => {
                         const target = e.currentTarget;

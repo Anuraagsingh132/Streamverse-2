@@ -1,0 +1,19 @@
+# Streamverse
+
+> Streamverse is a modern streaming web application providing free movies, anime, TV series, and live sports.
+
+Streamverse delivers a seamless viewing experience with curated media rails, trending content, and high-performance playback.
+
+## Media Catalogs & Sections
+
+- [Movies](https://streamverse.app/movies): Browse trending, popular, and top-rated movies across genres.
+- [TV Shows](https://streamverse.app/tv): Discover popular TV shows, seasons, and episodes.
+- [Anime](https://streamverse.app/anime): Search and stream anime with AniList synchronization and episode tracking.
+- [Live Sports & TV](https://streamverse.app/live-tv): Watch live sports, television events, and multi-network channels.
+- [AI Search](https://streamverse.app/search): Discover titles with conversational natural language search.
+- [Watchlist](https://streamverse.app/watchlist): Save and organize bookmarked media items.
+
+## Machine-Readable Resources
+
+- [Sitemap](https://streamverse.app/sitemap.xml): Complete XML sitemap listing canonical routes and media pages.
+- [AI Catalog](https://streamverse.app/ai-catalog.json): Machine-readable catalog for autonomous agents (ARD spec).

@@ -26,8 +26,8 @@ class FpsLoggerService {
   private isRunning = false;
   private animId = 0;
   private lastTime = 0;
-  private targetFps = 90; // Default to modern 90Hz+ mobile/laptop refresh
-  private frameBudgetMs = 11.11;
+  private targetFps = 60; // Standard 60Hz baseline (16.67ms budget)
+  private frameBudgetMs = 16.67;
   private recentAction = 'idle';
   private actionTimeout: ReturnType<typeof setTimeout> | undefined;
   private hasInitialized = false;
@@ -128,6 +128,12 @@ class FpsLoggerService {
   private loop = (now: number) => {
     if (!this.isRunning) return;
 
+    if (typeof document !== 'undefined' && document.hidden) {
+      this.lastTime = now;
+      this.animId = requestAnimationFrame(this.loop);
+      return;
+    }
+
     const delta = now - this.lastTime;
     this.lastTime = now;
 
@@ -171,12 +177,10 @@ class FpsLoggerService {
     // During idle (hands off keyboard/mouse), OS power-saving (Windows Dynamic Refresh Rate / ProMotion)
     // reduces display VSYNC to 45Hz/60Hz. We only capture true main-thread freezes (>100ms) during idle.
     const isActuallyScrolling = typeof window !== 'undefined' && Boolean((window as any).__IS_SCROLLING__);
-    const isInteractive = isActuallyScrolling || this.recentAction.startsWith('click') || this.recentAction.startsWith('key');
-    const effectiveThreshold = isInteractive ? threshold : Math.max(threshold, 100);
+    const isInteractive = isActuallyScrolling || this.recentAction.startsWith('scroll') || this.recentAction.startsWith('click') || this.recentAction.startsWith('key');
 
-    // Ignore backgrounded tab pauses (> 900ms)
-    if (isWarmedUp && delta > effectiveThreshold && delta < 900 && this.lastTime > 0) {
-      // Cooldown: prevent spamming 50 identical logs within 250ms
+    // Only record drops during active user interaction; ignore idle power-saving refresh throttling
+    if (isInteractive && isWarmedUp && delta > threshold && delta < 900 && this.lastTime > 0) {
       if (now - this.lastDropRecordedTime > 250) {
         this.lastDropRecordedTime = now;
         this.recordDrop(delta);
@@ -215,7 +219,7 @@ class FpsLoggerService {
     this.saveToStorage();
     this.notify();
 
-    if (import.meta.env?.DEV) {
+    if (typeof window !== "undefined" && (window as any).__DEBUG_FPS__) {
       console.warn(
         `%c[FPS DROP] ${droppedCount} frame(s) dropped on ${path} (${event.frameDurationMs}ms vs ${this.frameBudgetMs}ms budget) during ${event.recentAction}`,
         'color: #ef4444; font-weight: bold;',

@@ -4,10 +4,10 @@
  */
 
 export const FALLBACK_BACKDROP =
-  'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1280&auto=format&fit=crop';
+  'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=800&q=75&auto=format&fit=crop';
 
 export const FALLBACK_POSTER =
-  'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=780&auto=format&fit=crop';
+  'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=400&q=75&auto=format&fit=crop';
 
 export type TmdbImageTarget = 'poster' | 'backdrop' | 'card' | 'thumb';
 

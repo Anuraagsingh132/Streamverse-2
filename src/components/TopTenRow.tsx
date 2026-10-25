@@ -201,10 +201,12 @@ const TopTenRowComponent: React.FC<TopTenRowProps> = ({
                     <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-xl transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
                       <img 
                         alt={item.title} 
-                        loading={idx < 4 ? "eager" : "lazy"} 
+                        loading="lazy" 
                         decoding="async" 
+                        width={500}
+                        height={281}
                         className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 h-full w-full" 
-                        src={optimizeTmdbImage(item.backdrop_path || item.poster_path, 'backdrop')} 
+                        src={optimizeTmdbImage(item.backdrop_path || item.poster_path, 'card')} 
                         onError={(e) => {
                           const target = e.currentTarget;
                           if (item.poster_path && target.src !== item.poster_path) {

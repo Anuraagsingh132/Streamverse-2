@@ -6,7 +6,8 @@ import posthog from 'posthog-js';
 export const POSTHOG_PROJECT_TOKEN =
   (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_POSTHOG_PROJECT_TOKEN : '') || '';
 export const POSTHOG_HOST =
-  (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_POSTHOG_HOST : '') || 'https://us.i.posthog.com';
+  (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_POSTHOG_HOST : '') ||
+  (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') ? `${window.location.origin}/ingest` : 'https://us.i.posthog.com');
 
 let isInitialized = false;
 
@@ -16,6 +17,18 @@ let isInitialized = false;
 export function initPostHog(): typeof posthog {
   if (typeof window === 'undefined') return posthog;
   if (isInitialized) return posthog;
+
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.endsWith('.local'));
+
+  // Disable in local development and localhost to prevent ad-blockers from throwing net::ERR_BLOCKED_BY_CLIENT
+  if (isLocalhost || import.meta.env?.DEV) {
+    isInitialized = true;
+    return posthog;
+  }
 
   if (!POSTHOG_PROJECT_TOKEN) {
     if (import.meta.env?.DEV) {
@@ -30,7 +43,9 @@ export function initPostHog(): typeof posthog {
       autocapture: true, // Automatically captures button clicks, inputs, UI interactions
       capture_pageview: false, // Handled by React Router PostHogPageViewTracker for exact SPA accuracy
       capture_pageleave: true, // Tracks drop-offs, bounce rate, and time on page
-      disable_session_recording: false,
+      disable_session_recording: true,
+      disable_surveys: true,
+      capture_dead_clicks: false,
       session_recording: {
         maskAllElementAttributes: false,
         maskAllInputs: false,

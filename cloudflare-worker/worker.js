@@ -30,7 +30,7 @@ function getAuthorizedOrigin(request, env) {
   }
   try {
     const originHost = new URL(origin).hostname.toLowerCase();
-    const rawPatterns = env?.ALLOWED_ORIGIN_PATTERNS || 'localhost,127.0.0.1,streamverse.app,streamverse.vercel.app';
+    const rawPatterns = env?.ALLOWED_ORIGIN_PATTERNS || 'localhost,127.0.0.1,streamverse.app,streamverse.vercel.app,anuraag.studio';
     const allowedPatterns = rawPatterns.split(',');
     for (const pattern of allowedPatterns) {
       const p = pattern.trim().toLowerCase();

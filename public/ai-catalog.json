@@ -1,0 +1,39 @@
+{
+  "$schema": "https://agenticresourcediscovery.org/spec/v1/schema.json",
+  "name": "Streamverse",
+  "description": "Streamverse is a cinematic streaming web application for movies, TV series, anime, and live sports.",
+  "url": "https://streamverse.app",
+  "version": "2.0.0",
+  "capabilities": [
+    {
+      "name": "search",
+      "description": "Search movies, series, and anime by keyword or title",
+      "type": "query",
+      "endpoint": "/search"
+    },
+    {
+      "name": "movies",
+      "description": "Browse and stream trending and top-rated movies",
+      "type": "browse",
+      "endpoint": "/movies"
+    },
+    {
+      "name": "tv",
+      "description": "Browse and stream trending TV series and seasons",
+      "type": "browse",
+      "endpoint": "/tv"
+    },
+    {
+      "name": "anime",
+      "description": "Browse anime catalog with episode details",
+      "type": "browse",
+      "endpoint": "/anime"
+    },
+    {
+      "name": "live-tv",
+      "description": "Browse live sports and streaming television channels",
+      "type": "stream",
+      "endpoint": "/live-tv"
+    }
+  ]
+}
