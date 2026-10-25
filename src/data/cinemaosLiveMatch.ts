@@ -22,7 +22,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 6.9,
     badge: '#2 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/zMSLBsrkEnP2BbNSd2725MCaXvJ.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/nDScZ6YR2nfNCeK5bmJ1ujb355b.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/nDScZ6YR2nfNCeK5bmJ1ujb355b.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/5nZVjsCk5tWyyhLGt5U2TxsR85w.jpg',
     overview: 'A single mother and an incarcerated man forge an unlikely bond through heartfelt letters, unlocking a door to redemption, hope and love against all odds.',
     genres: ['Drama', 'Romance']
@@ -34,7 +34,7 @@ export const liveHeroItems: MediaItem[] = [
     year: 2026,
     vote_average: 8.3,
     badge: '#3 TRENDING · SERIES · 2026',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
     overview: 'A determined operative executes an international revenge contract that spirals out of control.',
     genres: ['Action', 'Thriller']
@@ -47,7 +47,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 7.5,
     badge: '#4 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/yihRNwM4YjIaDHGd3K9pHCfJweo.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
     overview: "The most powerful man in the world embarks on a frantic mission to prove he is humanity's savior before the disaster he's unleashed destroys everything.",
     genres: ['Comedy', 'Drama']
@@ -59,7 +59,7 @@ export const liveHeroItems: MediaItem[] = [
     year: 2023,
     vote_average: 8.6,
     badge: '#5 TRENDING · SERIES · 2026',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
     overview: 'Maomao, a pharmacist in the imperial court, unravels bizarre medical conspiracies and court intrigues.',
     genres: ['Animation', 'Mystery', 'Drama']
@@ -72,7 +72,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 7.3,
     badge: '#6 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/9ulobOWQViT7UQt2iYzb5tEVgm9.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/3icyRAqgakNcQn6aDVz9libFmBA.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/3icyRAqgakNcQn6aDVz9libFmBA.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/qe7ip5bsuGGdrEfkKuXpZoJ0beK.jpg',
     overview: 'Medical courier Bryan unwittingly finds himself fighting for survival as one fateful, horrifying night collapses around him in chaos.',
     genres: ['Horror', 'Sci-Fi', 'Adventure']
@@ -85,7 +85,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 8.1,
     badge: '#7 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/drBOdj4htH0Chlno2Ctt6OxCGgJ.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/y0reRTsewsPh0ePtgvDeLIsb5Wk.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/y0reRTsewsPh0ePtgvDeLIsb5Wk.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/9YKDy9xgIopB2qoFZcHYNkFeikh.jpg',
     overview: 'As war and plague devastate 14th-century England, a humble peasant ignites a rebellion, uniting an army of commoners to defy the King’s might in a desperate fight for justice and survival.',
     genres: ['History', 'Drama']
@@ -98,7 +98,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 6.7,
     badge: '#8 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/xk8hyep02bTtTmZo6sh2d6ke0u5.svg',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/9qxyrJfjk577ym5WD6HCDmunoyO.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/9qxyrJfjk577ym5WD6HCDmunoyO.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/9qxyrJfjk577ym5WD6HCDmunoyO.jpg',
     overview: "Lowen Ashleigh is hired by Jeremy Crawford to ghostwrite novels for his bestselling author wife Verity, who is unable to finish following an accident. Lowen gradually uncovers Verity's disturbing truths while residing at the Crawfords' home to work.",
     genres: ['Mystery', 'Thriller']
@@ -124,7 +124,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 8.2,
     badge: '#10 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/pAnbApoi6DHwXzoKBfQU4M5Wr8t.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg',
     overview: 'A former soldier is thrown into a brutal race against time when a critical medical delivery makes him and his unlikely partner the targets of a ruthless cartel. As the mission spirals into a deadly manhunt, every detour, delay, and bullet pushes them closer to failure.',
     genres: ['Action', 'Comedy']
@@ -137,7 +137,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 8.2,
     badge: '#8 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/2y6qVk9YIPxTzO43anxUQ9iTuh4.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/5lTZyuBTNOfawsfPT8Q0cIg6qAF.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/5lTZyuBTNOfawsfPT8Q0cIg6qAF.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/5lTZyuBTNOfawsfPT8Q0cIg6qAF.jpg',
     overview: 'After breaking the mysterious "One Wish Willow" to win his crush\'s heart, a hopeless romantic finds himself getting exactly what he asked for but soon discovers that some desires come at a dark, sinister price.',
     genres: ['Horror', 'Thriller']
@@ -150,7 +150,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 8.0,
     badge: '#9 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/xbWFkwfrHUL0SK5UXR0V677SiVQ.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/1A7s8zG4PF6YoJrncrTO6N4r0Sx.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/1A7s8zG4PF6YoJrncrTO6N4r0Sx.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/1A7s8zG4PF6YoJrncrTO6N4r0Sx.jpg',
     overview: 'Matt Hagen\'s meteoric rise from Gotham street kid to Hollywood leading man is tragically cut short when a local crime boss\'s actions leave him horribly disfigured. Abandoned by his team and with nothing left, Matt seeks out a cutting edge treatment that miraculously returns him to his former self… but also unexpectedly affects his grip on reality, spiraling him down a destructive path of all-consuming revenge.',
     genres: ['Horror', 'Thriller', 'Sci-Fi']
@@ -163,7 +163,7 @@ export const liveHeroItems: MediaItem[] = [
     vote_average: 6.1,
     badge: '#10 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/azIkJAuwICUb9TQq0CDL7EUC8cX.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/eJ4vMJJlnxnKqdJCBDXvNmE0LVp.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/eJ4vMJJlnxnKqdJCBDXvNmE0LVp.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/eJ4vMJJlnxnKqdJCBDXvNmE0LVp.jpg',
     overview: 'When Kevin Hart teams up with fellow comedian, Druski, and streamer, Kai Cenat for a record-breaking livestream at his tech-savvy mansion, things go hilariously off the rails, until the pranks turn to panic, and a real murder mystery unfolds on camera.',
     genres: ['Horror', 'Comedy']
@@ -188,7 +188,7 @@ export const liveTop10Movies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 7.4,
-    backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=640&q=75',
+    backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=480&q=70',
     poster_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=400&q=75',
     overview: 'A mayoral candidate and his wife must make an impossible moral compromise when their son is kidnapped in Los Angeles.',
     genres: ['Crime', 'Drama', 'Thriller']
@@ -199,7 +199,7 @@ export const liveTop10Movies: MediaItem[] = [
     media_type: 'movie',
     year: 2026,
     vote_average: 7.8,
-    backdrop_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=640&q=75',
+    backdrop_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=480&q=70',
     poster_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=75',
     overview: 'A world-class stunt driver and military team race against time in high-powered customized tactical vehicles across hostile territory.',
     genres: ['Action', 'Adventure', 'Thriller']
@@ -972,7 +972,7 @@ export const diggerCuratedDetails: MediaItem = {
   vote_average: 7.4,
   vote_count: 80,
   logo_path: 'https://image.tmdb.org/t/p/w500/yihRNwM4YjIaDHGd3K9pHCfJweo.png',
-  backdrop_path: 'https://image.tmdb.org/t/p/w1280/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
+  backdrop_path: 'https://image.tmdb.org/t/p/w780/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
   poster_path: 'https://image.tmdb.org/t/p/w500/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
   overview: "The most powerful man in the world embarks on a frantic mission to prove he is humanity's savior before the disaster he's unleashed destroys everything.",
   genres: ['Comedy', 'Drama'],
@@ -1054,7 +1054,7 @@ export const lanternsCuratedDetails: MediaItem = {
   vote_average: 8.4,
   vote_count: 489,
   logo_path: 'https://image.tmdb.org/t/p/w500/kANHXGvFKW13UEkZbYwl9nIJeEl.png',
-  backdrop_path: 'https://image.tmdb.org/t/p/w1280/6gqezQJ2mkm4jreWwLyOZy2Vf6i.jpg',
+  backdrop_path: 'https://image.tmdb.org/t/p/w780/6gqezQJ2mkm4jreWwLyOZy2Vf6i.jpg',
   poster_path: 'https://image.tmdb.org/t/p/w500/6gqezQJ2mkm4jreWwLyOZy2Vf6i.jpg',
   overview: 'Two intergalactic cops, new recruit John Stewart and Lantern legend Hal Jordan, are drawn into a dark, Earth-based mystery as they investigate a murder in the American heartland.',
   genres: ['Drama', 'Mystery', 'Sci-Fi & Fantasy'],

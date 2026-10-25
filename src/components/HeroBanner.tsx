@@ -9,6 +9,7 @@ import {
   ChevronRight 
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
+import { optimizeTmdbImage } from '../utils/imageUtils';
 
 interface HeroBannerProps {
   items: MediaItem[];
@@ -479,9 +480,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 >
                   <div className="relative rounded-xl">
                     <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-lg">
-                      <img decoding="async" 
-                        src={item.backdrop_path} 
-                        alt={item.title} 
+                      <img decoding="async"
+                        src={optimizeTmdbImage(item.backdrop_path, 'thumb')}
+                        alt=""
+                        aria-hidden="true"
+                        width={176}
+                        height={99}
                         loading="lazy" 
                         onError={(e) => {
                           const target = e.currentTarget;

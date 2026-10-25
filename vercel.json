@@ -113,7 +113,7 @@
       "destination": "https://lively-bar-b4aa.anuraagsingh10a.workers.dev/api/media/$1"
     },
     {
-      "source": "/((?!api/|ingest/).*)",
+      "source": "/((?!api/|ingest/|ai-catalog\\.json|llms\\.txt|sitemap\\.xml|robots\\.txt|assets/|media/|icons/|.*\\.[\\w]+$).*)",
       "destination": "/index.html"
     }
   ]

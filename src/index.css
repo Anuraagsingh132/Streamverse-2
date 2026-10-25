@@ -662,3 +662,10 @@ html.lenis body {
   transition-duration: 1ms;
   transition-behavior: allow-discrete;
 }
+
+/* Below-the-fold content visibility optimization: skips style & layout until scrolled near */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 360px;
+}
+

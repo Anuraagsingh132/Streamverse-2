@@ -607,7 +607,7 @@ const AppContent: React.FC = () => {
   const isWatchRoute = location.pathname.startsWith('/watch/') || isSportsWatchRoute;
   const currentRouteKey = getRouteKeyFromPath(location.pathname);
 
-  // Initialize Lenis smooth scroll
+  // Initialize Lenis smooth scroll on idle (zero impact on initial TBT)
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
       return;
@@ -615,42 +615,59 @@ const AppContent: React.FC = () => {
 
     let isDisposed = false;
     let lenisInstance: any = null;
+    let idleHandle: number | undefined;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
-    import('lenis').then(({ default: Lenis }) => {
+    const startLenis = () => {
       if (isDisposed) return;
-      const lenis = new Lenis({
-        autoRaf: true,
-        lerp: 0.14,
-        smoothWheel: true,
-        wheelMultiplier: 0.9,
-        gestureOrientation: 'vertical',
-        respectReducedMotion: true,
-        syncTouch: false,
-      });
-      lenisInstance = lenis;
-      lenisRef.current = lenis;
+      import('lenis').then(({ default: Lenis }) => {
+        if (isDisposed) return;
+        const lenis = new Lenis({
+          autoRaf: true,
+          lerp: 0.14,
+          smoothWheel: true,
+          wheelMultiplier: 0.9,
+          gestureOrientation: 'vertical',
+          respectReducedMotion: true,
+          syncTouch: false,
+        });
+        lenisInstance = lenis;
+        lenisRef.current = lenis;
 
-      // High-performance scroll tracking: zero DOM mutations or style recalcs during scroll
-      let scrollTimeout: ReturnType<typeof setTimeout> | undefined;
-      let isScrollingActive = false;
-      lenis.on('scroll', () => {
-        if (!isScrollingActive) {
-          isScrollingActive = true;
-          (window as any).__IS_SCROLLING__ = true;
-          document.body.classList.add('is-scrolling');
-        }
-        if (scrollTimeout) clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          isScrollingActive = false;
-          (window as any).__IS_SCROLLING__ = false;
-          document.body.classList.remove('is-scrolling');
-          window.dispatchEvent(new CustomEvent('scroll-idle'));
-        }, 150);
-      });
-    });
+        // High-performance scroll tracking: zero DOM mutations or style recalcs during scroll
+        let scrollTimeout: ReturnType<typeof setTimeout> | undefined;
+        let isScrollingActive = false;
+        lenis.on('scroll', () => {
+          if (!isScrollingActive) {
+            isScrollingActive = true;
+            (window as any).__IS_SCROLLING__ = true;
+            document.body.classList.add('is-scrolling');
+          }
+          if (scrollTimeout) clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            isScrollingActive = false;
+            (window as any).__IS_SCROLLING__ = false;
+            document.body.classList.remove('is-scrolling');
+            window.dispatchEvent(new CustomEvent('scroll-idle'));
+          }, 150);
+        });
+      }).catch(() => {});
+    };
+
+    if ('requestIdleCallback' in window) {
+      idleHandle = (window as any).requestIdleCallback(startLenis, { timeout: 2000 });
+    } else {
+      timeoutHandle = setTimeout(startLenis, 1000);
+    }
 
     return () => {
       isDisposed = true;
+      if (idleHandle !== undefined && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle !== undefined) {
+        clearTimeout(timeoutHandle);
+      }
       if (lenisInstance) {
         lenisInstance.destroy();
         lenisRef.current = null;

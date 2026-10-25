@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import posthog from 'posthog-js';
 
 // PostHog Configuration from Vite Environment
 export const POSTHOG_PROJECT_TOKEN =
@@ -10,6 +9,31 @@ export const POSTHOG_HOST =
   (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') ? `${window.location.origin}/ingest` : 'https://us.i.posthog.com');
 
 let isInitialized = false;
+let posthogInstance: any = null;
+const eventQueue: Array<{ event: string; properties?: Record<string, any> }> = [];
+
+/**
+ * High-performance buffered PostHog proxy.
+ * Eliminates posthog-js from the initial critical JS bundle, loading it asynchronously on idle.
+ */
+export const posthog = {
+  capture: (event: string, properties?: Record<string, any>) => {
+    if (posthogInstance && typeof posthogInstance.capture === 'function') {
+      posthogInstance.capture(event, properties);
+    } else {
+      eventQueue.push({ event, properties });
+    }
+  },
+  identify: (distinctId?: string, userProperties?: Record<string, any>) => {
+    posthogInstance?.identify?.(distinctId, userProperties);
+  },
+  reset: () => {
+    posthogInstance?.reset?.();
+  },
+  init: (...args: any[]) => {
+    posthogInstance?.init?.(...args);
+  }
+};
 
 /**
  * Initializes PostHog with full autocapture, session replay, and SPA routing support.
@@ -31,37 +55,36 @@ export function initPostHog(): typeof posthog {
   }
 
   if (!POSTHOG_PROJECT_TOKEN) {
-    if (import.meta.env?.DEV) {
-      console.warn('[PostHog] VITE_POSTHOG_PROJECT_TOKEN is missing. Analytics operating in stub mode.');
-    }
     return posthog;
   }
 
-  try {
-    posthog.init(POSTHOG_PROJECT_TOKEN, {
-      api_host: POSTHOG_HOST,
-      autocapture: true, // Automatically captures button clicks, inputs, UI interactions
-      capture_pageview: false, // Handled by React Router PostHogPageViewTracker for exact SPA accuracy
-      capture_pageleave: true, // Tracks drop-offs, bounce rate, and time on page
-      disable_session_recording: true,
-      disable_surveys: true,
-      capture_dead_clicks: false,
-      session_recording: {
-        maskAllElementAttributes: false,
-        maskAllInputs: false,
-      },
-      persistence: 'localStorage+cookie',
-      cross_subdomain_cookie: false,
-      loaded: (ph) => {
-        if (import.meta.env?.DEV) {
-          console.log('[PostHog] Initialized successfully with autocapture and session replay');
-        }
-      },
+  isInitialized = true;
+
+  // Asynchronously import posthog-js on idle to prevent blocking initial render & main thread
+  import('posthog-js')
+    .then(({ default: ph }) => {
+      posthogInstance = ph;
+      ph.init(POSTHOG_PROJECT_TOKEN, {
+        api_host: POSTHOG_HOST,
+        autocapture: true,
+        capture_pageview: false,
+        capture_pageleave: true,
+        disable_session_recording: true,
+        disable_surveys: true,
+        capture_dead_clicks: false,
+        persistence: 'localStorage+cookie',
+        cross_subdomain_cookie: false,
+        loaded: () => {
+          while (eventQueue.length > 0) {
+            const item = eventQueue.shift();
+            if (item) ph.capture(item.event, item.properties);
+          }
+        },
+      });
+    })
+    .catch((err) => {
+      console.warn('[PostHog] Dynamic load skipped:', err);
     });
-    isInitialized = true;
-  } catch (err) {
-    console.error('[PostHog] Initialization error:', err);
-  }
 
   return posthog;
 }
@@ -209,5 +232,4 @@ export function trackEvent(eventName: string, properties?: Record<string, any>):
   posthog.capture(eventName, properties);
 }
 
-export { posthog };
 export default posthog;

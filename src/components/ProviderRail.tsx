@@ -37,22 +37,22 @@ const ProviderRailComponent: React.FC<ProviderRailProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const providers = [
-    { name: 'Netflix', id: 8, logo: 'https://image.tmdb.org/t/p/w154/rK1KljqmbvO9HQa1PBFLILWah72.png', color: 'rgba(229,9,20,0.55)' },
-    { name: 'Prime Video', id: 9, logo: 'https://image.tmdb.org/t/p/w154/gMZdpavHmxFNnLpMHwVxfqeux2g.png', color: 'rgba(0,168,225,0.55)' },
-    { name: 'Apple TV+', id: 350, logo: 'https://image.tmdb.org/t/p/w154/9icYBfYFcwgCbky5VdGUIKJ4C5i.png', color: 'rgba(255,255,255,0.35)' },
-    { name: 'Disney+', id: 337, logo: 'https://image.tmdb.org/t/p/w154/5eZ872CghnHFLB1j8grszbrx0dx.png', color: 'rgba(17,60,207,0.55)' },
-    { name: 'Max', id: 1899, logo: 'https://image.tmdb.org/t/p/w154/skypuy7SXuugIQeYg0IglmzoKaS.png', color: 'rgba(0,40,250,0.55)' },
-    { name: 'Hulu', id: 15, logo: 'https://image.tmdb.org/t/p/w154/44uAnmSqvA4yBOdbPWN8YgQHjWm.png', color: 'rgba(28,231,131,0.55)' },
-    { name: 'Paramount+', id: 531, logo: 'https://image.tmdb.org/t/p/w154/4N4BMd0Mm0kHAmF7RZgL5lW3cwc.png', color: 'rgba(0,100,230,0.55)' },
-    { name: 'Peacock', id: 386, logo: 'https://image.tmdb.org/t/p/w154/a1UIdq5BrkcAxnxcUhFsNbXnxeu.png', color: 'rgba(234,179,8,0.55)' },
-    { name: 'Crunchyroll', id: 283, logo: 'https://image.tmdb.org/t/p/w154/uFL3c4Cq8M6WoLymlC5Y8bmGytV.png', color: 'rgba(244,117,33,0.55)' },
-    { name: 'Starz', id: 43, logo: 'https://image.tmdb.org/t/p/w154/h25xjouKmiSmFiiqw0aDXbxGZo7.png', color: 'rgba(120,113,108,0.55)' },
-    { name: 'AMC+', id: 528, logo: 'https://image.tmdb.org/t/p/w154/wsCUflcmL4dCkzBUaGP8cj1cTkh.png', color: 'rgba(239,68,68,0.55)' },
-    { name: 'MUBI', id: 11, logo: 'https://image.tmdb.org/t/p/w154/k7iSlvgWzZuO4zU5PcBjhABMuia.png', color: 'rgba(59,130,246,0.55)' },
-    { name: 'Shudder', id: 99, logo: 'https://image.tmdb.org/t/p/w154/58O6yqUFM6qoOiBNAddJs7xNKc.png', color: 'rgba(220,38,38,0.55)' },
-    { name: 'Discovery+', id: 526, logo: 'https://image.tmdb.org/t/p/w154/tHseJEgZaUdVlLtBpOGmKPfzbQ8.png', color: 'rgba(14,165,233,0.55)' },
-    { name: 'Tubi', id: 73, logo: 'https://image.tmdb.org/t/p/w154/9dEuvA8wg5TSeFBZlPxSVxFdimJ.png', color: 'rgba(234,88,12,0.55)' },
-    { name: 'Pluto TV', id: 300, logo: 'https://image.tmdb.org/t/p/w154/fN4czqaMQNLeF6sSSIjGbAWzvwK.png', color: 'rgba(250,204,21,0.55)' },
+    { name: 'Netflix', id: 8, logo: 'https://image.tmdb.org/t/p/w92/rK1KljqmbvO9HQa1PBFLILWah72.png', color: 'rgba(229,9,20,0.55)' },
+    { name: 'Prime Video', id: 9, logo: 'https://image.tmdb.org/t/p/w92/gMZdpavHmxFNnLpMHwVxfqeux2g.png', color: 'rgba(0,168,225,0.55)' },
+    { name: 'Apple TV+', id: 350, logo: 'https://image.tmdb.org/t/p/w92/9icYBfYFcwgCbky5VdGUIKJ4C5i.png', color: 'rgba(255,255,255,0.35)' },
+    { name: 'Disney+', id: 337, logo: 'https://image.tmdb.org/t/p/w92/5eZ872CghnHFLB1j8grszbrx0dx.png', color: 'rgba(17,60,207,0.55)' },
+    { name: 'Max', id: 1899, logo: 'https://image.tmdb.org/t/p/w92/skypuy7SXuugIQeYg0IglmzoKaS.png', color: 'rgba(0,40,250,0.55)' },
+    { name: 'Hulu', id: 15, logo: 'https://image.tmdb.org/t/p/w92/44uAnmSqvA4yBOdbPWN8YgQHjWm.png', color: 'rgba(28,231,131,0.55)' },
+    { name: 'Paramount+', id: 531, logo: 'https://image.tmdb.org/t/p/w92/4N4BMd0Mm0kHAmF7RZgL5lW3cwc.png', color: 'rgba(0,100,230,0.55)' },
+    { name: 'Peacock', id: 386, logo: 'https://image.tmdb.org/t/p/w92/a1UIdq5BrkcAxnxcUhFsNbXnxeu.png', color: 'rgba(234,179,8,0.55)' },
+    { name: 'Crunchyroll', id: 283, logo: 'https://image.tmdb.org/t/p/w92/uFL3c4Cq8M6WoLymlC5Y8bmGytV.png', color: 'rgba(244,117,33,0.55)' },
+    { name: 'Starz', id: 43, logo: 'https://image.tmdb.org/t/p/w92/h25xjouKmiSmFiiqw0aDXbxGZo7.png', color: 'rgba(120,113,108,0.55)' },
+    { name: 'AMC+', id: 528, logo: 'https://image.tmdb.org/t/p/w92/wsCUflcmL4dCkzBUaGP8cj1cTkh.png', color: 'rgba(239,68,68,0.55)' },
+    { name: 'MUBI', id: 11, logo: 'https://image.tmdb.org/t/p/w92/k7iSlvgWzZuO4zU5PcBjhABMuia.png', color: 'rgba(59,130,246,0.55)' },
+    { name: 'Shudder', id: 99, logo: 'https://image.tmdb.org/t/p/w92/58O6yqUFM6qoOiBNAddJs7xNKc.png', color: 'rgba(220,38,38,0.55)' },
+    { name: 'Discovery+', id: 526, logo: 'https://image.tmdb.org/t/p/w92/tHseJEgZaUdVlLtBpOGmKPfzbQ8.png', color: 'rgba(14,165,233,0.55)' },
+    { name: 'Tubi', id: 73, logo: 'https://image.tmdb.org/t/p/w92/9dEuvA8wg5TSeFBZlPxSVxFdimJ.png', color: 'rgba(234,88,12,0.55)' },
+    { name: 'Pluto TV', id: 300, logo: 'https://image.tmdb.org/t/p/w92/fN4czqaMQNLeF6sSSIjGbAWzvwK.png', color: 'rgba(250,204,21,0.55)' },
   ];
 
   const currentProviderObj = providers.find((p) => p.name === selectedProvider) || providers[0];

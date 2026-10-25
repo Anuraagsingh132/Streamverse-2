@@ -36,22 +36,21 @@
     <meta name="twitter:description" content="Beautifully designed website where you can watch anime, drama, movies and live sports. Built with React, TypeScript and Tailwind CSS." />
     <meta name="twitter:image" content="https://streamverse.app/apple-touch-icon.png" />
 
+    <!-- Performance Resource Hints: Targeted preconnects (image CDNs) -->
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="dns-prefetch" href="https://image.tmdb.org" />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="dns-prefetch" href="https://images.unsplash.com" />
+    <link rel="dns-prefetch" href="https://api.themoviedb.org" />
+    <link rel="dns-prefetch" href="https://graphql.anilist.co" />
+    <link rel="dns-prefetch" href="https://s4.anilist.co" />
+
     <!-- Critical Font Preload (Eliminates Render-Blocking Chain Delay) -->
     <link rel="preload" href="/media/36966cca54120369-s.p.woff2" as="font" type="font/woff2" crossorigin />
 
     <!-- High-Priority LCP Hero Backdrop Preload (Instant Discovery for Top Trending Slide) -->
     <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w780/8WGq5Q0tmTe30YZetLnU2dkOJZf.jpg" media="(max-width: 640px)" fetchpriority="high" />
     <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w1280/8WGq5Q0tmTe30YZetLnU2dkOJZf.jpg" media="(min-width: 641px)" fetchpriority="high" />
-
-    <!-- Performance Resource Hints: Targeted preconnects (Max 3, matching CORS mode for images & API) -->
-    <link rel="preconnect" href="https://image.tmdb.org" />
-    <link rel="dns-prefetch" href="https://image.tmdb.org" />
-    <link rel="preconnect" href="https://api.themoviedb.org" crossorigin />
-    <link rel="dns-prefetch" href="https://api.themoviedb.org" />
-    <link rel="preconnect" href="https://images.unsplash.com" />
-    <link rel="dns-prefetch" href="https://images.unsplash.com" />
-    <link rel="dns-prefetch" href="https://graphql.anilist.co" />
-    <link rel="dns-prefetch" href="https://s4.anilist.co" />
   </head>
   <body class="bg-[#000000] text-zinc-100 antialiased">
     <div id="root"></div>

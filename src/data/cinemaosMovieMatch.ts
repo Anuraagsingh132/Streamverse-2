@@ -22,7 +22,7 @@ export const movieHeroItems: MediaItem[] = [
     vote_average: 7.5,
     badge: '#2 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/yihRNwM4YjIaDHGd3K9pHCfJweo.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/b7t3r39Oll5qPxBKzLZ8eHMBD7l.jpg',
     overview: "The most powerful man in the world embarks on a frantic mission to prove he is humanity's savior before the disaster he's unleashed destroys everything.",
     genres: ['Comedy', 'Drama']
@@ -35,7 +35,7 @@ export const movieHeroItems: MediaItem[] = [
     vote_average: 8.2,
     badge: '#3 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/pAnbApoi6DHwXzoKBfQU4M5Wr8t.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg',
     overview: 'A former soldier is thrown into a brutal race against time when a critical medical delivery makes him and his unlikely partner the targets of a ruthless cartel.',
     genres: ['Action', 'Comedy']
@@ -48,7 +48,7 @@ export const movieHeroItems: MediaItem[] = [
     vote_average: 8.1,
     badge: '#4 TRENDING · MOVIE · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/drBOdj4htH0Chlno2Ctt6OxCGgJ.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/y0reRTsewsPh0ePtgvDeLIsb5Wk.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/y0reRTsewsPh0ePtgvDeLIsb5Wk.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/9YKDy9xgIopB2qoFZcHYNkFeikh.jpg',
     overview: 'As war and plague devastate 14th-century England, a humble peasant ignites a rebellion, uniting an army of commoners to defy the King’s might.',
     genres: ['History', 'Drama']

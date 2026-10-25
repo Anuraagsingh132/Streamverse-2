@@ -40,78 +40,96 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [topRatedMoviesList, setTopRatedMoviesList] = useState<MediaItem[]>(liveTopRatedMovies);
   const [topRatedShowsList, setTopRatedShowsList] = useState<MediaItem[]>(liveTopRatedShows);
 
-  // Progressive background fetch to enrich data from TMDB API while keeping valid backdrops
+  // Progressive background fetch to enrich data from TMDB API deferred to idle
   useEffect(() => {
     let isMounted = true;
+    let idleHandle: number | undefined;
+    let timerHandle: ReturnType<typeof setTimeout> | undefined;
 
-    // Fetch live trending hero banner items
-    getHeroTrending('all', 10)
-      .then((res) => {
-        if (isMounted && res?.length) {
-          deferUntilScrollIdle(() => {
-            if (!isMounted) return;
-            React.startTransition(() => {
-              setHeroItemsList(mergeValidMediaWithFallback(res, liveHeroItems, 10));
-            });
-          });
-        }
-      })
-      .catch(() => {});
+    const runEnrichment = () => {
+      if (!isMounted) return;
 
-    getTrending('movie', 'day')
-      .then((res) => {
-        if (isMounted && res?.length) {
-          deferUntilScrollIdle(() => {
-            if (!isMounted) return;
-            React.startTransition(() => {
-              setMoviesList(mergeValidMediaWithFallback(res, liveTop10Movies));
+      // Fetch live trending hero banner items
+      getHeroTrending('all', 10)
+        .then((res) => {
+          if (isMounted && res?.length) {
+            deferUntilScrollIdle(() => {
+              if (!isMounted) return;
+              React.startTransition(() => {
+                setHeroItemsList(mergeValidMediaWithFallback(res, liveHeroItems, 10));
+              });
             });
-          });
-        }
-      })
-      .catch(() => {});
+          }
+        })
+        .catch(() => {});
 
-    getTrending('tv', 'day')
-      .then((res) => {
-        if (isMounted && res?.length) {
-          deferUntilScrollIdle(() => {
-            if (!isMounted) return;
-            React.startTransition(() => {
-              setShowsList(mergeValidMediaWithFallback(res, liveTop10Shows));
+      getTrending('movie', 'day')
+        .then((res) => {
+          if (isMounted && res?.length) {
+            deferUntilScrollIdle(() => {
+              if (!isMounted) return;
+              React.startTransition(() => {
+                setMoviesList(mergeValidMediaWithFallback(res, liveTop10Movies));
+              });
             });
-          });
-        }
-      })
-      .catch(() => {});
+          }
+        })
+        .catch(() => {});
 
-    getTopRated('movie')
-      .then((res) => {
-        if (isMounted && res?.length) {
-          deferUntilScrollIdle(() => {
-            if (!isMounted) return;
-            React.startTransition(() => {
-              setTopRatedMoviesList(mergeValidMediaWithFallback(res, liveTopRatedMovies));
+      getTrending('tv', 'day')
+        .then((res) => {
+          if (isMounted && res?.length) {
+            deferUntilScrollIdle(() => {
+              if (!isMounted) return;
+              React.startTransition(() => {
+                setShowsList(mergeValidMediaWithFallback(res, liveTop10Shows));
+              });
             });
-          });
-        }
-      })
-      .catch(() => {});
+          }
+        })
+        .catch(() => {});
 
-    getTopRated('tv')
-      .then((res) => {
-        if (isMounted && res?.length) {
-          deferUntilScrollIdle(() => {
-            if (!isMounted) return;
-            React.startTransition(() => {
-              setTopRatedShowsList(mergeValidMediaWithFallback(res, liveTopRatedShows));
+      getTopRated('movie')
+        .then((res) => {
+          if (isMounted && res?.length) {
+            deferUntilScrollIdle(() => {
+              if (!isMounted) return;
+              React.startTransition(() => {
+                setTopRatedMoviesList(mergeValidMediaWithFallback(res, liveTopRatedMovies));
+              });
             });
-          });
-        }
-      })
-      .catch(() => {});
+          }
+        })
+        .catch(() => {});
+
+      getTopRated('tv')
+        .then((res) => {
+          if (isMounted && res?.length) {
+            deferUntilScrollIdle(() => {
+              if (!isMounted) return;
+              React.startTransition(() => {
+                setTopRatedShowsList(mergeValidMediaWithFallback(res, liveTopRatedShows));
+              });
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    if ('requestIdleCallback' in window) {
+      idleHandle = (window as any).requestIdleCallback(runEnrichment, { timeout: 3000 });
+    } else {
+      timerHandle = setTimeout(runEnrichment, 1200);
+    }
 
     return () => {
       isMounted = false;
+      if (idleHandle !== undefined && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleHandle);
+      }
+      if (timerHandle !== undefined) {
+        clearTimeout(timerHandle);
+      }
     };
   }, []);
 
@@ -162,39 +180,47 @@ export const HomePage: React.FC<HomePageProps> = ({
         />
 
         {/* Streaming Providers Rail */}
-        <ProviderRail
-          onPlay={onPlay}
-          onOpenDetails={onOpenDetails}
-          watchlist={watchlist}
-          onToggleWatchlist={onToggleWatchlist}
-          onNavigateAll={() => onNavigate('providers')}
-        />
+        <div className="content-visibility-auto">
+          <ProviderRail
+            onPlay={onPlay}
+            onOpenDetails={onOpenDetails}
+            watchlist={watchlist}
+            onToggleWatchlist={onToggleWatchlist}
+            onNavigateAll={() => onNavigate('providers')}
+          />
+        </div>
 
         {/* Top 10 Rated with Movies / TV Shows toggle */}
-        <TopTenRow
-          title="Top 10 rated"
-          subtitle="All-time favourites"
-          items={activeTopRated}
-          onPlay={onPlay}
-          onOpenDetails={onOpenDetails}
-          watchlist={watchlist}
-          onToggleWatchlist={onToggleWatchlist}
-          onBrowseAll={() => onNavigate('movie')}
-          typeFilter={topRatedFilter}
-          onTypeFilterChange={setTopRatedFilter}
-        />
+        <div className="content-visibility-auto">
+          <TopTenRow
+            title="Top 10 rated"
+            subtitle="All-time favourites"
+            items={activeTopRated}
+            onPlay={onPlay}
+            onOpenDetails={onOpenDetails}
+            watchlist={watchlist}
+            onToggleWatchlist={onToggleWatchlist}
+            onBrowseAll={() => onNavigate('movie')}
+            typeFilter={topRatedFilter}
+            onTypeFilterChange={setTopRatedFilter}
+          />
+        </div>
 
         {/* Browse by Genre */}
-        <GenreRail
-          onPlay={onPlay}
-          onOpenDetails={onOpenDetails}
-          watchlist={watchlist}
-          onToggleWatchlist={onToggleWatchlist}
-          onNavigateGenre={() => onNavigate('movie')}
-        />
+        <div className="content-visibility-auto">
+          <GenreRail
+            onPlay={onPlay}
+            onOpenDetails={onOpenDetails}
+            watchlist={watchlist}
+            onToggleWatchlist={onToggleWatchlist}
+            onNavigateGenre={() => onNavigate('movie')}
+          />
+        </div>
 
         {/* Platforms Marquee */}
-        <PlatformsMarquee />
+        <div className="content-visibility-auto">
+          <PlatformsMarquee />
+        </div>
       </div>
     </div>
   );

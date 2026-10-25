@@ -24,7 +24,7 @@ export const tvHeroItems: MediaItem[] = [
     vote_average: 7.3,
     badge: '#2 TRENDING SERIES · SERIES · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/mcxfMCC7V4xq1fEVyHV4wGe2quY.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
     overview: 'An assassin seeks retribution across a neon underworld while hunted by lethal syndicates.',
     genres: ['Action', 'Thriller', 'Crime']
@@ -37,7 +37,7 @@ export const tvHeroItems: MediaItem[] = [
     vote_average: 8.3,
     badge: '#3 TRENDING SERIES · SERIES · 2026',
     logo_path: 'https://image.tmdb.org/t/p/w500/jd9EWL7f9Mefmj4c3YGEPqVx4r7.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/70RZX7kNjA0Qjn6HigB1oMvFJ8R.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/70RZX7kNjA0Qjn6HigB1oMvFJ8R.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/axdUor6gLMTrrB1UF4Qfy0TTSyX.jpg',
     overview: 'In the early 1900s, a fiercely independent woman drives a rift between two brothers, igniting a saga that unfolds across two generations.',
     genres: ['Drama', 'Family']
@@ -50,7 +50,7 @@ export const tvHeroItems: MediaItem[] = [
     vote_average: 8.6,
     badge: '#4 TRENDING SERIES · SERIES · 2023',
     logo_path: 'https://image.tmdb.org/t/p/w500/wP1Nn8yYI8g0YyR8G02Xz7QoP8f.png',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
     overview: 'Maomao lived a peaceful life with her apothecary father. Until one day, she is sold as a lowly servant to the emperor’s palace. But she was not meant for a compliant life among royalty.',
     genres: ['Animation', 'Drama', 'Mystery']
@@ -62,7 +62,7 @@ export const tvHeroItems: MediaItem[] = [
     year: 2026,
     vote_average: 9.1,
     badge: '#5 TRENDING SERIES · SERIES · 2026',
-    backdrop_path: 'https://image.tmdb.org/t/p/w1280/2hdcWhcyuHllCEjIxz8VDBzC0Fs.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/2hdcWhcyuHllCEjIxz8VDBzC0Fs.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/2hdcWhcyuHllCEjIxz8VDBzC0Fs.jpg',
     overview: 'An intense frontline combat unit battles insurmountable odds in the world’s most perilous war theater.',
     genres: ['War', 'Action', 'Drama']
