@@ -57,9 +57,9 @@ const ANIME_SERVERS: ServerOption[] = [
     getUrl: (tmdbId, isTV, season, episode) => {
       const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
-        return `https://framextv.xyz/embed/${cleanId}`;
+        return `https://framextv.cc/embed/${cleanId}`;
       }
-      return `https://framextv.xyz/embed/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+      return `https://framextv.cc/embed/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
     }
   },
   {
@@ -156,9 +156,9 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
     getUrl: (tmdbId, isTV, season, episode) => {
       const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
-        return `https://framextv.xyz/embed/${cleanId}`;
+        return `https://framextv.cc/embed/${cleanId}`;
       }
-      return `https://framextv.xyz/embed/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+      return `https://framextv.cc/embed/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
     }
   },
   {
