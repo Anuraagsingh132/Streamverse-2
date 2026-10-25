@@ -24,8 +24,32 @@ let activeMirrorIndex = 0;
 
 // Cache settings (60s fresh TTL per API guideline)
 const CACHE_TTL_MS = 60 * 1000;
+const CACHE_STORAGE_KEY = 'streamverse_live_streams_cache';
 let cachedData: { timestamp: number; categories: StreamCategory[]; allStreams: LiveStream[] } | null = null;
 let inFlightRequest: Promise<{ categories: StreamCategory[]; allStreams: LiveStream[] }> | null = null;
+
+/**
+ * Returns cached live stream data from memory or localStorage/sessionStorage.
+ * Enables instant frame-0 hydration on navigation and force-refresh.
+ */
+export function getCachedLiveStreams(): { categories: StreamCategory[]; allStreams: LiveStream[]; timestamp: number } | null {
+  if (cachedData && cachedData.allStreams.length > 0) {
+    return cachedData;
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = sessionStorage.getItem(CACHE_STORAGE_KEY) || localStorage.getItem(CACHE_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.allStreams) && parsed.allStreams.length > 0) {
+          cachedData = parsed;
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+  return null;
+}
 
 /**
  * Returns the currently active base domain.
@@ -137,10 +161,18 @@ export async function fetchLiveStreams(forceRefresh = false): Promise<{
       const data = await fetchWithMirrorFailover<LiveStreamsResponse>('/api/streams');
       const categories: StreamCategory[] = Array.isArray(data.streams) ? data.streams : [];
       const allStreams: LiveStream[] = categories.flatMap((cat) =>
-        (cat.streams || []).map((stream) => ({
-          ...stream,
-          category_name: stream.category_name || cat.category
-        }))
+        (cat.streams || []).map((stream) => {
+          let poster = stream.poster;
+          if (poster && poster.includes('poocloud.in')) {
+            // Dead DNS domain - sanitize to prevent ERR_NAME_NOT_RESOLVED main-thread hitches
+            poster = undefined;
+          }
+          return {
+            ...stream,
+            poster,
+            category_name: stream.category_name || cat.category
+          };
+        })
       );
 
       cachedData = {
@@ -148,6 +180,14 @@ export async function fetchLiveStreams(forceRefresh = false): Promise<{
         categories,
         allStreams
       };
+
+      if (typeof window !== 'undefined') {
+        try {
+          const serial = JSON.stringify(cachedData);
+          sessionStorage.setItem(CACHE_STORAGE_KEY, serial);
+          localStorage.setItem(CACHE_STORAGE_KEY, serial);
+        } catch {}
+      }
 
       // Trigger mirror discovery in background to keep list fresh
       refreshMirrorDomains().catch(() => {});
@@ -280,15 +320,36 @@ export function parseMatchTeams(name: string): MatchTeams {
     title = title.replace(scoreMatch[0], '').trim();
   }
 
-  // Split on " vs ", " vs. ", " at ", " v ", or " - "
-  const splitRegex = /\s+(?:vs\.?|at|v\.?|-)\s+/i;
-  const parts = title.split(splitRegex);
+  // Non-match session descriptors that follow a hyphen
+  const nonMatchDescriptors = /^(?:practice|qualifying|race|sprint|shootout|round|stage|session|final|semi-final|quarter-final|pre-show|highlights|warmup|day\s+\d+|heat\s+\d+)/i;
 
-  if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
+  // Primary match split on " vs ", " vs. ", " at ", " @ ", or " v "
+  const matchRegex = /\s+(?:vs\.?|at|@|v\.?)\s+/i;
+  const matchParts = title.split(matchRegex);
+
+  if (matchParts.length === 2 && matchParts[0].trim() && matchParts[1].trim()) {
     return {
       isMatch: true,
-      team1: parts[0].trim(),
-      team2: parts[1].trim(),
+      team1: matchParts[0].trim(),
+      team2: matchParts[1].trim(),
+      score,
+      cleanTitle: title
+    };
+  }
+
+  // Secondary fallback split on " - " ONLY if part 2 is not a session descriptor
+  const hyphenParts = title.split(/\s+-\s+/);
+  if (
+    hyphenParts.length === 2 &&
+    hyphenParts[0].trim() &&
+    hyphenParts[1].trim() &&
+    !nonMatchDescriptors.test(hyphenParts[1].trim()) &&
+    !/grand prix|championship|tournament|league|cup|series/i.test(hyphenParts[0].trim())
+  ) {
+    return {
+      isMatch: true,
+      team1: hyphenParts[0].trim(),
+      team2: hyphenParts[1].trim(),
       score,
       cleanTitle: title
     };

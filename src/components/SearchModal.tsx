@@ -11,10 +11,12 @@ import {
   Clock, 
   ArrowRight, 
   CornerDownLeft, 
-  Star 
+  Star,
+  Radio
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { searchTmdb } from '../services/tmdb';
+import { fetchLiveStreams, cleanStreamTitle, formatStreamTime, getStreamStatus } from '../services/liveTv';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { trackSearchQuery, posthog } from '../services/analytics';
 
@@ -52,6 +54,7 @@ const CATEGORY_TABS = [
   { value: 'movie', label: 'Movie', icon: Film },
   { value: 'tv', label: 'TV', icon: Tv },
   { value: 'anime', label: 'Anime', icon: Cat },
+  { value: 'sports', label: 'Live TV & Sports', icon: Radio },
   { value: 'manga', label: 'Manga', icon: BookOpen },
   { value: 'recent', label: 'Recent', icon: Clock },
 ] as const;
@@ -255,10 +258,58 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               }));
             setSearchResults(animeOnly);
           }
+        } else if (activeCategory === 'sports') {
+          try {
+            const data = await fetchLiveStreams();
+            const lowerQ = q.toLowerCase();
+            const nowSec = Math.floor(Date.now() / 1000);
+            const matched = data.allStreams
+              .filter((s) => {
+                const name = s.name?.toLowerCase() || '';
+                const tag = s.tag?.toLowerCase() || '';
+                const source = s.source_tag?.toLowerCase() || '';
+                const cat = s.category_name?.toLowerCase() || '';
+                return (
+                  name.includes(lowerQ) ||
+                  tag.includes(lowerQ) ||
+                  source.includes(lowerQ) ||
+                  cat.includes(lowerQ)
+                );
+              })
+              .slice(0, 20);
+
+            const mapped: SearchResultItem[] = matched.map((s) => {
+              const is247 = s.always_live === 1 || s.always_live === true;
+              const status = getStreamStatus(s, nowSec);
+              const badge = is247
+                ? '24/7 TV'
+                : status === 'live'
+                ? 'LIVE NOW'
+                : s.category_name || 'Sports';
+              return {
+                key: `sports-${s.id}`,
+                id: s.id,
+                href: `/sports?stream=${s.uri_name || s.id}`,
+                title: cleanStreamTitle(s.name),
+                meta: is247 ? '24/7 Channel' : formatStreamTime(s.starts_at),
+                badge,
+                poster: s.poster,
+                banner: s.poster,
+                overview: `Live broadcast on Streamverse · ${s.category_name || 'Sports'}`,
+                media_type: 'sports'
+              };
+            });
+            setSearchResults(mapped);
+          } catch {
+            setSearchResults([]);
+          }
         } else {
           // 'all', 'movie', 'tv'
           const tmdbType = activeCategory === 'all' ? 'multi' : activeCategory;
-          const tmdbRes = await searchTmdb(q, tmdbType);
+          const [tmdbRes, liveStreamsData] = await Promise.all([
+            searchTmdb(q, tmdbType),
+            activeCategory === 'all' ? fetchLiveStreams().catch(() => null) : null
+          ]);
           const mapped: SearchResultItem[] = tmdbRes.map((m) => {
             const isTv = m.media_type === 'tv';
             return {
@@ -276,7 +327,43 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               rawItem: m
             };
           });
-          setSearchResults(mapped);
+
+          let sportsMapped: SearchResultItem[] = [];
+          if (liveStreamsData?.allStreams) {
+            const lowerQ = q.toLowerCase();
+            const nowSec = Math.floor(Date.now() / 1000);
+            sportsMapped = liveStreamsData.allStreams
+              .filter((s) => {
+                const name = s.name?.toLowerCase() || '';
+                const tag = s.tag?.toLowerCase() || '';
+                const source = s.source_tag?.toLowerCase() || '';
+                const cat = s.category_name?.toLowerCase() || '';
+                return (
+                  name.includes(lowerQ) ||
+                  tag.includes(lowerQ) ||
+                  source.includes(lowerQ) ||
+                  cat.includes(lowerQ)
+                );
+              })
+              .slice(0, 4)
+              .map((s) => {
+                const is247 = s.always_live === 1 || s.always_live === true;
+                const status = getStreamStatus(s, nowSec);
+                return {
+                  key: `sports-${s.id}`,
+                  id: s.id,
+                  href: `/sports?stream=${s.uri_name || s.id}`,
+                  title: cleanStreamTitle(s.name),
+                  meta: is247 ? '24/7 Channel' : formatStreamTime(s.starts_at),
+                  badge: is247 ? '24/7 TV' : status === 'live' ? 'LIVE NOW' : 'Live Sport',
+                  poster: s.poster,
+                  banner: s.poster,
+                  overview: `Live broadcast direct on Streamverse · ${s.category_name || 'Sports'}`,
+                  media_type: 'sports'
+                };
+              });
+          }
+          setSearchResults([...sportsMapped, ...mapped]);
         }
       } catch (err) {
         console.error('Search failed:', err);
@@ -301,6 +388,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         media_type: item.media_type,
         category: activeCategory,
       });
+      if (item.media_type === 'sports') {
+        if (onNavigate) {
+          onNavigate(item.href);
+        } else {
+          window.location.href = item.href;
+        }
+        onClose();
+        return;
+      }
       if (item.media_type === 'manga') {
         window.open(`https://anilist.co/manga/${item.id}`, '_blank', 'noopener,noreferrer');
         onClose();

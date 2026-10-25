@@ -172,6 +172,23 @@ export const SettingsPage: React.FC = () => {
   const [savedNotification, setSavedNotification] = useState<string | null>(null);
   const [cachePurgedNotification, setCachePurgedNotification] = useState<boolean>(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState<boolean>(false);
+  const [isFpsEnabled, setIsFpsEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('streamverse_show_fps') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleFps = () => {
+    const next = !isFpsEnabled;
+    setIsFpsEnabled(next);
+    try {
+      localStorage.setItem('streamverse_show_fps', String(next));
+      window.dispatchEvent(new Event('toggle-fps-monitor'));
+    } catch {}
+    triggerSaved(`Real-time FPS HUD ${next ? 'enabled (Shift + F)' : 'disabled'}`);
+  };
 
   const triggerSaved = (msg: string = 'Settings automatically saved & synced across all players!') => {
     setSavedNotification(msg);
@@ -545,6 +562,38 @@ export const SettingsPage: React.FC = () => {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Real-time Performance & Framerate HUD Setting */}
+            <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5 space-y-4 pt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-white">
+                    <Activity className="h-4 w-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold">Real-Time FPS &amp; Smoothness Monitor</h3>
+                    <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30 uppercase tracking-widest">
+                      Live HUD
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/70 leading-relaxed max-w-xl">
+                    Displays a real-time hardware frame counter (FPS), frame-time latency (ms), and hitch detection anywhere on the site. Toggle quickly with <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white font-mono text-[11px] border border-white/15">Shift + F</kbd> or via <code className="bg-white/10 px-1 py-0.5 rounded text-rose-300 font-mono text-[11px]">?fps=true</code> in the URL.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleToggleFps}
+                  aria-pressed={isFpsEnabled}
+                  className={`inline-flex items-center gap-2 self-start sm:self-auto rounded-xl px-4 py-2.5 text-xs font-bold transition cursor-pointer border ${
+                    isFpsEnabled
+                      ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
+                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${isFpsEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
+                  <span>{isFpsEnabled ? 'HUD Enabled' : 'Enable FPS HUD'}</span>
+                </button>
               </div>
             </div>
           </motion.div>

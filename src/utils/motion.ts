@@ -21,9 +21,9 @@ export const EASINGS = {
 
 // Common reusable motion variants
 export const pageMotionVariants: Variants = {
-  initial: { opacity: 0, y: 6 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.24, ease: [0.16, 1, 0.3, 1] } },
-  exit: { opacity: 0, y: -4, transition: { duration: 0.16, ease: [0.25, 1, 0.5, 1] } },
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.12, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, transition: { duration: 0.06, ease: [0.25, 1, 0.5, 1] } },
 };
 
 export const modalBackdropVariants: Variants = {

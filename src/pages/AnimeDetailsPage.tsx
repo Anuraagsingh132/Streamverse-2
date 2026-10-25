@@ -220,8 +220,8 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
       {/* 1. HERO SECTION */}
       <section className="relative w-full">
         {/* Ambient Blur Layer */}
-        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-          <img
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[85vh] -z-10 overflow-hidden" aria-hidden="true">
+          <img decoding="async"
             alt=""
             className="h-full w-full scale-[1.2] object-cover opacity-60  saturate-150"
             src={
@@ -230,35 +230,26 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 : heroBackdrop
             }
             style={{
-              filter: 'blur(48px) saturate(1.4)',
-              WebkitFilter: 'blur(48px) saturate(1.4)',
+              filter: 'blur(24px) saturate(1.3)',
+              WebkitFilter: 'blur(24px) saturate(1.3)',
               transform: 'translate3d(0, 0, 0) scale(1.15)',
               opacity: 0.6,
               contain: 'paint'
             }}
           />
-          <div
-            className="absolute left-0 top-0 h-[45vh] w-full opacity-25 "
-            style={{
-              backgroundImage: `url(${heroBackdrop})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center top',
-              filter: 'blur(50px)',
-              maskImage: 'linear-gradient(black 0%, transparent 100%)'
-            }}
-          />
+          
         </div>
 
         {/* Kenburns Zoom Backdrop */}
         <div
           className="absolute inset-x-0 top-0 h-[90svh] overflow-hidden lg:h-[100svh]"
           style={{
-            maskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)'
+            
+
           }}
         >
           <div className="absolute inset-0" style={{ animation: 'hero-kenburns 20s ease-out forwards' }}>
-            <img
+            <img decoding="async"
               alt={d.title}
               className="h-full w-full object-cover object-top"
               src={heroBackdrop}
@@ -295,7 +286,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column (Meta & Synopsis) */}
-            <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">
+            <div className="flex min-w-0 max-w-2xl flex-col gap-3 sm:gap-4">
               {/* Badge Strip */}
               <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md">
@@ -311,7 +302,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
               {/* Title Art / Logo */}
               {heroLogo ? (
                 <div className="h-20 w-full max-w-[280px] sm:h-24 sm:max-w-sm lg:h-32 lg:max-w-lg">
-                  <img
+                  <img decoding="async"
                     src={heroLogo}
                     alt={d.title}
                     className="h-full w-full object-contain object-left-bottom"
@@ -584,7 +575,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                     className="group block cursor-pointer"
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5">
-                      <img
+                      <img decoding="async"
                         src={d.trailer_thumbnail || `https://img.youtube.com/vi/${d.trailer_key}/hqdefault.jpg`}
                         alt={d.title}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -620,7 +611,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                     className="group block cursor-pointer"
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5 border border-white/10">
-                      <img
+                      <img decoding="async"
                         src={d.trailer_thumbnail || `https://img.youtube.com/vi/${d.trailer_key}/hqdefault.jpg`}
                         alt={d.title}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -701,7 +692,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
       </section>
 
       {/* 2. EPISODES SECTION (#watch) */}
-      <section id="watch" className="scroll-mt-24 px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+      <section id="watch" className="scroll-mt-24 px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 340px" }}>
         {/* Section Header */}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -765,7 +756,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
         {viewMode === 'horizontal' ? (
           <div
             ref={episodesRailRef}
-            className="scrollbar-hide flex gap-4 overflow-x-auto pb-4 pt-1"
+            className="scrollbar-hide flex gap-4 overflow-x-auto overscroll-x-contain will-change-scroll pb-4 pt-1"
           >
             {d.episodes_list.map((ep) => (
               <div
@@ -774,7 +765,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 className="group relative w-[80vw] shrink-0 cursor-pointer sm:w-[320px] lg:w-[350px] xl:w-[380px]"
               >
                 <div className="relative aspect-video w-full overflow-hidden rounded-[20px] border border-border/50 bg-muted transition duration-300 group-hover:border-primary/40 group-hover:shadow-lg">
-                  <img
+                  <img decoding="async"
                     src={ep.still_path || d.backdrop_path}
                     alt={ep.title}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -831,7 +822,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 className="group relative cursor-pointer"
               >
                 <div className="relative aspect-video w-full overflow-hidden rounded-[20px] border border-border/50 bg-muted transition duration-300 group-hover:border-primary/40 group-hover:shadow-lg">
-                  <img
+                  <img decoding="async"
                     src={ep.still_path || d.backdrop_path}
                     alt={ep.title}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -881,7 +872,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
       {/* 3. CHARACTERS SECTION */}
       {d.characters && d.characters.length > 0 && (
-        <section className="mt-10 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+        <section className="mt-10 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 380px" }}>
           <div className="mb-4 flex items-end justify-between">
             <div>
               <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
@@ -910,7 +901,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
           <div
             ref={charactersRailRef}
-            className="scrollbar-hide flex gap-3 overflow-x-auto pb-4 pt-1"
+            className="scrollbar-hide flex gap-3 overflow-x-auto overscroll-x-contain will-change-scroll pb-4 pt-1"
           >
             {d.characters
               .filter((char) => char.image && !char.image.includes('default'))
@@ -920,7 +911,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                   className="group flex w-[120px] shrink-0 flex-col gap-2 sm:w-[140px] md:w-[150px] lg:w-[160px]"
                 >
                 <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-border/50 bg-muted transition duration-300 group-hover:border-primary/40 group-hover:shadow-lg">
-                  <img
+                  <img decoding="async"
                     src={char.image}
                     alt={char.name}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -943,7 +934,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
       {/* 4. RELATED ANIME SECTION */}
       {d.relations && d.relations.length > 0 && (
-        <section className="mt-10 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+        <section className="mt-10 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 cv-auto">
           <div className="mb-4 flex items-end justify-between">
             <div>
               <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
@@ -972,7 +963,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
           <div
             ref={relatedRailRef}
-            className="scrollbar-hide flex gap-4 overflow-x-auto pb-4 pt-1"
+            className="scrollbar-hide flex gap-4 overflow-x-auto overscroll-x-contain will-change-scroll pb-4 pt-1"
           >
             {d.relations.map((rel) => (
               <div
@@ -991,7 +982,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 className="group flex w-[260px] shrink-0 cursor-pointer flex-col gap-2 sm:w-[280px] lg:w-[310px]"
               >
                 <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/50 bg-muted transition duration-300 group-hover:border-primary/40 group-hover:shadow-lg">
-                  <img
+                  <img decoding="async"
                     src={rel.image}
                     alt={rel.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -1025,7 +1016,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
       {/* 5. RECOMMENDATIONS ("More like this") */}
       {d.recommendations && d.recommendations.length > 0 && (
-        <section className="mt-10 px-5 pb-16 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+        <section className="mt-10 px-5 pb-16 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 cv-auto">
           <div className="mb-4 flex items-end justify-between">
             <div>
               <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
@@ -1054,7 +1045,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
 
           <div
             ref={recsRailRef}
-            className="scrollbar-hide flex gap-4 overflow-x-auto pb-4 pt-1"
+            className="scrollbar-hide flex gap-4 overflow-x-auto overscroll-x-contain will-change-scroll pb-4 pt-1"
           >
             {d.recommendations.map((rec) => (
               <div
@@ -1073,7 +1064,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
                 className="group flex w-[260px] shrink-0 cursor-pointer flex-col gap-2 sm:w-[280px] lg:w-[310px]"
               >
                 <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/50 bg-muted transition duration-300 group-hover:border-primary/40 group-hover:shadow-lg">
-                  <img
+                  <img decoding="async"
                     src={rec.image}
                     alt={rec.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

@@ -1,3 +1,4 @@
+import { deferUntilScrollIdle } from '../utils/scrollScheduler';
 import React, { useState, useEffect } from 'react';
 import { MediaItem } from '../types/media';
 import { HeroBanner } from '../components/HeroBanner';
@@ -57,37 +58,94 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
 
     // Fetch live trending movies for Hero Banner
     getHeroTrending('movie', 10)
-      .then(res => { if (isMounted && res?.length) setHeroMoviesList(mergeValidMediaWithFallback(res, movieHeroItems, 10)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setHeroMoviesList(mergeValidMediaWithFallback(res, movieHeroItems, 10)));
+          });
+        }
+      })
       .catch(() => {});
 
     // Progressive asynchronous streaming: update each rail immediately upon arrival
     getTrending('movie', 'day')
-      .then(res => { if (isMounted && res?.length) setTrendingMoviesList(mergeValidMediaWithFallback(res, movieTop10Items)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setTrendingMoviesList(mergeValidMediaWithFallback(res, movieTop10Items)));
+          });
+        }
+      })
       .catch(() => {});
 
     getPopular('movie')
-      .then(res => { if (isMounted && res?.length) setPopularMoviesList(mergeValidMediaWithFallback(res, moviePopularItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setPopularMoviesList(mergeValidMediaWithFallback(res, moviePopularItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getTopRated('movie')
-      .then(res => { if (isMounted && res?.length) setTopRatedList(mergeValidMediaWithFallback(res, movieTopRatedItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setTopRatedList(mergeValidMediaWithFallback(res, movieTopRatedItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getByGenre(28, 'movie')
-      .then(res => { if (isMounted && res?.length) setActionMoviesList(mergeValidMediaWithFallback(res, movieActionItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setActionMoviesList(mergeValidMediaWithFallback(res, movieActionItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getByGenre(35, 'movie')
-      .then(res => { if (isMounted && res?.length) setComedyMoviesList(mergeValidMediaWithFallback(res, movieComedyItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setComedyMoviesList(mergeValidMediaWithFallback(res, movieComedyItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getNowPlayingMovies()
-      .then(res => { if (isMounted && res?.length) setNowPlayingList(mergeValidMediaWithFallback(res, movieNowPlayingItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setNowPlayingList(mergeValidMediaWithFallback(res, movieNowPlayingItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getUpcomingMovies()
-      .then(res => { if (isMounted && res?.length) setUpcomingMoviesList(mergeValidMediaWithFallback(res, movieUpcomingItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setUpcomingMoviesList(mergeValidMediaWithFallback(res, movieUpcomingItems)));
+          });
+        }
+      })
       .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -108,11 +166,8 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
         onToggleWatchlist={onToggleWatchlist}
       />
 
-      {/* Main Content Overlapping Hero with consistent 64-80px spacing rhythm */}
-      <div 
-        className="relative z-10 space-y-16 sm:space-y-20 pb-16"
-        style={{ marginTop: '-48px' }}
-      >
+      {/* Main Content Overlapping Hero (1:1 with HomePage standard) */}
+      <div className="relative z-10 space-y-16 sm:space-y-20 pb-16 mt-0 sm:-mt-20 md:-mt-24 lg:-mt-52 4xl:-mt-72">
         {/* Top 10 Today Row */}
         <TopTenRow
           title="Top 10 today"

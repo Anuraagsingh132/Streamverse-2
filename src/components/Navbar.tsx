@@ -72,13 +72,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: 'Home', route: 'home', icon: House },
     { label: 'Movies', route: 'movie', icon: Film },
     { label: 'TV Shows', route: 'tv', icon: Tv },
-    { label: 'Anime', route: 'anime', icon: Cat },
+    { label: 'Live TV', route: 'livesports', icon: Radio },
   ];
 
   const browseItems = [
     { label: 'Discover', route: 'discover', icon: Compass, description: 'Filter & explore titles' },
     { label: 'Providers', route: 'providers', icon: Tv2, description: 'Browse by streaming service' },
-    { label: 'Live TV & Sports', route: 'livesports', icon: Radio, description: 'Live sports & 24/7 channels' },
+    { label: 'Anime', route: 'anime', icon: Cat, description: 'Trending series & movies' },
     { label: 'Continue Watching', route: 'continue-watching', icon: History, description: 'Pick up where you left off' },
     { label: `Watchlist (${watchlistCount})`, route: 'watchlist', icon: Bookmark, description: 'Saved movies & shows' },
     { label: 'Settings', route: 'settings', icon: Settings, description: 'Preferences & appearance' },
@@ -125,6 +125,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         backgroundColor: 'rgba(10, 12, 20, 0.60)',
         backdropFilter: 'blur(20px) saturate(160%)',
         WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+        transform: 'translate3d(-50%, 0, 0)',
+        willChange: 'transform',
       }}
     >
       <div className="flex h-14 items-center px-2.5 sm:px-3 gap-1">
@@ -152,7 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <nav className="hidden lg:flex items-center gap-1">
           {navLinks.map((item) => {
             const Icon = item.icon;
-            const isActive = currentRoute === item.route || (item.route === 'anime' && currentRoute === 'anime-details');
+            const isActive = currentRoute === item.route || (item.route === 'livesports' && (currentRoute === 'sports' || currentRoute === 'livesports'));
             return (
               <motion.a
                 key={item.route}
@@ -192,7 +194,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setIsBrowseOpen(!isBrowseOpen)}
               onMouseEnter={() => {
                 prefetchRoute('providers');
-                prefetchRoute('livesports');
+                prefetchRoute('anime');
               }}
               className={`relative inline-flex h-10 items-center gap-1.5 px-3.5 rounded-full text-sm whitespace-nowrap transition-colors duration-200 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
                 isBrowseOpen 

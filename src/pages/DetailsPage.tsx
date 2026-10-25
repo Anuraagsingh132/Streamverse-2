@@ -1,3 +1,4 @@
+import { deferUntilScrollIdle } from '../utils/scrollScheduler';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -113,27 +114,32 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         const fullDetails = await getMediaDetails(initialItem.tmdbId || initialItem.id, initialItem.media_type);
         if (isMounted) {
           const isCurated = initialItem.id === '1248832' || initialItem.id === '95350';
-          setItem((prev) => ({
-            ...prev,
-            ...fullDetails,
-            backdrop_path: fullDetails.backdrop_path || prev.backdrop_path,
-            poster_path: fullDetails.poster_path || prev.poster_path,
-            overview: fullDetails.overview || prev.overview,
-            logo_path: fullDetails.logo_path || prev.logo_path,
-            title_logo: fullDetails.logo_path || prev.title_logo,
-            budget: isCurated ? (prev.budget || 180000000) : (fullDetails.budget || prev.budget),
-            revenue: isCurated ? (prev.revenue || 3400000) : (fullDetails.revenue || prev.revenue),
-            cast: isCurated ? prev.cast : ((fullDetails.cast && fullDetails.cast.length > 0) ? fullDetails.cast : prev.cast),
-            directors: isCurated ? prev.directors : ((fullDetails.directors && fullDetails.directors.length > 0) ? fullDetails.directors : prev.directors),
-            writers: isCurated ? prev.writers : ((fullDetails.writers && fullDetails.writers.length > 0) ? fullDetails.writers : prev.writers),
-            producers: isCurated ? prev.producers : ((fullDetails.producers && fullDetails.producers.length > 0) ? fullDetails.producers : prev.producers),
-            studios: isCurated ? prev.studios : ((fullDetails.studios && fullDetails.studios.length > 0) ? fullDetails.studios : prev.studios),
-            networks: isCurated ? prev.networks : ((fullDetails.networks && fullDetails.networks.length > 0) ? fullDetails.networks : prev.networks),
-            videos: isCurated ? prev.videos : ((fullDetails.videos && fullDetails.videos.length > 0) ? fullDetails.videos : prev.videos),
-            trailer_key: isCurated ? prev.trailer_key : (fullDetails.trailer_key || prev.trailer_key),
-            similar: isCurated ? prev.similar : (fullDetails.similar || prev.similar),
-            recommendations: isCurated ? prev.recommendations : (fullDetails.recommendations || prev.recommendations)
-          }));
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => {
+              setItem((prev) => ({
+                ...prev,
+                ...fullDetails,
+                backdrop_path: fullDetails.backdrop_path || prev.backdrop_path,
+                poster_path: fullDetails.poster_path || prev.poster_path,
+                overview: fullDetails.overview || prev.overview,
+                logo_path: fullDetails.logo_path || prev.logo_path,
+                title_logo: fullDetails.logo_path || prev.title_logo,
+                budget: isCurated ? (prev.budget || 180000000) : (fullDetails.budget || prev.budget),
+                revenue: isCurated ? (prev.revenue || 3400000) : (fullDetails.revenue || prev.revenue),
+                cast: isCurated ? prev.cast : ((fullDetails.cast && fullDetails.cast.length > 0) ? fullDetails.cast : prev.cast),
+                directors: isCurated ? prev.directors : ((fullDetails.directors && fullDetails.directors.length > 0) ? fullDetails.directors : prev.directors),
+                writers: isCurated ? prev.writers : ((fullDetails.writers && fullDetails.writers.length > 0) ? fullDetails.writers : prev.writers),
+                producers: isCurated ? prev.producers : ((fullDetails.producers && fullDetails.producers.length > 0) ? fullDetails.producers : prev.producers),
+                studios: isCurated ? prev.studios : ((fullDetails.studios && fullDetails.studios.length > 0) ? fullDetails.studios : prev.studios),
+                networks: isCurated ? prev.networks : ((fullDetails.networks && fullDetails.networks.length > 0) ? fullDetails.networks : prev.networks),
+                videos: isCurated ? prev.videos : ((fullDetails.videos && fullDetails.videos.length > 0) ? fullDetails.videos : prev.videos),
+                trailer_key: isCurated ? prev.trailer_key : (fullDetails.trailer_key || prev.trailer_key),
+                similar: isCurated ? prev.similar : (fullDetails.similar || prev.similar),
+                recommendations: isCurated ? prev.recommendations : (fullDetails.recommendations || prev.recommendations)
+              }));
+            });
+          });
 
           if (fullDetails.trailer_key) {
             setActiveVideoKey((prev) => prev || fullDetails.trailer_key || null);
@@ -143,7 +149,12 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           if (initialItem.media_type === 'tv' && episodes.length === 0) {
             const seasonEps = await getSeasonEpisodes(initialItem.tmdbId || initialItem.id, selectedSeason);
             if (isMounted && seasonEps) {
-              setEpisodes(seasonEps);
+              deferUntilScrollIdle(() => {
+                if (!isMounted) return;
+                React.startTransition(() => {
+                  setEpisodes(seasonEps);
+                });
+              });
             }
           }
         }
@@ -246,31 +257,20 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         }}
       />
       {/* 1:1 CinemaOS Ambient Fixed Backdrop Glow */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        <img
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[85vh] -z-10 overflow-hidden" aria-hidden="true">
+        <img decoding="async"
           alt=""
-          className="h-full w-full scale-[1.2] object-cover opacity-60  saturate-150"
+          className="h-full w-full object-cover opacity-50"
           src={
             item.backdrop_path?.includes('image.tmdb.org/t/p/')
               ? item.backdrop_path.replace(/\/t\/p\/(original|w\d+)\//, '/t/p/w300/')
               : item.backdrop_path
           }
           style={{
-            filter: 'blur(48px) saturate(1.4)',
-            WebkitFilter: 'blur(48px) saturate(1.4)',
-            transform: 'translate3d(0, 0, 0) scale(1.15)',
-            opacity: 0.6,
+            filter: 'blur(20px)',
+            WebkitFilter: 'blur(20px)',
+            transform: 'translate3d(0, 0, 0)',
             contain: 'paint'
-          }}
-        />
-        <div
-          className="absolute left-0 top-0 h-[45vh] w-full opacity-25 "
-          style={{
-            backgroundImage: `url(${item.backdrop_path})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center top',
-            filter: 'blur(50px)',
-            maskImage: 'linear-gradient(black 0%, transparent 100%)'
           }}
         />
       </div>
@@ -281,12 +281,11 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         <div
           className="absolute inset-x-0 top-0 h-[90svh] overflow-hidden lg:h-[100svh]"
           style={{
-            maskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)'
+            /* GPU Accelerated Layer */
           }}
         >
           <div className="absolute inset-0">
-            <img
+            <img decoding="async"
               alt={item.title}
               className="h-full w-full object-cover object-[center_15%] sm:object-[center_12%] lg:object-[center_15%]"
               src={item.backdrop_path}
@@ -323,7 +322,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
           <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             {/* Left Column: Metadata, Logo, Overview, CTAs */}
-            <div className="flex min-w-0 max-w-2xl flex-col gap-3 duration-700 animate-in fade-in slide-in-from-bottom-3 sm:gap-4">
+            <div className="flex min-w-0 max-w-2xl flex-col gap-3 sm:gap-4">
               {/* Badge row */}
               <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-900 backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white">
@@ -341,7 +340,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               {/* Title Logo (1:1 with transparent PNG or typography fallback) */}
               <div className="h-20 w-full max-w-[280px] sm:h-24 sm:max-w-sm lg:h-32 lg:max-w-lg">
                 {item.logo_path ? (
-                  <img
+                  <img decoding="async"
                     src={item.logo_path}
                     alt={item.title}
                     loading="eager"
@@ -632,7 +631,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     className="group block cursor-pointer"
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5">
-                      <img
+                      <img decoding="async"
                         alt={primaryTrailer?.name || `${item.title} trailer`}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -671,7 +670,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     className="group block cursor-pointer"
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5">
-                      <img
+                      <img decoding="async"
                         alt={`${item.title} - ${episodes[0]?.name || 'Next episode'}`}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -715,7 +714,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                             title={`${actor.name} as ${actor.character}`}
                             className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-black/60 transition hover:z-10 hover:scale-110"
                           >
-                            <img
+                            <img decoding="async"
                               alt={actor.name}
                               loading="lazy"
                               className="h-full w-full object-cover"
@@ -746,7 +745,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     className="group block cursor-pointer"
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5 border border-white/10">
-                      <img
+                      <img decoding="async"
                         alt={primaryTrailer?.name || `${item.title} trailer`}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -782,7 +781,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     className="group block cursor-pointer"
                   >
                     <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/5 border border-white/10">
-                      <img
+                      <img decoding="async"
                         alt={`${item.title} - ${episodes[0]?.name || 'Next episode'}`}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -830,7 +829,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 {item.cast.slice(0, 10).map((actor) => (
                   <div key={actor.id} className="flex w-16 shrink-0 flex-col items-center text-center sm:w-20">
                     <div className="relative h-14 w-14 overflow-hidden rounded-full border border-white/15 bg-white/10 shadow-md ring-2 ring-black/40">
-                      <img
+                      <img decoding="async"
                         alt={actor.name}
                         loading="lazy"
                         className="h-full w-full object-cover"
@@ -931,7 +930,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                       ?.filter((partner) => Boolean(partner.logo_path))
                       .slice(0, 4)
                       .map((partner) => (
-                        <img
+                        <img decoding="async"
                           key={partner.id}
                           src={partner.logo_path}
                           alt={partner.name}
@@ -953,7 +952,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
       {/* TV Show: Episodes Section (1:1 with cinemaos.tech) */}
       {item.media_type === 'tv' && (
-        <section className="px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+        <section className="px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 290px" }}>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="flex items-center gap-2.5">
@@ -1073,10 +1072,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   <div className="w-36 shrink-0 sm:w-56 md:w-64">
                     <div
                       onClick={() => onPlay({ ...item, episodes_list: episodes }, ep.episode_number, selectedSeason)}
-                      className="card-3d relative cursor-pointer rounded-xl"
+                      className="relative cursor-pointer rounded-xl"
                     >
                       <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                        <img
+                        <img decoding="async"
                           alt={ep.name}
                           loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1104,7 +1103,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                           </span>
                         </div>
                       </div>
-                      <span className="card-3d-glare" aria-hidden="true" />
+                      
                     </div>
                   </div>
 
@@ -1156,7 +1155,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
       {/* Movie: Trailers & Teasers Section (1:1 with cinemaos.tech) */}
       {item.media_type === 'movie' && item.videos && item.videos.length > 0 && (
-        <section className="px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+        <section className="px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 cv-auto">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="flex items-center gap-2.5">
@@ -1192,10 +1191,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
             <div
               ref={trailerRailRef}
-              className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 pb-4 pt-2"
+              className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-4 pb-4 pt-2"
               style={{
-                maskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)'
+                
+
               }}
             >
               {item.videos.map((vid) => (
@@ -1208,7 +1207,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                   className="group w-64 shrink-0 cursor-pointer md:w-72"
                 >
                   <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10">
-                    <img
+                    <img decoding="async"
                       alt={vid.name}
                       loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1231,7 +1230,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
       )}
 
       {/* Cast & Crew Section */}
-      <section className="w-full px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" aria-labelledby="cast-crew-heading">
+      <section className="w-full px-5 py-8 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 420px" }} aria-labelledby="cast-crew-heading">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
@@ -1260,7 +1259,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               {item.cast?.map((actor) => (
                 <div key={actor.id} className="flex min-w-0 items-center gap-3">
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white/10">
-                    <img
+                    <img decoding="async"
                       alt={actor.name}
                       loading="lazy"
                       className="h-full w-full object-cover"
@@ -1295,7 +1294,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     {directorList.map((dir) => (
                       <div key={dir.id} className="flex min-w-0 items-center gap-2">
                         <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
-                          <img
+                          <img decoding="async"
                             alt={dir.name}
                             loading="lazy"
                             className="h-full w-full object-cover"
@@ -1321,7 +1320,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     {writerList.map((writer) => (
                       <div key={writer.id} className="flex min-w-0 items-center gap-2">
                         <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
-                          <img
+                          <img decoding="async"
                             alt={writer.name}
                             loading="lazy"
                             className="h-full w-full object-cover"
@@ -1347,7 +1346,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     {producerList.map((producer) => (
                       <div key={producer.id} className="flex min-w-0 items-center gap-2">
                         <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
-                          <img
+                          <img decoding="async"
                             alt={producer.name}
                             loading="lazy"
                             className="h-full w-full object-cover"
@@ -1368,7 +1367,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
       </section>
 
       {/* More Like This (Vertical Poster Cards matching 1:1) */}
-      <section className="mt-10 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+      <section className="mt-10 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 380px" }}>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
@@ -1401,10 +1400,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
           <div
             ref={moreLikeRailRef}
-            className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5"
+            className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
+              
+
             }}
           >
             {similarItems.map((similarItem) => (
@@ -1421,7 +1420,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
       </section>
 
       {/* Recommended movies / Recommended shows (Vertical Poster Cards matching 1:1) */}
-      <section className="px-5 py-4 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+      <section className="px-5 py-4 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 380px" }}>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
@@ -1456,8 +1455,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
             ref={recommendedRailRef}
             className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
+              
+
             }}
           >
             {recommendedItems.map((recItem) => (

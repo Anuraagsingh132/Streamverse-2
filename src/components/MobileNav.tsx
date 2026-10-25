@@ -6,7 +6,7 @@ import {
   Tv, 
   Cat, 
   LayoutGrid,
-  Volleyball, 
+  Radio, 
   Search, 
   Tv2,
   Bookmark,
@@ -33,21 +33,34 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
   // Smooth scroll-direction reaction: hide gently on scroll down, snap back on scroll up
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+
     let ticking = false;
+    let isVisibleCurrent = true;
+
     const handleScroll = () => {
+      // Completely bypass on desktop viewports where MobileNav is hidden
+      if (mediaQuery.matches) return;
+
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const currentY = window.scrollY;
+          let nextVisible = isVisibleCurrent;
           if (currentY <= 60) {
-            setIsVisible(true);
+            nextVisible = true;
           } else if (currentY > lastScrollY.current + 8) {
             // Scrolling down -> hide
-            setIsVisible(false);
+            nextVisible = false;
           } else if (currentY < lastScrollY.current - 8) {
             // Scrolling up -> show
-            setIsVisible(true);
+            nextVisible = true;
           }
           lastScrollY.current = currentY;
+          if (nextVisible !== isVisibleCurrent) {
+            isVisibleCurrent = nextVisible;
+            setIsVisible(nextVisible);
+          }
           ticking = false;
         });
         ticking = true;
@@ -63,7 +76,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     { label: 'Home', route: 'home', icon: House },
     { label: 'Movies', route: 'movie', icon: Film },
     { label: 'TV', route: 'tv', icon: Tv },
-    { label: 'Anime', route: 'anime', icon: Cat },
+    { label: 'Live TV', route: 'livesports', icon: Radio },
     { label: 'More', isAction: true, icon: LayoutGrid },
   ];
 
@@ -79,10 +92,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       }
     },
     { 
-      label: 'Live TV & Sports', 
-      description: 'Live match streams & 24/7 TV', 
-      icon: Volleyball, 
-      route: 'livesports'
+      label: 'Anime',
+      description: 'Trending series & movies',
+      icon: Cat,
+      route: 'anime'
     },
     { 
       label: 'Providers', 
@@ -145,7 +158,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           y: isVisible || isMoreOpen ? 0 : 88,
           opacity: isVisible || isMoreOpen ? 1 : 0
         }}
-        transition={{ type: 'spring', stiffness: 350, damping: 32 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         <nav 
           className="liquid-glass-bar" 
@@ -159,7 +172,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
             const isTabActive = !item.isAction && (
               currentRoute === item.route ||
               (item.route === 'movie' && currentRoute === 'movies') ||
-              (item.route === 'anime' && currentRoute === 'anime-details')
+              (item.route === 'livesports' && (currentRoute === 'sports' || currentRoute === 'livesports'))
             );
             const isMoreActive = item.isAction && isMoreOpen;
             const isActive = isTabActive || isMoreActive;

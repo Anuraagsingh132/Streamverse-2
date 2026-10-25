@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const PlatformsMarquee: React.FC = () => {
+const PlatformsMarqueeComponent: React.FC = () => {
   const platforms = [
     { name: 'Netflix', imageUrl: 'https://img.icons8.com/ios/250/netflix--v1.png' },
     { name: 'Disney+', imageUrl: 'https://img.icons8.com/nolan/256/disney-plus.png' },
@@ -17,7 +17,7 @@ export const PlatformsMarquee: React.FC = () => {
   ];
 
   return (
-    <section id="bottom-providers" className="relative overflow-hidden py-16">
+    <section id="bottom-providers" className="relative overflow-hidden py-16" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 578px' }}>
       {/* Warm Red/Burgundy Ambient Radial Glow */}
       <div 
         className="pointer-events-none absolute inset-0 -z-10"
@@ -36,7 +36,7 @@ export const PlatformsMarquee: React.FC = () => {
             className="group flex overflow-hidden p-2 [--gap:1rem] [gap:var(--gap)] flex-row max-w-screen mt-10 [--duration:40s]"
             style={{ '--duration': '40s', '--gap': '1rem' } as React.CSSProperties}
           >
-            {[0, 1, 2, 3].map((rep) => (
+            {[0, 1].map((rep) => (
               <div
                 key={rep}
                 className="flex shrink-0 justify-around [gap:var(--gap)] animate-marquee flex-row group-hover:[animation-play-state:paused] [animation-direction:reverse]"
@@ -45,10 +45,10 @@ export const PlatformsMarquee: React.FC = () => {
                 {platforms.map((a, i) => (
                   <div
                     key={`${rep}-${i}`}
-                    className="group flex h-20 w-32 items-center justify-center rounded-xl border border-black/10 bg-white/10 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 hover:-translate-y-1 hover:border-black/30 hover:bg-white/20 dark:border-white/10 dark:bg-black/20 dark:hover:border-white/30 dark:hover:bg-black/30 md:h-24 md:w-40 cursor-pointer"
+                    className="group flex h-20 w-32 items-center justify-center rounded-xl border border-black/10 bg-white/10  transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 hover:-translate-y-1 hover:border-black/30 hover:bg-white/20 dark:border-white/10 dark:bg-black/20 dark:hover:border-white/30 dark:hover:bg-black/30 md:h-24 md:w-40 cursor-pointer"
                   >
                     <div className="relative flex h-16 w-20 items-center justify-center p-2">
-                      <img
+                      <img decoding="async"
                         src={a.imageUrl}
                         alt={a.name}
                         className="h-full w-full object-contain opacity-90 transition-opacity group-hover:opacity-100 brightness-0 invert"
@@ -66,4 +66,5 @@ export const PlatformsMarquee: React.FC = () => {
   );
 };
 
+export const PlatformsMarquee = React.memo(PlatformsMarqueeComponent);
 export default PlatformsMarquee;

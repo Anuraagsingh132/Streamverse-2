@@ -1,3 +1,4 @@
+import { deferUntilScrollIdle } from '../utils/scrollScheduler';
 import React, { useState, useEffect } from 'react';
 import { HeroBanner } from '../components/HeroBanner';
 import { TopTenRow } from '../components/TopTenRow';
@@ -47,7 +48,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     getHeroTrending('all', 10)
       .then((res) => {
         if (isMounted && res?.length) {
-          setHeroItemsList(mergeValidMediaWithFallback(res, liveHeroItems, 10));
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => {
+              setHeroItemsList(mergeValidMediaWithFallback(res, liveHeroItems, 10));
+            });
+          });
         }
       })
       .catch(() => {});
@@ -55,7 +61,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     getTrending('movie', 'day')
       .then((res) => {
         if (isMounted && res?.length) {
-          setMoviesList(mergeValidMediaWithFallback(res, liveTop10Movies));
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => {
+              setMoviesList(mergeValidMediaWithFallback(res, liveTop10Movies));
+            });
+          });
         }
       })
       .catch(() => {});
@@ -63,7 +74,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     getTrending('tv', 'day')
       .then((res) => {
         if (isMounted && res?.length) {
-          setShowsList(mergeValidMediaWithFallback(res, liveTop10Shows));
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => {
+              setShowsList(mergeValidMediaWithFallback(res, liveTop10Shows));
+            });
+          });
         }
       })
       .catch(() => {});
@@ -71,7 +87,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     getTopRated('movie')
       .then((res) => {
         if (isMounted && res?.length) {
-          setTopRatedMoviesList(mergeValidMediaWithFallback(res, liveTopRatedMovies));
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => {
+              setTopRatedMoviesList(mergeValidMediaWithFallback(res, liveTopRatedMovies));
+            });
+          });
         }
       })
       .catch(() => {});
@@ -79,7 +100,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     getTopRated('tv')
       .then((res) => {
         if (isMounted && res?.length) {
-          setTopRatedShowsList(mergeValidMediaWithFallback(res, liveTopRatedShows));
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => {
+              setTopRatedShowsList(mergeValidMediaWithFallback(res, liveTopRatedShows));
+            });
+          });
         }
       })
       .catch(() => {});

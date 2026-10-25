@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 import { motion } from 'motion/react';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LiveStream } from '../../types/liveTv';
@@ -15,7 +15,7 @@ interface LiveStreamRailProps {
   unitLabel?: string;
 }
 
-export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
+const LiveStreamRailComponent: React.FC<LiveStreamRailProps> = ({
   title,
   subtitle,
   items,
@@ -25,13 +25,17 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
   featured = false
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevTitleRef = useRef(title);
 
-  // Ensure row starts with scrollLeft = 0 and resets whenever items update
+  // Only reset scroll position if the rail identity actually changes
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft = 0;
+    if (prevTitleRef.current !== title) {
+      prevTitleRef.current = title;
+      if (scrollRef.current) {
+        scrollRef.current.scrollLeft = 0;
+      }
     }
-  }, [items]);
+  }, [title]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -47,13 +51,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
   if (!items || items.length === 0) return null;
 
   return (
-    <motion.section
-      className="relative py-2 select-none"
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-    >
+    <section className="relative py-2 select-none">
       {/* Cinematic Ambient Glow for Featured Rail */}
       {featured && (
         <div
@@ -70,13 +68,16 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
       <div className="px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            {/* High-contrast uppercase eyebrow */}
-            <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-300">
-              {subtitle}
-            </p>
+            {/* High-contrast uppercase eyebrow with accent pill */}
+            <div className="flex items-center gap-2">
+              <div className="h-3.5 w-[3px] rounded-full bg-rose-500" aria-hidden="true" />
+              <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-300">
+                {subtitle}
+              </p>
+            </div>
 
             {/* Clean bold white section title */}
-            <h2 className="mt-1 text-xl sm:text-2xl font-bold text-white tracking-tight">
+            <h2 className="mt-1 text-2xl font-black md:text-3xl text-white tracking-tight">
               {title}
             </h2>
           </div>
@@ -86,7 +87,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
             <button
               type="button"
               onClick={onBrowseAll}
-              className="group flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 hover:border-white/35 active:scale-95 cursor-pointer shadow-sm"
+              className="group flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 hover:border-white/35 active:scale-95 cursor-pointer shadow-sm"
             >
               <span>Browse all</span>
               <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -102,7 +103,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
           type="button"
           onClick={() => scroll('left')}
           aria-label={`Scroll ${title} left`}
-          className="absolute left-3 lg:left-6 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/85 text-white border border-white/25 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black hover:border-white/40 shadow-2xl cursor-pointer"
+          className="absolute left-3 lg:left-6 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/90 text-white border border-white/25 opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black hover:border-white/40 shadow-2xl cursor-pointer"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -112,7 +113,7 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
           type="button"
           onClick={() => scroll('right')}
           aria-label={`Scroll ${title} right`}
-          className="absolute right-3 lg:right-6 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/85 text-white border border-white/25 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black shadow-2xl cursor-pointer"
+          className="absolute right-3 lg:right-6 top-1/2 z-30 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-black/90 text-white border border-white/25 opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black shadow-2xl cursor-pointer"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -120,15 +121,12 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
         {/* Scroll Container with 48px Right Fade and Clean Gutter */}
         <div
           ref={scrollRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto px-6 sm:px-10 lg:px-14 pb-4 scrollbar-none snap-x snap-mandatory max-w-[1600px] mx-auto scroll-pl-6 sm:scroll-pl-10 lg:scroll-pl-14"
+          className="flex gap-4 sm:gap-6 overflow-x-auto px-6 sm:px-10 lg:px-14 pb-4 scrollbar-none snap-x snap-proximity scroll-smooth overscroll-x-contain max-w-[1600px] mx-auto scroll-pl-6 sm:scroll-pl-10 lg:scroll-pl-14"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
-            maskImage:
-              'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)',
-            WebkitMaskImage:
-              'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)'
+            /* Pure hardware compositing */
           }}
         >
           {items.map((stream, idx) => {
@@ -175,8 +173,9 @@ export const LiveStreamRail: React.FC<LiveStreamRailProps> = ({
           })}
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 };
 
+export const LiveStreamRail = memo(LiveStreamRailComponent);
 export default LiveStreamRail;

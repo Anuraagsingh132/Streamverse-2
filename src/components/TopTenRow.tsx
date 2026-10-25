@@ -17,7 +17,7 @@ interface TopTenRowProps {
   onTypeFilterChange?: (type: 'movie' | 'tv') => void;
 }
 
-export const TopTenRow: React.FC<TopTenRowProps> = ({
+const TopTenRowComponent: React.FC<TopTenRowProps> = ({
   title,
   subtitle,
   items,
@@ -43,13 +43,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
   };
 
   return (
-    <motion.section
-      className="py-4 cv-auto"
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-    >
+    <section className="py-4" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 397px' }}>
       {/* Header matching user reference image exactly */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -67,7 +61,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
 
           <div className="flex items-center gap-3">
             {typeFilter && onTypeFilterChange && (
-              <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md relative">
+              <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1  relative">
                 <button
                   type="button"
                   onClick={() => onTypeFilterChange('movie')}
@@ -117,7 +111,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
               <button
                 type="button"
                 onClick={onBrowseAll}
-                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold text-white/90 backdrop-blur-md transition hover:bg-white/20 hover:text-white cursor-pointer [-webkit-tap-highlight-color:transparent]"
+                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold text-white/90  transition hover:bg-white/20 hover:text-white cursor-pointer [-webkit-tap-highlight-color:transparent]"
               >
                 <span>Browse all</span>
                 <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -134,7 +128,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
           type="button"
           onClick={() => scroll('left')}
           aria-label="Scroll left"
-          className="absolute left-2 top-[38%] z-30 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/75 text-white border border-white/20 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black/95 shadow-2xl cursor-pointer"
+          className="absolute left-2 top-[38%] z-30 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/75 text-white border border-white/20  opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black/95 shadow-2xl cursor-pointer"
         >
           <ChevronLeft className="h-5 w-5" />
         </motion.button>
@@ -145,7 +139,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
           type="button"
           onClick={() => scroll('right')}
           aria-label="Scroll right"
-          className="absolute right-2 top-[38%] z-30 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/75 text-white border border-white/20 backdrop-blur-md opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black/95 shadow-2xl cursor-pointer"
+          className="absolute right-2 top-[38%] z-30 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/75 text-white border border-white/20  opacity-0 group-hover/rail:opacity-100 transition-opacity hover:bg-black/95 shadow-2xl cursor-pointer"
         >
           <ChevronRight className="h-5 w-5" />
         </motion.button>
@@ -153,11 +147,8 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
         {/* Cards Row */}
         <div 
           ref={scrollRef}
-          className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-3 sm:gap-4 px-5 pb-6 pt-2 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" 
-          style={{
-            maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)'
-          }}
+          className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-3 sm:gap-4 px-5 pb-6 pt-2 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" 
+          /* Pure hardware compositing */
         >
           {items.slice(0, 10).map((item, idx) => {
             const isSaved = watchlist.includes(item.id);
@@ -239,7 +230,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                           onToggleWatchlist(item);
                         }}
                         title={isSaved ? "In Watchlist" : "Add to watchlist"} 
-                        className={`absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-md transition-colors duration-200 opacity-0 group-hover:opacity-100 cursor-pointer ${
+                        className={`absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 bg-black/85 transition-colors duration-200 opacity-0 group-hover:opacity-100 cursor-pointer ${
                           isSaved 
                             ? 'bg-primary text-white border-primary' 
                             : 'bg-black/60 text-white hover:bg-black/85'
@@ -251,7 +242,7 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
                       {/* Play Button Overlay on Hover */}
                       <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none">
                         <div 
-                          className="h-12 w-12 rounded-full bg-white/25 ring-1 ring-white/50 text-white flex items-center justify-center backdrop-blur-md shadow-2xl transform scale-90 group-hover:scale-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                          className="h-12 w-12 rounded-full bg-black/80 ring-1 ring-white/50 text-white flex items-center justify-center shadow-2xl transform scale-90 group-hover:scale-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
                         >
                           <Play className="h-5 w-5 fill-white text-white ml-0.5" />
                         </div>
@@ -288,8 +279,28 @@ export const TopTenRow: React.FC<TopTenRowProps> = ({
           })}
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 };
 
+export const TopTenRow = React.memo(TopTenRowComponent, (prev, next) => {
+  if (
+    prev.title !== next.title ||
+    prev.subtitle !== next.subtitle ||
+    prev.items !== next.items ||
+    prev.typeFilter !== next.typeFilter ||
+    prev.onTypeFilterChange !== next.onTypeFilterChange ||
+    prev.onPlay !== next.onPlay ||
+    prev.onOpenDetails !== next.onOpenDetails
+  ) {
+    return false;
+  }
+  if (prev.watchlist !== next.watchlist) {
+    const prevSet = new Set(prev.watchlist);
+    const nextSet = new Set(next.watchlist);
+    const anyChanged = prev.items.slice(0, 10).some((item) => prevSet.has(item.id) !== nextSet.has(item.id));
+    if (anyChanged) return false;
+  }
+  return true;
+});
 export default TopTenRow;

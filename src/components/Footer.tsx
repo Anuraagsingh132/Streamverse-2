@@ -6,7 +6,7 @@ interface FooterProps {
   onNavigate: (route: string) => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+const FooterComponent: React.FC<FooterProps> = ({ onNavigate }) => {
   const browseLinks = [
     { label: 'Movies', route: 'movie' },
     { label: 'TV Shows', route: 'tv' },
@@ -24,7 +24,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
   return (
     <footer 
-      className="relative mt-20 border-t border-white/10 bg-black/60 backdrop-blur-2xl footer-mobile-spacer"
+      className="relative mt-20 border-t border-white/10 bg-black/60 backdrop-blur-2xl footer-mobile-spacer" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 630px' }}
     >
       {/* Top ambient highlight line */}
       <div className="h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
@@ -133,4 +133,5 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   );
 };
 
+export const Footer = React.memo(FooterComponent);
 export default Footer;

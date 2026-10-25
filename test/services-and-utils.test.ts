@@ -23,6 +23,7 @@ import {
   getStreamThemeColor
 } from '../src/services/liveTv';
 import { LiveStream } from '../src/types/liveTv';
+import { fpsLogger } from '../src/services/fpsLogger';
 
 test('HDHub: parseAudioCodec correctly categorizes web compatibility', () => {
   // AAC / Web audio
@@ -669,6 +670,11 @@ test('LiveTV: parseMatchTeams extracts teams, score, and title cleanly', () => {
   const channel = parseMatchTeams('Fox Cricket 501 HD');
   assert.strictEqual(channel.isMatch, false);
   assert.strictEqual(channel.cleanTitle, 'Fox Cricket 501 HD');
+
+  // Grand Prix session preserves title and is not fake match
+  const gp = parseMatchTeams('United States Grand Prix - Practice 1');
+  assert.strictEqual(gp.isMatch, false);
+  assert.strictEqual(gp.cleanTitle, 'United States Grand Prix - Practice 1');
 });
 
 test('LiveTV: getProviderBadge maps recognizable broadcaster brands', () => {
@@ -701,4 +707,15 @@ test('LiveTV: getStreamThemeColor returns category and colors fallback', () => {
     colors: ['#ff0055']
   };
   assert.strictEqual(getStreamThemeColor(customColorStream), '#ff0055');
+});
+
+test('FpsLogger: records action, calculates metrics, and manages log subscriptions', () => {
+  fpsLogger.recordAction('test-scroll');
+  const unsubscribe = fpsLogger.subscribe((logs) => {
+    assert(Array.isArray(logs));
+  });
+  assert(fpsLogger.getTargetFps() >= 60);
+  fpsLogger.clearLogs();
+  assert.strictEqual(fpsLogger.getLogs().length, 0);
+  unsubscribe();
 });

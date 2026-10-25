@@ -374,7 +374,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                       >
                         <div className="card-3d relative rounded-xl">
                           <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-md">
-                            <img
+                            <img decoding="async"
                               alt={item.title}
                               loading="lazy"
                               className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
@@ -483,7 +483,7 @@ export const AISearchPage: React.FC<AISearchPageProps> = ({
                       className="group relative h-40 sm:h-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 cursor-pointer shadow-lg transition-colors"
                     >
                       {/* Darkened Image Layer */}
-                      <img 
+                      <img decoding="async" 
                         src={mood.image} 
                         alt={mood.title}
                         loading="lazy"

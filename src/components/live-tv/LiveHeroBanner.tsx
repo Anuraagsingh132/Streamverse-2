@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import {
   Play,
   Info,
@@ -7,15 +7,22 @@ import {
   ChevronRight,
   Tv,
   Radio,
-  Clapperboard
+  Clapperboard,
+  X
 } from 'lucide-react';
 import { LiveStream } from '../../types/liveTv';
 import {
   getStreamStatus,
   getProviderBadge,
   parseMatchTeams,
-  cleanStreamTitle
+  cleanStreamTitle,
+  formatStreamTime
 } from '../../services/liveTv';
+
+const getHighResPoster = (poster?: string): string => {
+  if (!poster) return '';
+  return poster.replace('-thumbnail.jpg', '.jpg');
+};
 
 // High-resolution photographic arena/stadium backdrops for hero showcase
 const SPORT_HERO_BACKDROPS: Record<string, string> = {
@@ -75,7 +82,7 @@ interface LiveHeroBannerProps {
   onToggleBookmark?: (stream: LiveStream) => void;
 }
 
-export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
+const LiveHeroBannerComponent: React.FC<LiveHeroBannerProps> = ({
   items,
   onPlay,
   onOpenDetails,
@@ -88,16 +95,47 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
   const [savedLocal, setSavedLocal] = useState<number[]>(savedStreamIds);
   const [showInfoModal, setShowInfoModal] = useState<LiveStream | null>(null);
 
+  // Close info modal on Escape key press
+  useEffect(() => {
+    if (!showInfoModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowInfoModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showInfoModal]);
+
   // Auto-advance hero slides every 8 seconds (matching Movies hero)
   useEffect(() => {
     if (isPaused || items.length <= 1) return;
 
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % items.length);
+      React.startTransition(() => {
+        setCurrentIndex((prev) => (prev + 1) % items.length);
+      });
     }, 8000);
 
     return () => clearInterval(timer);
   }, [items.length, isPaused]);
+
+  // Up Next 3 items for bottom-right preview strip, deduplicated and excluding current slide
+  const upNextItems = useMemo(() => {
+    if (items.length <= 1) return [];
+    const maxPreview = Math.min(items.length - 1, 3);
+    const seen = new Set<number>([currentIndex]);
+    const result: { item: LiveStream; idx: number; pos: number }[] = [];
+
+    for (let i = 1; i < items.length && result.length < maxPreview; i++) {
+      const idx = (currentIndex + i) % items.length;
+      if (!seen.has(idx)) {
+        seen.add(idx);
+        result.push({ item: items[idx], idx, pos: result.length });
+      }
+    }
+    return result;
+  }, [items, currentIndex]);
 
   if (!items || items.length === 0) return null;
 
@@ -140,14 +178,6 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
     setTouchStartX(null);
   };
 
-  // Up Next 3 items for bottom-right floating preview strip (matching Movies hero)
-  const upNextIndices = [
-    (currentIndex + 1) % items.length,
-    (currentIndex + 2) % items.length,
-    (currentIndex + 3) % items.length
-  ];
-  const upNextItems = upNextIndices.map((idx, pos) => ({ item: items[idx], idx, pos }));
-
   return (
     <section
       aria-label="Featured Sports Broadcast"
@@ -160,38 +190,14 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Ambient Backdrop Glow: Matches Movies Hero (Contained to hero on mobile, creates deep rich atmosphere) */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[85vh] md:fixed md:inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        {items.map((item, idx) => {
-          const isActive = idx === currentIndex;
-          const highResBackdrop = getSportHeroBackdrop(item.category_name, item.name);
-          const bgUrl = item.poster && !item.poster.includes('-thumbnail') ? item.poster : highResBackdrop;
-          return (
-            <div
-              key={item.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
-                isActive ? 'opacity-40' : 'opacity-0'
-              }`}
-              style={{
-                backgroundImage: `url(${bgUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center 20%',
-                filter: 'blur(80px) saturate(150%)',
-                transform: 'scale(1.2)'
-              }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Main Hero Container: Matches Movies Hero height (lg:h-screen, giving expansive breathing room under navbar) */}
+      {/* Main Hero Container: Expansive cinematic viewport height (1:1 with Movies Hero) */}
       <div className="relative h-[min(68svh,560px)] sm:h-[75vh] lg:h-screen w-full select-none">
         {/* Full-Bleed Backdrop Image Layer with Top Mask & Ken Burns Animation */}
         <div 
-          className="absolute inset-x-0 top-0 overflow-hidden h-full lg:h-[calc(100%+20vh)]"
+          className="absolute inset-0 overflow-hidden z-0 pointer-events-none"
           style={{
-            maskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)'
+            isolation: 'isolate',
+            contain: 'paint'
           }}
         >
           {items.map((item, idx) => {
@@ -203,10 +209,7 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
 
             if (!isNear) return null;
 
-            const isChannel = item.always_live === 1 || item.always_live === true;
             const highResBackdrop = getSportHeroBackdrop(item.category_name, item.name);
-            const isApiThumbnail =
-              item.poster?.includes('-thumbnail.jpg') || item.poster?.includes('/thumb/');
 
             return (
               <div
@@ -223,8 +226,9 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                   }}
                 >
                   <img
-                    src={!isChannel && item.poster && !isApiThumbnail ? item.poster : highResBackdrop}
+                    src={highResBackdrop}
                     alt={item.name}
+                    decoding="async"
                     fetchPriority={isActive ? 'high' : 'auto'}
                     loading={isActive ? 'eager' : 'lazy'}
                     className="h-full w-full object-cover object-top sm:object-center"
@@ -234,14 +238,14 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
             );
           })}
 
-          {/* Gradients matching Movies hero: Deep left scrim + subtle top scrim + soft bottom fade */}
-          <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-r from-black via-black/95 via-black/70 via-black/30 to-transparent" />
-          <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-black/60 via-transparent to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 z-20 h-48 sm:h-64 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 50%, transparent)' }} />
+          {/* Gradients: Deep left scrim + subtle top scrim + soft bottom fade */}
+          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black via-black/90 via-black/60 to-transparent" />
+          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 z-10 h-48 sm:h-64 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 50%, transparent)' }} />
 
           {/* Mobile-Only Scrims */}
-          <div className="md:hidden absolute inset-x-0 top-0 z-20 pointer-events-none" style={{ height: '120px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.25) 50%, transparent)' }} />
-          <div className="md:hidden absolute inset-x-0 bottom-0 z-20 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 40%, transparent)' }} />
+          <div className="md:hidden absolute inset-x-0 top-0 z-10 pointer-events-none" style={{ height: '120px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.25) 50%, transparent)' }} />
+          <div className="md:hidden absolute inset-x-0 bottom-0 z-10 pointer-events-none" style={{ height: '70%', background: 'linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 40%, transparent)' }} />
         </div>
 
         {/* Vertical Watermark */}
@@ -252,9 +256,9 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
           Streamverse
         </div>
 
-        {/* Content Container: Cleanly elevated on desktop with items-end pb-5 sm:pb-32 md:pb-36 lg:pb-64 (1:1 with Movies hero) */}
-        <div className="relative z-10 flex h-full items-end pb-5 sm:pb-32 md:pb-36 lg:pb-64 4xl:pb-80">
-          <div className="w-full px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+        {/* Content Container (Cleanly elevated on desktop with lg:pb-64, 1:1 with HeroBanner) */}
+        <div className="relative z-20 flex h-full items-end pb-5 sm:pb-32 md:pb-36 lg:pb-64 4xl:pb-80">
+          <div className="relative w-full px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto flex items-end justify-between gap-6">
             <div className="flex max-w-xl flex-col gap-2.5 sm:gap-4 2xl:max-w-2xl">
               {/* Badge Row (High contrast, bold pills) */}
               <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
@@ -264,16 +268,16 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                     LIVE NOW
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-md">
+                  <span className="inline-flex items-center rounded-full border border-white/20 bg-black/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-md">
                     UPCOMING
                   </span>
                 )}
 
-                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-md">
+                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-md">
                   {current.category_name || 'Sports'}
                 </span>
 
-                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-md">
+                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-md">
                   {provider.label}
                 </span>
               </div>
@@ -310,7 +314,7 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                 <button
                   type="button"
                   onClick={() => (onOpenDetails ? onOpenDetails(current) : setShowInfoModal(current))}
-                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-black/50 md:bg-white/15 px-4 sm:px-5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/25 active:scale-95 select-none cursor-pointer"
+                  className="flex h-11 min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-4 sm:px-5 text-sm font-semibold text-white transition active:scale-95 select-none cursor-pointer"
                 >
                   <Info className="lucide lucide-info h-4 w-4" />
                   More Info
@@ -321,10 +325,10 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                   onClick={() => toggleBookmark(current)}
                   title={isSaved ? 'Remove from Saved' : 'Save for Later'}
                   aria-label={isSaved ? 'Remove from Saved' : 'Save for Later'}
-                  className={`inline-flex items-center justify-center h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border border-white/20 backdrop-blur-md hover:bg-white/25 active:scale-95 transition cursor-pointer ${
+                  className={`inline-flex items-center justify-center h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border border-white/20 hover:bg-white/20 active:scale-95 transition cursor-pointer ${
                     isSaved
                       ? 'bg-primary/25 text-primary border-primary/40'
-                      : 'bg-black/50 md:bg-white/15 text-white'
+                      : 'bg-white/10 text-white'
                   }`}
                 >
                   <Bookmark className={`lucide lucide-bookmark h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
@@ -362,10 +366,10 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                   })}
                 </div>
 
-                {/* Mobile Indicators: Capped at 5 with wide solid active pill */}
+                {/* Mobile Indicators: Capped at 8 with sliding active pill */}
                 <div className="flex md:hidden items-center gap-2 py-1 mt-1 sm:mt-2">
-                  {items.slice(0, 5).map((_, idx) => {
-                    const isActive = idx === currentIndex;
+                  {items.slice(0, Math.min(items.length, 8)).map((_, idx) => {
+                    const isActive = idx === (currentIndex < 8 ? currentIndex : currentIndex % Math.min(items.length, 8));
                     return (
                       <button
                         key={`mob-${idx}`}
@@ -393,7 +397,7 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                     onClick={handlePrev}
                     aria-label="Previous slide"
                     title="Previous slide"
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white transition hover:bg-black/90 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
                     <ChevronLeft className="lucide lucide-chevron-left h-4 w-4" />
                   </button>
@@ -402,7 +406,7 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
                     onClick={handleNext}
                     aria-label="Next slide"
                     title="Next slide"
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white transition hover:bg-black/90 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
                     <ChevronRight className="lucide lucide-chevron-right h-4 w-4" />
                   </button>
@@ -410,41 +414,43 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
               </div>
             </div>
 
-            {/* Up Next Section on Right: 1:1 with Movies Hero Placement */}
-            <div 
-              className="absolute right-5 hidden flex-col gap-2.5 sm:bottom-32 md:bottom-36 lg:bottom-64 lg:right-10 xl:right-12 xl:flex 2xl:right-14 4xl:bottom-80"
-            >
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
-                <span className="h-3.5 w-[3px] rounded-full bg-primary" />
-                Up Next on Streamverse
-              </div>
-              <div className="flex gap-3">
-                {upNextItems.map(({ item, idx, pos }) => (
-                  <button
-                    key={`up-next-${item.id}-${pos}`}
-                    type="button"
-                    onClick={() => setCurrentIndex(idx)}
-                    className="group w-36 text-left xl:w-44 cursor-pointer"
-                  >
-                    <div className="card-3d relative rounded-xl">
-                      <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-lg">
-                        <img
-                          src={item.poster || getSportHeroBackdrop(item.category_name, item.name)}
-                          alt={cleanStreamTitle(item.name)}
-                          loading="lazy"
-                          className="h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+            {/* Up Next Section on Right: Perfectly aligned within max-w-[1600px] container */}
+            {upNextItems.length > 0 && (
+              <div className="hidden flex-col gap-2.5 xl:flex shrink-0">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
+                  <span className="h-3.5 w-[3px] rounded-full bg-rose-500" />
+                  Up Next on Streamverse
+                </div>
+                <div className="flex gap-3">
+                  {upNextItems.map(({ item, idx, pos }) => (
+                    <button
+                      key={`up-next-${item.id}-${pos}`}
+                      type="button"
+                      onClick={() => setCurrentIndex(idx)}
+                      className="group w-36 text-left xl:w-44 cursor-pointer"
+                    >
+                      <div className="relative rounded-xl overflow-hidden">
+                        <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-lg">
+                          <img
+                            src={item.poster ? getHighResPoster(item.poster) : getSportHeroBackdrop(item.category_name, item.name)}
+                            alt={cleanStreamTitle(item.name)}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src = getSportHeroBackdrop(item.category_name, item.name);
+                            }}
+                            className="h-full w-full object-cover opacity-85 transition duration-300 group-hover:scale-105 group-hover:opacity-100"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+                        </div>
                       </div>
-                      <span className="card-3d-glare" aria-hidden="true" />
-                    </div>
-                    <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-snug text-white/80 transition-colors group-hover:text-white">
-                      {cleanStreamTitle(item.name)}
-                    </p>
-                  </button>
-                ))}
+                      <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-snug text-white/80 transition-colors group-hover:text-white">
+                        {cleanStreamTitle(item.name)}
+                      </p>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -462,41 +468,66 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
-                {showInfoModal.category_name}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-rose-500/20 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-rose-400 border border-rose-500/30">
+                  {showInfoModal.category_name || 'Sports'}
+                </span>
+                <span className="text-xs font-semibold text-zinc-400">
+                  {getProviderBadge(showInfoModal.source_tag, showInfoModal.tag).label}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowInfoModal(null)}
-                className="rounded-full p-1 text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                aria-label="Close modal"
+                className="rounded-full p-1.5 text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <h3 className="text-2xl font-bold text-white">
+            <h3 className="text-2xl font-bold text-white tracking-tight">
               {cleanStreamTitle(showInfoModal.name)}
             </h3>
 
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-1 text-xs text-zinc-300">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400 font-medium">Broadcast Type</span>
+                <span className="text-white font-semibold">
+                  {showInfoModal.always_live ? '24/7 Linear Network Feed' : 'Live Event Relay'}
+                </span>
+              </div>
+              {showInfoModal.starts_at && (
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 font-medium">Schedule / Kickoff</span>
+                  <span className="text-white font-semibold">
+                    {formatStreamTime(showInfoModal.starts_at)}
+                  </span>
+                </div>
+              )}
+            </div>
+
             <p className="text-sm text-white/70 leading-relaxed">
-              Broadcasted via {showInfoModal.source_tag || showInfoModal.tag || 'Official Stream'}.
+              Broadcast direct from {showInfoModal.source_tag || showInfoModal.tag || 'Official Stream'} in crystal clear HD. Stadium relay feed on Streamverse.
             </p>
 
             <div className="pt-2 flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => {
+                  const toPlay = showInfoModal;
                   setShowInfoModal(null);
-                  onPlay(showInfoModal);
+                  onPlay(toPlay);
                 }}
-                className="flex-1 rounded-full bg-white py-3 text-sm font-bold text-black hover:bg-white/90 transition text-center cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 rounded-full bg-white py-3 text-sm font-bold text-black hover:bg-white/90 transition text-center cursor-pointer shadow-lg active:scale-95"
               >
+                <Play className="h-4 w-4 fill-current" />
                 Watch Broadcast Now
               </button>
               <button
                 type="button"
                 onClick={() => setShowInfoModal(null)}
-                className="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/20 transition cursor-pointer"
+                className="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/20 transition cursor-pointer active:scale-95"
               >
                 Close
               </button>
@@ -508,4 +539,5 @@ export const LiveHeroBanner: React.FC<LiveHeroBannerProps> = ({
   );
 };
 
+export const LiveHeroBanner = memo(LiveHeroBannerComponent);
 export default LiveHeroBanner;

@@ -1,3 +1,4 @@
+import { deferUntilScrollIdle } from '../utils/scrollScheduler';
 import React, { useState, useEffect } from 'react';
 import { MediaItem } from '../types/media';
 import { HeroBanner } from '../components/HeroBanner';
@@ -57,37 +58,94 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
 
     // Fetch live trending TV shows for Hero Banner
     getHeroTrending('tv', 10)
-      .then(res => { if (isMounted && res?.length) setHeroShowsList(mergeValidMediaWithFallback(res, tvHeroItems, 10)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setHeroShowsList(mergeValidMediaWithFallback(res, tvHeroItems, 10)));
+          });
+        }
+      })
       .catch(() => {});
 
     // Progressive asynchronous streaming: update each rail immediately upon arrival
     getTrending('tv', 'day')
-      .then(res => { if (isMounted && res?.length) setTrendingShowsList(mergeValidMediaWithFallback(res, tvTop10Items)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setTrendingShowsList(mergeValidMediaWithFallback(res, tvTop10Items)));
+          });
+        }
+      })
       .catch(() => {});
 
     getPopular('tv')
-      .then(res => { if (isMounted && res?.length) setPopularShowsList(mergeValidMediaWithFallback(res, tvPopularItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setPopularShowsList(mergeValidMediaWithFallback(res, tvPopularItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getTopRated('tv')
-      .then(res => { if (isMounted && res?.length) setTopRatedShowsList(mergeValidMediaWithFallback(res, tvTopRatedItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setTopRatedShowsList(mergeValidMediaWithFallback(res, tvTopRatedItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getByGenre(18, 'tv')
-      .then(res => { if (isMounted && res?.length) setDramaShowsList(mergeValidMediaWithFallback(res, tvDramaItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setDramaShowsList(mergeValidMediaWithFallback(res, tvDramaItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getByGenre(35, 'tv')
-      .then(res => { if (isMounted && res?.length) setComedyShowsList(mergeValidMediaWithFallback(res, tvComedyItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setComedyShowsList(mergeValidMediaWithFallback(res, tvComedyItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getAiringTodayTV()
-      .then(res => { if (isMounted && res?.length) setAiringTodayList(mergeValidMediaWithFallback(res, tvAiringTodayItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setAiringTodayList(mergeValidMediaWithFallback(res, tvAiringTodayItems)));
+          });
+        }
+      })
       .catch(() => {});
 
     getOnTheAirTV()
-      .then(res => { if (isMounted && res?.length) setOnTheAirList(mergeValidMediaWithFallback(res, tvOnTheAirItems)); })
+      .then(res => {
+        if (isMounted && res?.length) {
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => setOnTheAirList(mergeValidMediaWithFallback(res, tvOnTheAirItems)));
+          });
+        }
+      })
       .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -108,11 +166,8 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
         onToggleWatchlist={onToggleWatchlist}
       />
 
-      {/* Main Content Overlapping Hero with consistent 64-80px spacing rhythm */}
-      <div 
-        className="relative z-10 space-y-16 sm:space-y-20 pb-16"
-        style={{ marginTop: '-48px' }}
-      >
+      {/* Main Content Overlapping Hero (1:1 with HomePage standard) */}
+      <div className="relative z-10 space-y-16 sm:space-y-20 pb-16 mt-0 sm:-mt-20 md:-mt-24 lg:-mt-52 4xl:-mt-72">
         {/* Top 10 Today Row */}
         <TopTenRow
           title="Top 10 today"

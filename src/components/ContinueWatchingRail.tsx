@@ -10,7 +10,7 @@ interface ContinueWatchingRailProps {
   onOpenDetails: (item: MediaItem) => void;
 }
 
-export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
+const ContinueWatchingRailComponent: React.FC<ContinueWatchingRailProps> = ({
   onPlay,
   onOpenDetails
 }) => {
@@ -78,13 +78,7 @@ export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
   };
 
   return (
-    <motion.section 
-      aria-label="Continue Watching" 
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="relative z-20 py-2 sm:py-3"
-    >
+    <section aria-label="Continue Watching" className="relative z-20 py-2 sm:py-3 cv-auto">
       {/* Consistent Section Header matching Top 10 and other rows */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 mb-4">
         <div className="flex items-center gap-2.5">
@@ -124,11 +118,8 @@ export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
         {/* Cards Row - Exact same grid, padding, width, and gap as the rows below */}
         <div 
           ref={scrollRef}
-          className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-4 pt-1 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
-          style={{
-            maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)'
-          }}
+          className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-4 pt-1 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 overscroll-x-contain will-change-scroll"
+          /* Zero composite mask overhead */
         >
           <AnimatePresence mode="popLayout">
             {validHistory.map((record) => {
@@ -150,15 +141,7 @@ export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
                 : timeLabel;
 
               return (
-                <motion.div
-                  layout
-                  initial={{ opacity: 0, scale: 0.94 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }}
-                  transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
-                  key={`${record.id}_${record.season || 0}_${record.episode || 0}`}
-                  className="group relative flex-none w-[74vw] sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
-                >
+                <div key={`${record.id}_${record.season || 0}_${record.episode || 0}`} className="group relative flex-none w-[74vw] sm:w-[300px] lg:w-[330px] 2xl:w-[360px] transition-transform duration-300">
                   {/* 16:9 Landscape Card with Info on the Image */}
                   <div
                     role="button"
@@ -231,14 +214,14 @@ export const ContinueWatchingRail: React.FC<ContinueWatchingRailProps> = ({
                       />
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </AnimatePresence>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
-};
-
+};
+export const ContinueWatchingRail = React.memo(ContinueWatchingRailComponent);
 export default ContinueWatchingRail;

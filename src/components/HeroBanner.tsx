@@ -115,7 +115,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
       onTouchEnd={handleTouchEnd}
     >
       {/* Ambient Backdrop Glow: Contained to hero on mobile to prevent iOS fixed-layer black band glitches & muddy tints */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[85vh] md:fixed md:inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
         {items.map((item, idx) => {
           const isActive = idx === currentIndex;
           const isNear = Math.abs(idx - currentIndex) <= 1 || 
@@ -129,7 +129,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           }
 
           return (
-            <img 
+            <img decoding="async" 
               key={`glow-${item.id}`} 
               alt="" 
               src={thumb} 
@@ -143,8 +143,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                 isActive ? 'opacity-35 md:opacity-60' : 'opacity-0'
               }`}
               style={{
-                filter: 'blur(48px) saturate(1.4)',
-                WebkitFilter: 'blur(48px) saturate(1.4)',
+                filter: 'blur(24px)', WebkitFilter: 'blur(24px)',
                 transform: 'translate3d(0, 0, 0) scale(1.15)',
                 transition: 'opacity 1000ms ease',
                 contain: 'paint'
@@ -159,8 +158,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
         <div 
           className="absolute inset-x-0 top-0 overflow-hidden h-full lg:h-[calc(100%+20vh)]" 
           style={{
-            maskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 98%)'
+            /* Pure hardware compositing */ contain: 'paint'
           }}
         >
           {items.map((item, idx) => {
@@ -260,7 +258,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                   className="h-16 sm:h-24 w-full max-w-[240px] sm:max-w-sm duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both lg:h-32 lg:max-w-lg" 
                   style={{ animationDelay: '90ms' }}
                 >
-                  <img 
+                  <img decoding="async" 
                     key={`logo-${current.id}`}
                     src={current.logo_path || current.title_logo} 
                     alt={current.title} 
@@ -467,9 +465,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                   onClick={() => onOpenDetails(item)}
                   className="group w-36 text-left xl:w-44"
                 >
-                  <div className="card-3d relative rounded-xl">
+                  <div className="relative rounded-xl">
                     <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-lg">
-                      <img 
+                      <img decoding="async" 
                         src={item.backdrop_path} 
                         alt={item.title} 
                         loading="lazy" 

@@ -45,9 +45,9 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
           import('../pages/DetailsPage');
         }
       }}
-      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.97] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 will-change-transform"
+      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.97] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
     >
-      <div className="card-3d relative rounded-xl">
+      <div className="relative rounded-xl">
         <div className="relative isolate aspect-[2/3] overflow-hidden rounded-xl bg-white/5 shadow-xl shadow-black/40">
           <img
             alt={item.title}
@@ -65,7 +65,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
 
           {/* Top Left Rating Badge */}
           {showRatingBadge && (
-            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md transition-opacity duration-300 lg:group-hover/card:opacity-0">
+            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-white transition-opacity duration-300 lg:group-hover/card:opacity-0">
               <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
               {rating}
             </span>
@@ -106,7 +106,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
             </p>
           </div>
         </div>
-        <span className="card-3d-glare" aria-hidden="true" />
+        
       </div>
 
       {/* Underneath Metadata */}

@@ -1,3 +1,4 @@
+import { deferUntilScrollIdle } from '../utils/scrollScheduler';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'motion/react';
 import { MediaItem } from '../types/media';
@@ -6,21 +7,7 @@ import { ArrowUpRight, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import animeHeroSlides from '../data/animeHeroSlides.json';
 import { fetchAniListRail, fetchAniListHeroTrending } from '../services/anilist';
 
-let fallbackAnimeDataPromise: Promise<Record<string, any[]>> | null = null;
-function getFallbackAnimeData(): Promise<Record<string, any[]>> {
-  if (!fallbackAnimeDataPromise) {
-    fallbackAnimeDataPromise = fetch('/data/animeInitialData.json')
-      .then((res) => {
-        if (!res.ok) throw new Error('Static fetch failed');
-        return res.json();
-      })
-      .catch(async () => {
-        const mod = await import('../data/animeInitialData.json');
-        return (mod.default || mod) as Record<string, any[]>;
-      });
-  }
-  return fallbackAnimeDataPromise;
-}
+import initialAnimeData from '../data/animeInitialData.json';
 import { getCachedAnimeLogo } from '../services/animeLogo';
 import { SEOHead } from '../components/SEOHead';
 import { FALLBACK_BACKDROP } from '../utils/imageUtils';
@@ -89,7 +76,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
   const [genreResults, setGenreResults] = useState<any[]>([]);
   const [isLoadingGenre, setIsLoadingGenre] = useState<boolean>(false);
-  const [railsData, setRailsData] = useState<Record<string, any[]>>({});
+  const [railsData, setRailsData] = useState<Record<string, any[]>>(initialAnimeData as Record<string, any[]>);
   const [heroSlides, setHeroSlides] = useState<any[]>(animeHeroSlides);
  
   // Progressive background fetch for rails to keep UI snappy without 429 errors or lag
@@ -118,17 +105,17 @@ export const AnimePage: React.FC<AnimePageProps> = ({
         }).filter((s: any) => Boolean(s.backdropUrl));
 
         if (formattedSlides.length > 0) {
-          setHeroSlides(formattedSlides);
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            React.startTransition(() => {
+              setHeroSlides(formattedSlides);
+            });
+          });
         }
       }
     }).catch(() => {});
 
-    // Load fallback anime data asynchronously in background
-    getFallbackAnimeData().then((data) => {
-      if (isMounted) {
-        setRailsData((prev) => (Object.keys(prev).length === 0 ? data : { ...data, ...prev }));
-      }
-    }).catch(() => {});
+// Fallback anime data is statically initialized
 
     async function loadRailsProgressively() {
       const railDefinitions = [
@@ -149,16 +136,21 @@ export const AnimePage: React.FC<AnimePageProps> = ({
         try {
           const items = await fetchAniListRail(rDef.vars);
           if (isMounted && items && items.length > 0) {
-            setRailsData((prev) => ({
-              ...prev,
-              [rDef.key]: items
-            }));
+            deferUntilScrollIdle(() => {
+              if (!isMounted) return;
+              React.startTransition(() => {
+                setRailsData((prev) => ({
+                  ...prev,
+                  [rDef.key]: items
+                }));
+              });
+            });
           }
         } catch {
           // Gracefully continue using initial data
         }
         // Small pause between background fetches
-        await new Promise((r) => setTimeout(r, 150));
+        await new Promise((r) => setTimeout(r, 250));
       }
     }
 
@@ -224,7 +216,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
         const media = data?.data?.Page?.media || [];
         setGenreResults(media);
       } else {
-        const fallback = await getFallbackAnimeData();
+        const fallback = initialAnimeData as Record<string, any[]>;
         const allLists = Object.values(fallback).flat();
         const localMatches = allLists.filter((item: any) => 
           item.genres?.some((g: string) => g.toLowerCase() === genre.toLowerCase())
@@ -234,7 +226,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
     } catch (err) {
       console.warn('Genre load error, falling back to local matches:', err);
       try {
-        const fallback = await getFallbackAnimeData();
+        const fallback = initialAnimeData as Record<string, any[]>;
         const allLists = Object.values(fallback).flat();
         const localMatches = allLists.filter((item: any) => 
           item.genres?.some((g: string) => g.toLowerCase() === genre.toLowerCase())
@@ -339,7 +331,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
 
               {/* Genre Rail Container with No Scrollbar */}
               <div className="group/rail relative">
-                <div className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ maskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)' }}>
+                <div className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ }}>
                   {isLoadingGenre ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <div key={i} className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]">
@@ -419,7 +411,7 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
   }, [checkScroll]);
 
   return (
-    <div className="w-full duration-700 animate-in fade-in-50 slide-in-from-bottom-4">
+    <div className="w-full" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 285px' }}>
       {/* Header */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -457,7 +449,7 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
           type="button"
           aria-label="Scroll left"
           onClick={() => handleScroll('left')}
-          className={`absolute top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-black/75 sm:flex left-2 lg:left-4 ${
+          className={`absolute top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/85 text-white shadow-2xl transition duration-300 hover:scale-110 hover:bg-black sm:flex left-2 lg:left-4 ${
             canScrollLeft ? 'opacity-0 focus-visible:opacity-100 group-hover/rail:opacity-100 cursor-pointer' : 'pointer-events-none opacity-0'
           }`}
         >
@@ -469,7 +461,7 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
           type="button"
           aria-label="Scroll right"
           onClick={() => handleScroll('right')}
-          className={`absolute top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-black/75 sm:flex right-2 lg:right-4 ${
+          className={`absolute top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/85 text-white shadow-2xl transition duration-300 hover:scale-110 hover:bg-black sm:flex right-2 lg:right-4 ${
             canScrollRight ? 'opacity-0 focus-visible:opacity-100 group-hover/rail:opacity-100 cursor-pointer' : 'pointer-events-none opacity-0'
           }`}
         >
@@ -481,8 +473,8 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
           onScroll={checkScroll}
           className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
           style={{
-            maskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 0%, black 94%, transparent 100%)'
+            
+
           }}
         >
           {displayItems.length === 0 ? (
@@ -551,7 +543,7 @@ const AnimeCard = React.memo(function AnimeCard({ item, onClick }: { item: any; 
     <div className="card-3d relative rounded-xl">
       <div
         onClick={onClick}
-        className="group relative flex aspect-video w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] hover:border-primary/40 hover:shadow-lg hover:ring-1 hover:ring-primary/20 cursor-pointer"
+        className="group relative flex aspect-video w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] hover:border-primary/40 hover:shadow-lg hover:ring-1 hover:ring-primary/20 cursor-pointer"
       >
         <img
           src={image || FALLBACK_BACKDROP}
@@ -575,14 +567,14 @@ const AnimeCard = React.memo(function AnimeCard({ item, onClick }: { item: any; 
 
         {/* Hover play button */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-          <div className="rounded-full bg-white/20 p-2.5 ring-1 ring-white/40 backdrop-blur-sm">
+          <div className="rounded-full bg-white/25 p-2.5 ring-1 ring-white/50">
             <div className="ml-0.5 h-0 w-0 border-b-[6px] border-l-[9px] border-t-[6px] border-b-transparent border-l-white border-t-transparent" />
           </div>
         </div>
 
         {/* Top right yellow star rating badge */}
         {score && (
-          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
             <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
             <span>{score}</span>
           </div>

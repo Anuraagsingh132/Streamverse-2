@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'motion/react';
 import {
   Globe,
   Target,
   Tv,
-  RefreshCw
+  RefreshCw,
+  Search,
+  X
 } from 'lucide-react';
 
 // Sport-specific crisp vector SVG icons
@@ -146,9 +148,11 @@ interface LiveCategoryStripProps {
   onRefresh: () => void;
   refreshing: boolean;
   timeAgoText: string;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
-export const LiveCategoryStrip: React.FC<LiveCategoryStripProps> = ({
+const LiveCategoryStripComponent: React.FC<LiveCategoryStripProps> = ({
   selectedSport,
   onSelectSport,
   statusFilter,
@@ -158,61 +162,78 @@ export const LiveCategoryStrip: React.FC<LiveCategoryStripProps> = ({
   totalCount,
   onRefresh,
   refreshing,
-  timeAgoText
+  timeAgoText,
+  searchQuery,
+  onSearchChange
 }) => {
   return (
     <section className="relative pt-2 pb-0 select-none">
       {/* Category Header Row (Aligns with content grid, no clipping) */}
       <div className="px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-400 mb-1.5">
-              Browse by sport
-            </p>
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none">
-              Sports &amp; Leagues
-            </h2>
+          <div className="flex items-center gap-2.5">
+            <div className="h-3.5 w-[3px] rounded-full bg-rose-500" aria-hidden="true" />
+            <div>
+              <p className="text-[11px] font-bold tracking-wider uppercase text-zinc-400">
+                Browse by sport
+              </p>
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none mt-0.5">
+                Sports & Leagues
+              </h2>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search Input Bar */}
+            {onSearchChange && (
+              <div className="relative flex-1 min-w-[200px] sm:min-w-[260px] max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery || ''}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder="Search matches, teams, or channels..."
+                  aria-label="Search live sports broadcasts"
+                  className="w-full h-9 pl-8 pr-8 rounded-full border border-white/15 bg-white/[0.07] text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/40 focus:border-white/30 transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => onSearchChange('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer"
+                    title="Clear search"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Status Segmented Toggle: On exact same baseline as heading */}
-            <div className="flex h-9 min-h-[36px] items-center rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-xl relative">
+            <div className="flex h-9 min-h-[36px] items-center rounded-full border border-white/15 bg-white/[0.07] p-1 relative">
               <button
                 type="button"
                 onClick={() => onSelectStatus('all')}
-                className={`relative flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-bold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
+                className={`relative flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-bold transition-all active:scale-95 cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                   statusFilter === 'all'
-                    ? 'text-black'
+                    ? 'bg-white text-black shadow-md'
                     : 'text-zinc-300 hover:text-white'
                 }`}
               >
-                {statusFilter === 'all' && (
-                  <motion.div
-                    layoutId="sports-status-pill"
-                    className="absolute inset-0 rounded-full bg-white shadow-md"
-                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                  />
-                )}
-                <span className="relative z-10">All ({totalCount})</span>
+                <span>All ({totalCount})</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onSelectStatus('live')}
-                className={`relative flex items-center justify-center gap-2 rounded-full px-3.5 py-1 text-xs font-bold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
+                className={`relative flex items-center justify-center gap-2 rounded-full px-3.5 py-1 text-xs font-bold transition-all active:scale-95 cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                   statusFilter === 'live'
-                    ? 'text-black'
+                    ? 'bg-white text-black shadow-md'
                     : 'text-zinc-300 hover:text-white'
                 }`}
               >
-                {statusFilter === 'live' && (
-                  <motion.div
-                    layoutId="sports-status-pill"
-                    className="absolute inset-0 rounded-full bg-white shadow-md"
-                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                  />
-                )}
-                <span className="relative z-10 inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5">
                   <span
                     className={`h-2 w-2 rounded-full ${
                       statusFilter === 'live' ? 'bg-red-600' : 'bg-red-500'
@@ -225,25 +246,18 @@ export const LiveCategoryStrip: React.FC<LiveCategoryStripProps> = ({
               <button
                 type="button"
                 onClick={() => onSelectStatus('upcoming')}
-                className={`relative flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-bold transition cursor-pointer [-webkit-tap-highlight-color:transparent] ${
+                className={`relative flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-bold transition-all active:scale-95 cursor-pointer [-webkit-tap-highlight-color:transparent] ${
                   statusFilter === 'upcoming'
-                    ? 'text-black'
+                    ? 'bg-white text-black shadow-md'
                     : 'text-zinc-300 hover:text-white'
                 }`}
               >
-                {statusFilter === 'upcoming' && (
-                  <motion.div
-                    layoutId="sports-status-pill"
-                    className="absolute inset-0 rounded-full bg-white shadow-md"
-                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                  />
-                )}
-                <span className="relative z-10">Upcoming ({upcomingCount})</span>
+                <span>Upcoming ({upcomingCount})</span>
               </button>
             </div>
 
             {/* Clear "Updated just now" Refresh Pill */}
-            <div className="flex h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 backdrop-blur-xl">
+            <div className="flex h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3">
               <span className="text-xs font-semibold text-zinc-300 hidden sm:inline select-none">
                 Updated {timeAgoText}
               </span>
@@ -266,26 +280,18 @@ export const LiveCategoryStrip: React.FC<LiveCategoryStripProps> = ({
 
       {/* Horizontal Borderless Squircle Icon Strip with filled active highlight & sport-specific icons */}
       <div
-        className="flex gap-4 sm:gap-5 overflow-x-auto pb-3 pt-1 px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto scrollbar-none"
-        style={{
-          maskImage:
-            'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)',
-          WebkitMaskImage:
-            'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)'
-        }}
+        className="flex gap-4 sm:gap-5 overflow-x-auto pb-3 pt-1 px-6 sm:px-10 lg:px-14 max-w-[1600px] mx-auto scrollbar-none scroll-smooth overscroll-x-contain"
       >
         {SPORT_CATEGORIES.map((cat) => {
           const isSelected = selectedSport === cat.id;
           const Icon = cat.icon;
 
           return (
-            <motion.button
+            <button
               key={cat.id}
               type="button"
-              whileTap={{ scale: 0.92 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               onClick={() => onSelectSport(cat.id)}
-              className="group flex w-[68px] sm:w-[76px] shrink-0 flex-col items-center gap-2 cursor-pointer focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+              className="group flex w-[68px] sm:w-[76px] shrink-0 flex-col items-center gap-2 cursor-pointer focus-visible:outline-none [-webkit-tap-highlight-color:transparent] active:scale-95 transition-transform"
               aria-pressed={isSelected}
             >
               <span
@@ -307,15 +313,11 @@ export const LiveCategoryStrip: React.FC<LiveCategoryStripProps> = ({
                 {cat.label}
               </span>
               {isSelected ? (
-                <motion.div
-                  layoutId="active-sport-dot"
-                  className="h-1 w-3.5 rounded-full bg-white shadow-sm"
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                />
+                <div className="h-1 w-3.5 rounded-full bg-white shadow-sm" />
               ) : (
                 <div className="h-1 w-3.5" />
               )}
-            </motion.button>
+            </button>
           );
         })}
       </div>
@@ -323,4 +325,5 @@ export const LiveCategoryStrip: React.FC<LiveCategoryStripProps> = ({
   );
 };
 
+export const LiveCategoryStrip = memo(LiveCategoryStripComponent);
 export default LiveCategoryStrip;

@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
 import { Footer } from './components/Footer';
+import { FpsMonitor } from './components/FpsMonitor';
 import { MediaItem } from './types/media';
 import { getMediaDetails } from './services/tmdb';
 import { useWatchlistStore } from './store/useWatchlistStore';
@@ -584,6 +585,11 @@ const WatchAnimeRoute: React.FC<WatchAnimeRouteProps> = ({
 
 // ---------------- Main Router Application Shell ----------------
 
+const SportsRedirect: React.FC = () => {
+  const location = useLocation();
+  return <Navigate to={`/sports${location.search}`} replace />;
+};
+
 const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -594,7 +600,13 @@ const AppContent: React.FC = () => {
 
   const lenisRef = useRef<Lenis | null>(null);
 
-  const isWatchRoute = location.pathname.startsWith('/watch/');
+  const isSportsWatchRoute =
+    (location.pathname === '/sports' ||
+      location.pathname === '/live-tv' ||
+      location.pathname === '/livetv' ||
+      location.pathname === '/livesports') &&
+    Boolean(new URLSearchParams(location.search).get('stream'));
+  const isWatchRoute = location.pathname.startsWith('/watch/') || isSportsWatchRoute;
   const currentRouteKey = getRouteKeyFromPath(location.pathname);
 
   // Initialize Lenis smooth scroll
@@ -605,13 +617,32 @@ const AppContent: React.FC = () => {
 
     const lenis = new Lenis({
       autoRaf: true,
-      lerp: 0.088,
+      lerp: 0.14,
       smoothWheel: true,
-      wheelMultiplier: 1.0,
+      wheelMultiplier: 0.9,
       gestureOrientation: 'vertical',
       respectReducedMotion: true,
+      syncTouch: false,
     });
     lenisRef.current = lenis;
+
+    // High-performance scroll tracking: zero DOM mutations or style recalcs during scroll
+    let scrollTimeout: ReturnType<typeof setTimeout> | undefined;
+    let isScrollingActive = false;
+    lenis.on('scroll', () => {
+      if (!isScrollingActive) {
+        isScrollingActive = true;
+        (window as any).__IS_SCROLLING__ = true;
+        document.body.classList.add('is-scrolling');
+      }
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        isScrollingActive = false;
+        (window as any).__IS_SCROLLING__ = false;
+        document.body.classList.remove('is-scrolling');
+        window.dispatchEvent(new CustomEvent('scroll-idle'));
+      }, 150);
+    });
 
     return () => {
       lenis.destroy();
@@ -662,8 +693,10 @@ const AppContent: React.FC = () => {
   // Navigation handlers
   const handleNavigate = useCallback(
     (route: string) => {
-      setSelectedItem(null);
-      navigate(getRouteHref(route));
+      React.startTransition(() => {
+        setSelectedItem(null);
+        navigate(getRouteHref(route));
+      });
     },
     [navigate]
   );
@@ -671,12 +704,14 @@ const AppContent: React.FC = () => {
   const handleOpenDetails = useCallback(
     (item: MediaItem) => {
       trackMediaDetailsOpen(item, location.pathname);
-      setSelectedItem(item);
-      if (item.media_type === 'anime') {
-        navigate(`/anime/${item.id}`);
-      } else {
-        navigate(`/${item.media_type === 'tv' ? 'tv' : 'movie'}/${item.id}`);
-      }
+      React.startTransition(() => {
+        setSelectedItem(item);
+        if (item.media_type === 'anime') {
+          navigate(`/anime/${item.id}`);
+        } else {
+          navigate(`/${item.media_type === 'tv' ? 'tv' : 'movie'}/${item.id}`);
+        }
+      });
     },
     [navigate, location.pathname]
   );
@@ -684,14 +719,16 @@ const AppContent: React.FC = () => {
   const handlePlay = useCallback(
     (item: MediaItem, episode: number = 1, season: number = 1) => {
       trackMediaPlay(item, episode, season);
-      setPlayingItem(item);
-      if (item.media_type === 'movie') {
-        navigate(`/watch/movie/${item.id}`);
-      } else if (item.media_type === 'anime') {
-        navigate(`/watch/anime/${item.id}/${episode || 1}`);
-      } else {
-        navigate(`/watch/tv/${item.id}?season=${season || 1}&episode=${episode || 1}`);
-      }
+      React.startTransition(() => {
+        setPlayingItem(item);
+        if (item.media_type === 'movie') {
+          navigate(`/watch/movie/${item.id}`);
+        } else if (item.media_type === 'anime') {
+          navigate(`/watch/anime/${item.id}/${episode || 1}`);
+        } else {
+          navigate(`/watch/tv/${item.id}?season=${season || 1}&episode=${episode || 1}`);
+        }
+      });
     },
     [navigate]
   );
@@ -786,9 +823,9 @@ const AppContent: React.FC = () => {
                 />
                 <Route path="/anime/browse" element={<Navigate to="/anime" replace />} />
                 <Route path="/sports" element={<LiveSportsPage />} />
-                <Route path="/live-tv" element={<Navigate to="/sports" replace />} />
-                <Route path="/livetv" element={<Navigate to="/sports" replace />} />
-                <Route path="/livesports" element={<Navigate to="/sports" replace />} />
+                <Route path="/live-tv" element={<SportsRedirect />} />
+                <Route path="/livetv" element={<SportsRedirect />} />
+                <Route path="/livesports" element={<SportsRedirect />} />
                 <Route path="/music" element={<ComingSoonPage feature="music" onNavigate={handleNavigate} />} />
                 <Route path="/providers" element={<ComingSoonPage feature="providers" onNavigate={handleNavigate} />} />
                 <Route path="/watchlist" element={<ComingSoonPage feature="watchlist" onNavigate={handleNavigate} />} />
@@ -911,6 +948,9 @@ const AppContent: React.FC = () => {
           onOpenSearch={() => setIsSearchOpen(true)}
         />
       )}
+
+      {/* Real-Time FPS & Performance Monitor HUD */}
+      <FpsMonitor />
 
       {/* Search Modal */}
       <AnimatePresence>

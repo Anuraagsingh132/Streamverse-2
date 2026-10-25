@@ -1,3 +1,4 @@
+import { deferUntilScrollIdle } from '../utils/scrollScheduler';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Film, Tv, ArrowUpRight, Play, Plus, Check, Star, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
@@ -17,7 +18,7 @@ interface GenreRailProps {
   items?: MediaItem[];
 }
 
-export const GenreRail: React.FC<GenreRailProps> = ({
+const GenreRailComponent: React.FC<GenreRailProps> = ({
   onPlay,
   onOpenDetails,
   watchlist,
@@ -91,7 +92,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
   };
 
   return (
-    <section id="genres">
+    <section id="genres" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 450px' }}>
       <section className="py-4 sm:py-10">
         {/* Section Header */}
         <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
@@ -110,7 +111,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
 
             <div className="flex items-center gap-2">
               {/* Movies / TV Shows Toggle (Standardized Segmented Control) */}
-              <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md relative">
+              <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1  relative">
                 <button
                   type="button"
                   onClick={() => setMediaType('movie')}
@@ -159,7 +160,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                 <button
                   type="button"
                   onClick={() => onNavigateGenre(selectedGenre)}
-                  className="hidden items-center gap-1 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/20 hover:text-white sm:flex"
+                  className="hidden items-center gap-1 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/80  transition hover:bg-white/20 hover:text-white sm:flex"
                 >
                   Browse all <ArrowUpRight className="h-3.5 w-3.5" />
                 </button>
@@ -173,8 +174,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
           <div
             className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-3 pb-3 pt-1 sm:gap-4 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
+              /* Pure hardware compositing */
             }}
           >
             {genres.map((genre) => {
@@ -251,7 +251,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
           <button
             onClick={() => scroll('left')}
             aria-label="Scroll left"
-            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
+            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl  transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -259,17 +259,17 @@ export const GenreRail: React.FC<GenreRailProps> = ({
           <button
             onClick={() => scroll('right')}
             aria-label="Scroll right"
-            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
+            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl  transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
 
           <div
             ref={scrollRef}
-            className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
+            className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 overscroll-x-contain will-change-scroll"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black 100%)'
+
+
             }}
           >
             {genreItems.map((item, idx) => {
@@ -299,7 +299,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                     }}
                     className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
-                    <div className="card-3d relative rounded-xl">
+                    <div className="relative rounded-xl">
                       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
                         <img
                           alt={item.title}
@@ -333,7 +333,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                             e.stopPropagation();
                             onToggleWatchlist(item);
                           }}
-                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition-colors duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer ${
+                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30  transition-colors duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer ${
                             isSaved
                               ? 'bg-rose-600 text-white'
                               : 'bg-black/50 text-white hover:bg-black/70'
@@ -354,7 +354,7 @@ export const GenreRail: React.FC<GenreRailProps> = ({
                               e.stopPropagation();
                               onPlay(item);
                             }}
-                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 cursor-pointer shadow-lg"
+                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40  transition-transform duration-300 group-hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 cursor-pointer shadow-lg"
                           >
                             <Play className="h-5 w-5 fill-white text-white ml-0.5" />
                           </motion.button>
@@ -389,4 +389,20 @@ export const GenreRail: React.FC<GenreRailProps> = ({
   );
 };
 
+export const GenreRail = React.memo(GenreRailComponent, (prev, next) => {
+  if (
+    prev.onPlay !== next.onPlay ||
+    prev.onOpenDetails !== next.onOpenDetails ||
+    prev.onNavigateGenre !== next.onNavigateGenre
+  ) {
+    return false;
+  }
+  if (prev.watchlist !== next.watchlist) {
+    const prevSet = new Set(prev.watchlist);
+    const nextSet = new Set(next.watchlist);
+    const anyChanged = (prev.items || []).some((item) => prevSet.has(item.id) !== nextSet.has(item.id));
+    if (anyChanged) return false;
+  }
+  return true;
+});
 export default GenreRail;

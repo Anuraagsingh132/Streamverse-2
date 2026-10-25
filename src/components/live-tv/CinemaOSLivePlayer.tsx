@@ -26,15 +26,6 @@ export const CinemaOSLivePlayer: React.FC<CinemaOSLivePlayerProps> = ({ stream, 
   const modalRef = useRef<HTMLDivElement | null>(null);
   const feedDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Lock body scroll while player is active
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
-
   // Controls auto-hide timer (fades after 4s of mouse inactivity)
   const resetHideTimer = useCallback(() => {
     setShowControls(true);
@@ -45,6 +36,24 @@ export const CinemaOSLivePlayer: React.FC<CinemaOSLivePlayerProps> = ({ stream, 
       }
     }, 4000);
   }, [isFeedDropdownOpen]);
+
+  // Reset substream, feed dropdown and loading state when stream prop changes
+  useEffect(() => {
+    setSelectedSubstreamId(null);
+    setIframeLoaded(false);
+    setIsFeedDropdownOpen(false);
+    setShowControls(true);
+    resetHideTimer();
+  }, [stream.id, resetHideTimer]);
+
+  // Lock body scroll while player is active
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     hideTimerRef.current = setTimeout(() => {
@@ -130,10 +139,12 @@ export const CinemaOSLivePlayer: React.FC<CinemaOSLivePlayerProps> = ({ stream, 
     ];
     if (stream.substreams) {
       stream.substreams.forEach((sub) => {
+        const localeBadge = sub.locale ? sub.locale.toUpperCase() : undefined;
+        const tagBadge = sub.tag && sub.tag !== stream.tag ? sub.tag : undefined;
         feeds.push({
           id: sub.id,
           label: sub.source_tag || sub.name || `Feed #${sub.id}`,
-          badge: sub.name || undefined
+          badge: localeBadge ? `${localeBadge} Audio` : tagBadge || (sub.name !== stream.name ? sub.name : undefined)
         });
       });
     }
@@ -196,6 +207,14 @@ export const CinemaOSLivePlayer: React.FC<CinemaOSLivePlayerProps> = ({ stream, 
           </div>
         )}
       </div>
+
+      {/* Top Hover Detection Zone to recover hidden controls over cross-origin iframes */}
+      <div
+        onMouseEnter={() => setShowControls(true)}
+        onMouseMove={resetHideTimer}
+        className="absolute top-0 inset-x-0 h-20 z-40 pointer-events-auto"
+        aria-hidden="true"
+      />
 
       {/* Floating Top Controls (Auto-hides after 4s) — Matches Movies CinemaOSPlayer exactly */}
       <div

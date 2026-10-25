@@ -1,3 +1,4 @@
+import { deferUntilScrollIdle } from '../utils/scrollScheduler';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Film, Tv, ArrowUpRight, Play, Plus, Check, Star, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
@@ -20,7 +21,7 @@ interface ProviderRailProps {
   defaultType?: 'movie' | 'tv';
 }
 
-export const ProviderRail: React.FC<ProviderRailProps> = ({
+const ProviderRailComponent: React.FC<ProviderRailProps> = ({
   onPlay,
   onOpenDetails,
   watchlist,
@@ -66,12 +67,15 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
         const providerId = currentProviderObj.id || PROVIDER_NAME_TO_ID[selectedProvider.toLowerCase()] || 8;
         const results = await getByProvider(providerId, filterType);
         if (isMounted && results.length > 0) {
-          if (selectedProvider === 'Netflix') {
-            const fallback = filterType === 'tv' ? tvNetflixItems : exactNetflixMovies;
-            setProviderItems(mergeValidMediaWithFallback(results, fallback));
-          } else {
-            setProviderItems(results);
-          }
+          deferUntilScrollIdle(() => {
+            if (!isMounted) return;
+            if (selectedProvider === 'Netflix') {
+              const fallback = filterType === 'tv' ? tvNetflixItems : exactNetflixMovies;
+              setProviderItems(mergeValidMediaWithFallback(results, fallback));
+            } else {
+              setProviderItems(results);
+            }
+          });
         }
       } catch (err) {
         console.warn('TMDB Provider fetch error:', err);
@@ -105,7 +109,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
   };
 
   return (
-    <section className="relative py-7 cv-auto overflow-hidden">
+    <section className="relative py-7 overflow-hidden" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 655px' }}>
       {/* Cinematic Dark Slate/Teal Atmospheric Ambient Backdrop */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -132,7 +136,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
 
           <div className="flex items-center gap-2.5">
             {/* Movies / TV Shows Toggle */}
-            <div className="flex items-center rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl relative">
+            <div className="flex items-center rounded-full border border-white/10 bg-black/70 p-1 relative">
               <button
                 type="button"
                 onClick={() => setFilterType('movie')}
@@ -181,7 +185,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
             <button
               type="button"
               onClick={onNavigateAll || (() => {})}
-              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold text-white/90 backdrop-blur-xl transition hover:bg-white/20 hover:text-white cursor-pointer [-webkit-tap-highlight-color:transparent]"
+              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 min-h-[36px] sm:min-h-0 text-xs font-semibold text-white/90 transition hover:bg-white/20 hover:text-white cursor-pointer [-webkit-tap-highlight-color:transparent]"
             >
               <span>Browse all</span>
               <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -191,7 +195,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
       </div>
 
       {/* Platform Switcher Buttons Rail */}
-      <div className="scrollbar-hide flex gap-3.5 sm:gap-4.5 overflow-x-auto pb-4 pt-2 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+      <div className="scrollbar-hide flex gap-3.5 sm:gap-4.5 overflow-x-auto pb-4 pt-2 px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 overscroll-x-contain will-change-scroll">
         {providers.map((p) => {
           const isSelected = selectedProvider === p.name;
           return (
@@ -243,7 +247,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
       {/* Active Provider Sub-Header Card (Subtle, Refined Border) */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 mt-4">
         <div
-          className="relative overflow-hidden flex items-center justify-between rounded-2xl border border-white/10 bg-black/50 p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 shadow-lg"
+          className="relative overflow-hidden flex items-center justify-between rounded-2xl border border-white/10 bg-zinc-950/90 p-4 sm:p-5 transition-all duration-300 shadow-lg"
           style={{
             backgroundImage: `linear-gradient(90deg, ${currentProviderObj.color.replace('0.55', '0.12').replace('0.35', '0.08')} 0%, transparent 45%)`
           }}
@@ -270,7 +274,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
           <button
             type="button"
             onClick={onNavigateAll || (() => {})}
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/90 backdrop-blur-xl transition hover:bg-white/20 hover:text-white cursor-pointer"
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/90  transition hover:bg-white/20 hover:text-white cursor-pointer"
           >
             <span>View all</span>
             <ArrowUpRight className="h-3.5 w-3.5 stroke-[2]" />
@@ -285,7 +289,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
           <button
             onClick={() => scroll('left')}
             aria-label="Scroll left"
-            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
+            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl  transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -293,17 +297,17 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
           <button
             onClick={() => scroll('right')}
             aria-label="Scroll right"
-            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
+            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 hidden h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-2xl  transition duration-300 hover:scale-110 hover:bg-black/80 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
 
           <div
             ref={scrollRef}
-            className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
+            className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 overscroll-x-contain will-change-scroll"
             style={{
-              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
+
+
             }}
           >
             {providerItems.map((item, idx) => {
@@ -324,7 +328,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
                     }}
                     className="group block cursor-pointer"
                   >
-                    <div className="card-3d relative rounded-xl">
+                    <div className="relative rounded-xl">
                       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
                         <img
                           alt={item.title}
@@ -359,7 +363,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
                             e.stopPropagation();
                             onToggleWatchlist(item);
                           }}
-                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30 backdrop-blur-sm transition-colors duration-200 cursor-pointer ${
+                          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/30  transition-colors duration-200 cursor-pointer ${
                             isSaved
                               ? 'opacity-100 bg-rose-600 text-white'
                               : 'opacity-0 group-hover:opacity-100 bg-black/50 text-white hover:bg-black/70'
@@ -380,7 +384,7 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
                             whileHover={{ scale: 1.18 }}
                             whileTap={{ scale: 0.92 }}
                             transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 cursor-pointer shadow-lg"
+                            className="rounded-full bg-white/20 p-3 ring-1 ring-white/40  transition-transform duration-300 group-hover:scale-110 cursor-pointer shadow-lg"
                           >
                             <Play className="h-5 w-5 fill-white text-white ml-0.5" />
                           </motion.div>
@@ -415,4 +419,21 @@ export const ProviderRail: React.FC<ProviderRailProps> = ({
   );
 };
 
+export const ProviderRail = React.memo(ProviderRailComponent, (prev, next) => {
+  if (
+    prev.onPlay !== next.onPlay ||
+    prev.onOpenDetails !== next.onOpenDetails ||
+    prev.onNavigateAll !== next.onNavigateAll ||
+    prev.defaultType !== next.defaultType
+  ) {
+    return false;
+  }
+  if (prev.watchlist !== next.watchlist) {
+    const prevSet = new Set(prev.watchlist);
+    const nextSet = new Set(next.watchlist);
+    const anyChanged = (prev.items || []).some((item) => prevSet.has(item.id) !== nextSet.has(item.id));
+    if (anyChanged) return false;
+  }
+  return true;
+});
 export default ProviderRail;

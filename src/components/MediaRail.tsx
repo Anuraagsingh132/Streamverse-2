@@ -17,7 +17,7 @@ interface MediaRailProps {
 
 import { optimizeTmdbImage, FALLBACK_BACKDROP, FALLBACK_POSTER } from '../utils/imageUtils';
 
-export const MediaRail: React.FC<MediaRailProps> = ({
+const MediaRailComponent: React.FC<MediaRailProps> = ({
   title,
   subtitle,
   items,
@@ -42,13 +42,7 @@ export const MediaRail: React.FC<MediaRailProps> = ({
   };
 
   return (
-    <motion.section
-      className="py-6 cv-auto"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-    >
+    <section className="py-6 cv-auto">
       {/* Rail Header */}
       <div className="px-5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -99,10 +93,10 @@ export const MediaRail: React.FC<MediaRailProps> = ({
 
         <div
           ref={scrollRef}
-          className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
+          className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
           style={{
-            maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)'
+
+
           }}
         >
           {items.map((item, idx) => {
@@ -231,6 +225,26 @@ export const MediaRail: React.FC<MediaRailProps> = ({
           })}
         </div>
       </div>
-    </motion.section>
+    </section>
   );
-};
+};
+export const MediaRail = React.memo(MediaRailComponent, (prev, next) => {
+  if (
+    prev.title !== next.title ||
+    prev.subtitle !== next.subtitle ||
+    prev.items !== next.items ||
+    prev.posterAspect !== next.posterAspect ||
+    prev.onPlay !== next.onPlay ||
+    prev.onOpenDetails !== next.onOpenDetails
+  ) {
+    return false;
+  }
+  if (prev.watchlist !== next.watchlist) {
+    const prevSet = new Set(prev.watchlist);
+    const nextSet = new Set(next.watchlist);
+    const anyChanged = prev.items.some((item) => prevSet.has(item.id) !== nextSet.has(item.id));
+    if (anyChanged) return false;
+  }
+  return true;
+});
+export default MediaRail;
