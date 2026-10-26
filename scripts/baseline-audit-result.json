@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-26T18:34:04.012Z",
+  "timestamp": "2026-10-26T19:31:30.964Z",
   "url": "http://localhost:4173/",
   "performance": {
     "ttfbMs": 4,
@@ -7,64 +7,51 @@
     "lcpMs": 0,
     "cls": 0,
     "tbtMs": 0,
-    "loadTimeMs": 107,
-    "domInteractiveMs": 28,
-    "totalRequests": 84,
-    "totalBytes": 638458,
-    "jsBytes": 1659,
+    "loadTimeMs": 104,
+    "domInteractiveMs": 29,
+    "totalRequests": 85,
+    "totalBytes": 770930,
+    "jsBytes": 1741,
     "cssBytes": 0,
-    "imgBytes": 614479,
+    "imgBytes": 601573,
     "resourceBreakdown": {
       "document": {
         "count": 1,
         "bytes": 0
       },
       "script": {
-        "count": 20,
-        "bytes": 1659
-      },
-      "font": {
-        "count": 1,
-        "bytes": 22320
+        "count": 24,
+        "bytes": 1741
       },
       "stylesheet": {
         "count": 2,
         "bytes": 0
       },
+      "font": {
+        "count": 4,
+        "bytes": 167616
+      },
       "image": {
         "count": 23,
-        "bytes": 614479
+        "bytes": 601573
       },
       "fetch": {
-        "count": 16,
+        "count": 17,
         "bytes": 0
       }
     }
   },
   "accessibility": {
-    "violationsCount": 2,
+    "violationsCount": 0,
     "passesCount": 42,
     "incompleteCount": 1,
     "violationsByImpact": {
       "critical": 0,
-      "serious": 2,
+      "serious": 0,
       "moderate": 0,
       "minor": 0
     },
-    "violations": [
-      {
-        "id": "label-content-name-mismatch",
-        "impact": "serious",
-        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
-        "nodesCount": 45
-      },
-      {
-        "id": "nested-interactive",
-        "impact": "serious",
-        "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
-        "nodesCount": 45
-      }
-    ]
+    "violations": []
   },
   "seo": {
     "title": "StreamVerse — Movies, Anime, TV Shows & Live Sports",
@@ -72,7 +59,7 @@
     "canonical": "https://streamverse.anuraag.studio/",
     "ogTitle": "StreamVerse — Movies, Anime, TV Shows & Live Sports",
     "ogImage": "https://streamverse.anuraag.studio/og/streamverse-home.jpg",
-    "h1Count": 0,
+    "h1Count": 1,
     "hasRobotsTxt": true,
     "sitemapUrlCount": 63
   },
@@ -82,8 +69,8 @@
       "connection": "keep-alive",
       "content-encoding": "gzip",
       "content-type": "text/html",
-      "date": "Mon, 26 Oct 2026 18:33:54 GMT",
-      "etag": "W/\"12ec-XcqLnJNLul9fmKqr0psev6VCDUE\"",
+      "date": "Mon, 26 Oct 2026 19:31:21 GMT",
+      "etag": "W/\"14d4-yyT0DgWodP1voGxVV/ckyBZLwh4\"",
       "keep-alive": "timeout=5",
       "transfer-encoding": "chunked",
       "vary": "Origin"

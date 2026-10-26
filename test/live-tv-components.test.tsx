@@ -47,7 +47,7 @@ describe('Live TV & Sports Components', () => {
       expect(screen.getByText(/Football/i)).toBeInTheDocument();
 
       // Card click triggers onPlay
-      const card = screen.getByRole('button', { name: /Watch Arsenal vs Chelsea/i });
+      const card = screen.getAllByRole('button', { name: /Arsenal vs Chelsea/i })[0];
       fireEvent.click(card);
       expect(onPlay).toHaveBeenCalledWith(mockLiveMatch);
     });
