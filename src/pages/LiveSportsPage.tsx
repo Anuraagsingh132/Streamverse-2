@@ -374,8 +374,8 @@ export const LiveSportsPage: React.FC = () => {
   return (
     <div className="relative min-h-screen text-white">
       <SEOHead
-        title="Live Sports & Live TV | Streamverse"
-        description="Stream live football, cricket, NFL broadcasts, basketball, and continuous 24/7 TV networks in high definition on Streamverse."
+        title="Live Sports & Live TV | StreamVerse"
+        description="Stream live football, cricket, NFL broadcasts, basketball, and continuous 24/7 TV networks in high definition on StreamVerse."
       />
 
       {/* Hero Showcase or First-Visit Loading Hero Skeleton */}

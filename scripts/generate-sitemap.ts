@@ -7,7 +7,7 @@ import { extractedAnime } from '../src/data/animeData';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASE_URL = 'https://streamverse.app';
+const BASE_URL = 'https://streamverse.anuraag.studio';
 const TODAY = new Date().toISOString().split('T')[0];
 
 interface SitemapUrl {

@@ -155,7 +155,7 @@ export const MoviesPage: React.FC<MoviesPageProps> = ({
     <div className="relative min-h-screen">
       <SEOHead
         title="Browse Movies"
-        description="Stream popular, top rated, and upcoming blockbuster movies in 4K and 1080p on Streamverse."
+        description="Stream popular, top rated, and upcoming blockbuster movies in 4K and 1080p on StreamVerse."
       />
       {/* Hero Showcase (Movie Focus - Resident Evil lead with stylized red logo) */}
       <HeroBanner

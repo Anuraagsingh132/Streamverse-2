@@ -44,7 +44,7 @@ const FooterComponent: React.FC<FooterProps> = ({ onNavigate }) => {
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-lg shadow-black/40 transition-colors group-hover:border-primary/50 group-hover:bg-primary/15">
                 <Clapperboard className="h-5 w-5 text-primary" />
               </span>
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-white">Streamverse</span>
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-white">StreamVerse</span>
             </a>
             
             <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
@@ -114,10 +114,10 @@ const FooterComponent: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Disclaimer & Legal Notice */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs sm:text-sm text-zinc-400 leading-relaxed">
           <p className="max-w-2xl">
-            Streamverse does not host any files on its servers. All contents are provided by non-affiliated third parties. Direct DMCA inquiries to the relevant host providers.
+            StreamVerse does not host any files on its servers. All contents are provided by non-affiliated third parties. Direct DMCA inquiries to the relevant host providers.
           </p>
           <p className="shrink-0 text-zinc-400">
-            © 2026 Streamverse · Powered by{' '}
+            © 2026 StreamVerse · Powered by{' '}
             <a 
               href="https://www.themoviedb.org" 
               target="_blank" 

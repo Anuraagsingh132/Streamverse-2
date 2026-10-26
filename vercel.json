@@ -113,6 +113,50 @@
       "destination": "https://lively-bar-b4aa.anuraagsingh10a.workers.dev/api/media/$1"
     },
     {
+      "source": "/watch/anime/:id/:episode",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|whatsapp|twitterbot|telegrambot|discordbot|slackbot|linkedinbot|pinterest|skypeuripreview|applebot|redditbot).*"
+        }
+      ],
+      "destination": "/api/og?type=anime&id=:id&ep=:episode"
+    },
+    {
+      "source": "/watch/:type(movie|tv|anime)/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|whatsapp|twitterbot|telegrambot|discordbot|slackbot|linkedinbot|pinterest|skypeuripreview|applebot|redditbot).*"
+        }
+      ],
+      "destination": "/api/og?type=:type&id=:id"
+    },
+    {
+      "source": "/watch/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|whatsapp|twitterbot|telegrambot|discordbot|slackbot|linkedinbot|pinterest|skypeuripreview|applebot|redditbot).*"
+        }
+      ],
+      "destination": "/api/og?type=movie&id=:id"
+    },
+    {
+      "source": "/:type(movie|tv|anime)/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|whatsapp|twitterbot|telegrambot|discordbot|slackbot|linkedinbot|pinterest|skypeuripreview|applebot|redditbot).*"
+        }
+      ],
+      "destination": "/api/og?type=:type&id=:id"
+    },
+    {
       "source": "/((?!api/|ingest/|ai-catalog\\.json|llms\\.txt|sitemap\\.xml|robots\\.txt|assets/|media/|icons/|.*\\.[\\w]+$).*)",
       "destination": "/index.html"
     }

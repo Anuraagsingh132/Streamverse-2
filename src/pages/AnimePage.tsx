@@ -247,7 +247,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
     <div className="relative min-h-screen">
       <SEOHead
         title="Watch Anime Online"
-        description="Stream trending anime series, top rated classics, and latest seasonal episodes in Japanese with English subtitles on Streamverse."
+        description="Stream trending anime series, top rated classics, and latest seasonal episodes in Japanese with English subtitles on StreamVerse."
       />
       {/* 1:1 Anime Hero Banner with Clearlogo PNG */}
       <HeroBanner

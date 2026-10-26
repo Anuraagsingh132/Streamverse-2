@@ -238,7 +238,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
     <div className="relative min-h-screen text-white pb-36 sm:pb-32 lg:pb-16">
       <SEOHead
         title={`${item.title}${releaseYear ? ` (${releaseYear})` : ''}`}
-        description={item.overview || `Watch ${item.title} in HD on Streamverse.`}
+        description={item.overview || `Watch ${item.title} in HD on StreamVerse.`}
         image={item.backdrop_path || item.poster_path}
         type={item.media_type === 'tv' ? 'video.tv_show' : 'video.movie'}
         jsonLd={{
@@ -301,7 +301,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           aria-hidden="true"
           className="pointer-events-none absolute right-3 top-1/2 z-20 hidden -translate-y-1/2 select-none text-[11px] font-medium uppercase tracking-[0.6em] text-white/20 [writing-mode:vertical-rl] md:block"
         >
-          Streamverse
+          StreamVerse
         </div>
 
         {/* Hero Content Overlays */}
@@ -327,7 +327,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-900 backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white">
                   <Clapperboard className="h-3 w-3 text-rose-500" />
-                  Streamverse
+                  StreamVerse
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />

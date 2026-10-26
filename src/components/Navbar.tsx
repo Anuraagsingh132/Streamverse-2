@@ -141,8 +141,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           }}
           onMouseEnter={() => prefetchRoute('home')}
           onFocus={() => prefetchRoute('home')}
-          aria-label="Streamverse Home"
-          title="Streamverse Home"
+          aria-label="StreamVerse Home"
+          title="StreamVerse Home"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-rose-500 hover:text-rose-400 hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
         >
           <Clapperboard className="h-[18px] w-[18px]" strokeWidth={1.5} />
@@ -303,8 +303,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               onNavigate('home');
             }}
             whileTap={{ scale: 0.92 }}
-            aria-label="Streamverse Home"
-            title="Streamverse Home"
+            aria-label="StreamVerse Home"
+            title="StreamVerse Home"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
           >
             <svg 

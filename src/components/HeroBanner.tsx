@@ -247,7 +247,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
           aria-hidden="true" 
           className="pointer-events-none absolute right-3 top-1/2 z-10 hidden -translate-y-1/2 select-none text-[11px] font-black uppercase tracking-[0.6em] text-white/15 [writing-mode:vertical-rl] lg:block xl:right-5"
         >
-          Streamverse
+          StreamVerse
         </div>
 
         {/* Content Container (Cleanly elevated on desktop with lg:pb-64) */}
@@ -264,7 +264,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
               >
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-900 backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-white">
                   <Clapperboard className="lucide lucide-clapperboard h-3 w-3 text-primary" aria-hidden="true" />
-                  Streamverse
+                  StreamVerse
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />

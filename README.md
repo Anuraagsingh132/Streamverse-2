@@ -1,4 +1,4 @@
-# 🎬 Streamverse 2
+# 🎬 StreamVerse 2
 
 A next-generation cinema and streaming entertainment portal built with **React 19**, **TypeScript**, **Vite**, and **Tailwind CSS**. Experience seamless media discovery, anime catalogs, live sports, AI-powered search, smooth inertia scrolling with Lenis, and fluid Motion micro-interactions.
 
@@ -25,7 +25,7 @@ A next-generation cinema and streaming entertainment portal built with **React 1
 
 ## 🚀 One-Click Deployment to Vercel
 
-You can deploy Streamverse 2 directly to Vercel with zero additional configuration:
+You can deploy StreamVerse 2 directly to Vercel with zero additional configuration:
 
 1. Click the **Deploy with Vercel** button above or import this repository in [Vercel Dashboard](https://vercel.com/new).
 2. Vercel automatically detects the **Vite** framework preset:
@@ -40,7 +40,7 @@ You can deploy Streamverse 2 directly to Vercel with zero additional configurati
 
 ## 🔑 Environment Variables (Optional)
 
-Streamverse 2 works **100% out of the box with zero environment variables required** because it includes built-in fallbacks.
+StreamVerse 2 works **100% out of the box with zero environment variables required** because it includes built-in fallbacks.
 
 If you wish to use your own personal TMDB API key:
 

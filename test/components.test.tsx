@@ -279,7 +279,7 @@ describe('Component Testing Suite (TEST-02)', () => {
     it('renders brand, grouped navigation sections (Browse & Account), and handles clicks', () => {
       const onNavigate = vi.fn();
       render(<Footer onNavigate={onNavigate} />);
-      expect(screen.getByText('Streamverse')).toBeInTheDocument();
+      expect(screen.getByText('StreamVerse')).toBeInTheDocument();
       expect(screen.getByText('Browse')).toBeInTheDocument();
       expect(screen.getByText('Account')).toBeInTheDocument();
       const sportsLink = screen.getByText('Live TV & Sports');
@@ -290,7 +290,7 @@ describe('Component Testing Suite (TEST-02)', () => {
       expect(watchlistLink).toBeInTheDocument();
       fireEvent.click(watchlistLink);
       expect(onNavigate).toHaveBeenCalledWith('watchlist');
-      expect(screen.getByText(/Streamverse does not host any files on its servers/i)).toBeInTheDocument();
+      expect(screen.getByText(/StreamVerse does not host any files on its servers/i)).toBeInTheDocument();
     });
   });
 });

@@ -22,6 +22,7 @@ import { getRouteHref } from './utils/routeUtils';
 import { pageMotionVariants } from './utils/motion';
 import { ArrowLeft, Home, Compass } from 'lucide-react';
 import { PostHogPageViewTracker, trackMediaDetailsOpen, trackMediaPlay } from './services/analytics';
+import { SEOHead } from './components/SEOHead';
 
 // Lazy-loaded route views
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -394,14 +395,28 @@ const WatchMovieRoute: React.FC<WatchMovieRouteProps> = ({
     return <div className="min-h-screen bg-black" />;
   }
 
+  const releaseYear = activeItem.release_date ? activeItem.release_date.slice(0, 4) : '';
+  const metaTitle = `${activeItem.title}${releaseYear ? ` (${releaseYear})` : ''} — StreamVerse`;
+  const metaDesc = activeItem.overview
+    ? `Watch ${activeItem.title} on StreamVerse: ${activeItem.overview}`
+    : `Watch ${activeItem.title} on StreamVerse in high definition.`;
+
   return (
-    <CinemaOSPlayer
-      item={activeItem}
-      initialSeason={1}
-      initialEpisode={1}
-      episodesList={activeItem.episodes_list}
-      onClose={onClose}
-    />
+    <>
+      <SEOHead
+        title={metaTitle}
+        description={metaDesc}
+        image={activeItem.backdrop_path || activeItem.poster_path}
+        type="video.movie"
+      />
+      <CinemaOSPlayer
+        item={activeItem}
+        initialSeason={1}
+        initialEpisode={1}
+        episodesList={activeItem.episodes_list}
+        onClose={onClose}
+      />
+    </>
   );
 };
 
@@ -482,17 +497,32 @@ const WatchTvRoute: React.FC<WatchTvRouteProps> = ({
     return <div className="min-h-screen bg-black" />;
   }
 
+  const releaseYear = activeItem.release_date ? activeItem.release_date.slice(0, 4) : '';
+  const tvSuffix = ` · S${season}:E${episode}`;
+  const metaTitle = `${activeItem.title}${releaseYear ? ` (${releaseYear})` : ''}${tvSuffix} — StreamVerse`;
+  const metaDesc = activeItem.overview
+    ? `Watch ${activeItem.title} on StreamVerse: ${activeItem.overview}`
+    : `Watch ${activeItem.title} on StreamVerse in high definition.`;
+
   return (
-    <CinemaOSPlayer
-      item={activeItem}
-      initialSeason={season}
-      initialEpisode={episode}
-      episodesList={activeItem.episodes_list}
-      onClose={onClose}
-      onEpisodeChange={(s, ep) => {
-        setSearchParams({ season: String(s), episode: String(ep) });
-      }}
-    />
+    <>
+      <SEOHead
+        title={metaTitle}
+        description={metaDesc}
+        image={activeItem.backdrop_path || activeItem.poster_path}
+        type="video.tv_show"
+      />
+      <CinemaOSPlayer
+        item={activeItem}
+        initialSeason={season}
+        initialEpisode={episode}
+        episodesList={activeItem.episodes_list}
+        onClose={onClose}
+        onEpisodeChange={(s, ep) => {
+          setSearchParams({ season: String(s), episode: String(ep) });
+        }}
+      />
+    </>
   );
 };
 
@@ -572,17 +602,31 @@ const WatchAnimeRoute: React.FC<WatchAnimeRouteProps> = ({
     return <div className="min-h-screen bg-black" />;
   }
 
+  const rawTitle = activeItem.title || 'Anime';
+  const metaTitle = `${rawTitle} · Episode ${episode} — StreamVerse`;
+  const metaDesc = activeItem.overview
+    ? `Watch ${rawTitle} Episode ${episode} on StreamVerse: ${activeItem.overview}`
+    : `Watch ${rawTitle} on StreamVerse in high definition.`;
+
   return (
-    <CinemaOSPlayer
-      item={activeItem}
-      initialSeason={1}
-      initialEpisode={episode}
-      episodesList={activeItem.episodes_list}
-      onClose={onClose}
-      onEpisodeChange={(_s, ep) => {
-        navigate(`/watch/anime/${activeItem.id}/${ep}`, { replace: true });
-      }}
-    />
+    <>
+      <SEOHead
+        title={metaTitle}
+        description={metaDesc}
+        image={activeItem.backdrop_path || activeItem.poster_path}
+        type="video.tv_show"
+      />
+      <CinemaOSPlayer
+        item={activeItem}
+        initialSeason={1}
+        initialEpisode={episode}
+        episodesList={activeItem.episodes_list}
+        onClose={onClose}
+        onEpisodeChange={(_s, ep) => {
+          navigate(`/watch/anime/${activeItem.id}/${ep}`, { replace: true });
+        }}
+      />
+    </>
   );
 };
 

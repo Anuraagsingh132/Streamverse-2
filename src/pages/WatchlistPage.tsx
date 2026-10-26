@@ -73,7 +73,7 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 lg:pt-28 pb-16 space-y-8">
       <SEOHead
         title="My Watchlist"
-        description="Your personal watchlist of movies, TV shows, and anime on Streamverse."
+        description="Your personal watchlist of movies, TV shows, and anime on StreamVerse."
       />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">

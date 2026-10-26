@@ -155,7 +155,7 @@ export const TVShowsPage: React.FC<TVShowsPageProps> = ({
     <div className="relative min-h-screen">
       <SEOHead
         title="Browse TV Shows"
-        description="Stream trending series, award-winning dramas, and new releases with full season episode support on Streamverse."
+        description="Stream trending series, award-winning dramas, and new releases with full season episode support on StreamVerse."
       />
       {/* Hero Showcase (TV Focus - Coven Academy lead) */}
       <HeroBanner

@@ -199,7 +199,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
     <div className="relative min-h-screen bg-background text-foreground pb-36 sm:pb-32 lg:pb-16">
       <SEOHead
         title={`${d.title}${d.year ? ` (${d.year})` : ''} — Anime`}
-        description={d.description || d.overview || `Watch ${d.title} anime online on Streamverse.`}
+        description={d.description || d.overview || `Watch ${d.title} anime online on StreamVerse.`}
         image={d.backdrop_path || d.poster_path}
         type="video.tv_show"
         jsonLd={{
@@ -265,7 +265,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
           aria-hidden="true"
           className="pointer-events-none absolute right-3 top-1/2 z-10 hidden -translate-y-1/2 select-none text-[11px] font-black uppercase tracking-[0.6em] text-white/15 [writing-mode:vertical-rl] lg:block xl:right-5"
         >
-          Streamverse
+          StreamVerse
         </div>
 
         {/* Content Container aligned to bottom */}
@@ -291,7 +291,7 @@ export const AnimeDetailsPage: React.FC<AnimeDetailsPageProps> = ({
               <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md">
                   <Clapperboard className="h-3.5 w-3.5 text-primary" />
-                  Streamverse
+                  StreamVerse
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />

@@ -118,7 +118,7 @@ export const MusicPage: React.FC = () => {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 lg:pt-28 pb-16 space-y-8">
       <SEOHead
         title="Cinema Soundscapes & OSTs"
-        description="Listen to iconic film soundtracks, anime opening themes, and orchestral motion picture scores on Streamverse."
+        description="Listen to iconic film soundtracks, anime opening themes, and orchestral motion picture scores on StreamVerse."
       />
 
       {/* Hidden Native HTML5 Audio Element */}

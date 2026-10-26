@@ -9,9 +9,9 @@ export interface DocumentMetadataOptions {
   jsonLd?: Record<string, any>;
 }
 
-const DEFAULT_TITLE = 'Streamverse - Watch Movies, Anime, TV Shows & Live Sports';
-const DEFAULT_DESCRIPTION = 'Streamverse is a cinematic streaming platform where you can discover movies, anime, tv series and live sports in high-definition.';
-const DEFAULT_IMAGE = '/favicon-32x32.png';
+const DEFAULT_TITLE = 'StreamVerse - Watch Movies, Anime, TV Shows & Live Sports';
+const DEFAULT_DESCRIPTION = 'StreamVerse is a cinematic streaming platform where you can discover movies, anime, tv series and live sports in high-definition.';
+const DEFAULT_IMAGE = 'https://streamverse.anuraag.studio/apple-touch-icon.png';
 
 function setMetaTag(nameOrProperty: string, content: string, isProperty: boolean = false) {
   const selector = isProperty ? `meta[property="${nameOrProperty}"]` : `meta[name="${nameOrProperty}"]`;
@@ -35,7 +35,9 @@ export function useDocumentMetadata(options: DocumentMetadataOptions) {
   useEffect(() => {
     // 1. Update document title
     const fullTitle = title
-      ? (title.includes('Streamverse') ? title : `${title} — Streamverse`)
+      ? (title.includes('StreamVerse') || title.includes('Streamverse')
+          ? title.replace(/Streamverse/g, 'StreamVerse')
+          : `${title} — StreamVerse`)
       : DEFAULT_TITLE;
     document.title = fullTitle;
 
@@ -44,6 +46,7 @@ export function useDocumentMetadata(options: DocumentMetadataOptions) {
     setMetaTag('description', metaDesc);
 
     // 3. Open Graph Tags
+    setMetaTag('og:site_name', 'StreamVerse', true);
     setMetaTag('og:title', fullTitle, true);
     setMetaTag('og:description', metaDesc, true);
     setMetaTag('og:type', type, true);
@@ -56,6 +59,7 @@ export function useDocumentMetadata(options: DocumentMetadataOptions) {
 
     // 4. Twitter Card Tags
     setMetaTag('twitter:card', image ? 'summary_large_image' : 'summary');
+    setMetaTag('twitter:site', '@StreamVerse');
     setMetaTag('twitter:title', fullTitle);
     setMetaTag('twitter:image', ogImage);
     setMetaTag('twitter:description', metaDesc);

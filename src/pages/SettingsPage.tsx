@@ -311,8 +311,8 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="relative min-h-screen overflow-hidden px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 lg:pt-28 pb-24">
       <SEOHead
-        title="Settings & Playback Preferences | Streamverse"
-        description="Configure your default video server, PixelDrain CDN stream routes, subtitle typography, and playback behavior on Streamverse."
+        title="Settings & Playback Preferences | StreamVerse"
+        description="Configure your default video server, PixelDrain CDN stream routes, subtitle typography, and playback behavior on StreamVerse."
       />
 
       {/* Atmospheric Ambient Glow Backdrop */}

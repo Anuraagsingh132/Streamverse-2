@@ -467,7 +467,7 @@ export const ComingSoonPage: React.FC<ComingSoonPageProps> = ({ feature, onNavig
 
   return (
     <div className="relative min-h-[85vh] overflow-hidden px-4 sm:px-6 lg:px-8 pt-24 pb-20">
-      <SEOHead title={`${meta.title} | Streamverse`} description={meta.seoDescription} />
+      <SEOHead title={`${meta.title} | StreamVerse`} description={meta.seoDescription} />
 
       {/* Atmospheric Ambient Glow Backdrop */}
       <div

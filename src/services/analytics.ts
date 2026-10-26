@@ -101,7 +101,7 @@ export function PostHogPageViewTracker(): null {
 
     try {
       const fullUrl = window.location.href;
-      const pageTitle = document.title || 'Streamverse';
+      const pageTitle = document.title || 'StreamVerse';
 
       posthog.capture('$pageview', {
         $current_url: fullUrl,
