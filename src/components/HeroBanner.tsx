@@ -285,10 +285,11 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
 
               {/* Title or Title Logo */}
               {(current.logo_path || current.title_logo || dynamicLogo) && !logoError ? (
-                <div 
-                  className="h-16 sm:h-24 w-full max-w-[240px] sm:max-w-sm duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both lg:h-32 lg:max-w-lg" 
+                <h1 
+                  className="h-16 sm:h-24 w-full max-w-[240px] sm:max-w-sm duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both lg:h-32 lg:max-w-lg m-0 p-0 font-normal" 
                   style={{ animationDelay: '90ms' }}
                 >
+                  <span className="sr-only">{current.title}</span>
                   <img decoding="async" 
                     key={`logo-${current.id}`}
                     src={current.logo_path || current.title_logo || dynamicLogo!} 
@@ -298,7 +299,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
                     style={{ filter: 'drop-shadow(rgba(0, 0, 0, 0.85) 0px 2px 10px) drop-shadow(rgba(0, 0, 0, 0.7) 0px 0px 4px)' }}
                     onError={() => setLogoError(true)}
                   />
-                </div>
+                </h1>
               ) : (
                 <h1 
                   key={`title-${current.id}`}
