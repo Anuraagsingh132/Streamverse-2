@@ -12,7 +12,8 @@ import {
   Bookmark,
   Settings,
   X,
-  ChevronRight
+  ChevronRight,
+  MessageSquarePlus
 } from 'lucide-react';
 import { getRouteHref } from '../utils/routeUtils';
 
@@ -114,6 +115,21 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       description: 'Playback, audio & preferences', 
       icon: Settings, 
       route: 'settings'
+    },
+    { 
+      label: 'Feedback & Requests', 
+      description: 'Report a bug or suggest new features', 
+      icon: MessageSquarePlus, 
+      action: () => {
+        setIsMoreOpen(false);
+        const fbBtn = document.querySelector('button[data-featurebase-feedback]') as HTMLButtonElement | null;
+        if (fbBtn) {
+          fbBtn.click();
+        } else if (typeof (window as unknown as { Featurebase?: (action: string) => void }).Featurebase === 'function') {
+          (window as unknown as { Featurebase: (action: string) => void }).Featurebase('show_feedback_widget');
+        }
+      }
+    
     },
   ];
 

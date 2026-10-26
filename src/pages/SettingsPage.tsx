@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Sliders,
   Film,
-  HardDrive
+  HardDrive,
+  MessageSquarePlus
 } from 'lucide-react';
 import { useUserSettings, VideoServerId, VideoQuality, SubtitleSize } from '../hooks/useUserSettings';
 import { PixelDrainRoute } from '../utils/pixeldrain';
@@ -964,6 +965,28 @@ export const SettingsPage: React.FC = () => {
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>Flush Media Cache</span>
+                </button>
+              </div>
+
+              {/* Feedback & Feature Requests Card */}
+              <div className="flex flex-col justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-white">
+                    <MessageSquarePlus className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-bold">Feedback &amp; Feature Requests</h3>
+                  </div>
+                  <p className="text-xs text-white/70 leading-relaxed">
+                    Have an idea for a feature, new stream source request, or bug to report? Share feedback directly with our team.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  data-featurebase-feedback
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary hover:bg-primary/20 transition cursor-pointer"
+                >
+                  <MessageSquarePlus className="h-3.5 w-3.5" />
+                  <span>Send Feedback</span>
                 </button>
               </div>
 

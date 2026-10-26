@@ -16,7 +16,8 @@ import {
   Bookmark,
   Settings,
   History,
-  Tv2
+  Tv2,
+  MessageSquarePlus
 } from 'lucide-react';
 import { getRouteHref } from '../utils/routeUtils';
 
@@ -322,6 +323,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </svg>
           </motion.a>
+
+          {/* Feedback & Requests Button */}
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            type="button"
+            data-featurebase-feedback
+            aria-label="Feedback & Requests"
+            title="Feedback & Requests"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+          >
+            <MessageSquarePlus className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </motion.button>
 
         {/* Account Profile Button */}
         <motion.button

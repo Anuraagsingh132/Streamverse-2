@@ -83,6 +83,15 @@ const FooterComponent: React.FC<FooterProps> = ({ onNavigate }) => {
                 Account
               </h3>
               <ul className="space-y-2.5">
+                <li>
+                  <button
+                    type="button"
+                    data-featurebase-feedback
+                    className="inline-flex items-center text-[15px] font-medium text-zinc-300 transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded py-0.5 cursor-pointer"
+                  >
+                    Feedback &amp; Requests
+                  </button>
+                </li>
                 {accountLinks.map((link) => (
                   <li key={link.label}>
                     <a
