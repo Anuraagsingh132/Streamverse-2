@@ -69,15 +69,39 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 5 Capped Primary Mobile Tabs with Labels
-  const primaryTabs = [
+  const handleOpenFeedback = () => {
+    setIsMoreOpen(false);
+    try {
+      const fb = (window as unknown as { Featurebase?: (action: string) => void }).Featurebase;
+      if (typeof fb === 'function') {
+        fb('show_feedback_widget');
+      } else {
+        const fbBtn = document.querySelector('button[data-featurebase-feedback]') as HTMLButtonElement | null;
+        if (fbBtn) {
+          fbBtn.click();
+        }
+      }
+    } catch (err) {
+      console.warn('Featurebase open error:', err);
+    }
+  };
+
+  // 6 Primary Mobile Tabs with Labels
+  const primaryTabs: Array<{
+    label: string;
+    route?: string;
+    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>;
+    isAction?: boolean;
+    isFeedback?: boolean;
+  }> = [
     { label: 'Home', route: 'home', icon: House },
     { label: 'Movies', route: 'movie', icon: Film },
     { label: 'TV', route: 'tv', icon: Tv },
     { label: 'Live TV', route: 'livesports', icon: Radio },
+    { label: 'Feedback', isFeedback: true, icon: MessageSquarePlus },
     { label: 'More', isAction: true, icon: LayoutGrid },
   ];
 
@@ -120,16 +144,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       label: 'Feedback & Requests', 
       description: 'Report a bug or suggest new features', 
       icon: MessageSquarePlus, 
-      action: () => {
-        setIsMoreOpen(false);
-        const fbBtn = document.querySelector('button[data-featurebase-feedback]') as HTMLButtonElement | null;
-        if (fbBtn) {
-          fbBtn.click();
-        } else if (typeof (window as unknown as { Featurebase?: (action: string) => void }).Featurebase === 'function') {
-          (window as unknown as { Featurebase: (action: string) => void }).Featurebase('show_feedback_widget');
-        }
-      }
-    
+      isFeedback: true,
+      action: handleOpenFeedback
     },
   ];
 
@@ -185,7 +201,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
           {primaryTabs.map((item) => {
             const Icon = item.icon;
-            const isTabActive = !item.isAction && (
+            const isTabActive = !item.isAction && !item.isFeedback && (
               currentRoute === item.route ||
               (item.route === 'movie' && currentRoute === 'movies') ||
               (item.route === 'livesports' && (currentRoute === 'sports' || currentRoute === 'livesports'))
@@ -226,6 +242,36 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 )}
               </div>
             );
+
+            if (item.isFeedback) {
+              return (
+                <button
+                  type="button"
+                  key={item.label}
+                  data-featurebase-feedback
+                  aria-label="Feedback and feature requests"
+                  onClick={handleOpenFeedback}
+                  className="relative flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] active:scale-[0.96] transition-transform duration-100"
+                >
+                  <div className="relative flex flex-col items-center justify-center w-full h-full pt-1 pb-1 z-10">
+                    <span className="relative flex items-center justify-center">
+                      <Icon 
+                        className="transition-colors duration-200 text-white/70 hover:text-rose-400"
+                        style={{ width: '21px', height: '21px' }}
+                        strokeWidth={1.85}
+                      />
+                      <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-60"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.9)]"></span>
+                      </span>
+                    </span>
+                    <span className="relative mt-1 text-[10.5px] leading-tight tracking-tight transition-colors duration-200 text-white/70 hover:text-white font-medium truncate max-w-full px-0.5">
+                      {item.label}
+                    </span>
+                  </div>
+                </button>
+              );
+            }
 
             if (item.isAction) {
               return (
@@ -306,6 +352,35 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 </button>
               </div>
 
+              {/* Highlighted Mobile Feedback Banner */}
+              <div className="mb-3.5">
+                <button
+                  type="button"
+                  data-featurebase-feedback
+                  onClick={handleOpenFeedback}
+                  className="group relative w-full overflow-hidden rounded-2xl border border-rose-500/30 bg-gradient-to-r from-rose-500/15 via-purple-500/10 to-rose-500/5 p-3.5 text-left shadow-[0_4px_24px_rgba(244,63,94,0.12)] transition-all duration-200 hover:border-rose-500/50 hover:bg-rose-500/20 active:scale-[0.98] cursor-pointer [-webkit-tap-highlight-color:transparent]"
+                >
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-rose-400/40 to-transparent" />
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-400 shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform duration-200">
+                      <MessageSquarePlus className="h-5 w-5" strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white tracking-tight">Feedback & Requests</span>
+                        <span className="rounded-full bg-rose-500/25 border border-rose-500/40 px-2 py-0.5 text-[10px] font-semibold text-rose-300">
+                          We're listening
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-white/60 leading-tight">
+                        Request movies, report bugs or share suggestions
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-rose-400/70 group-hover:text-rose-300 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                </button>
+              </div>
+
               {/* Items List */}
               <div className="space-y-2">
                 {moreItems.map((item) => {
@@ -338,6 +413,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                       <button
                         type="button"
                         key={item.label}
+                        data-featurebase-feedback={item.isFeedback ? '' : undefined}
                         onClick={item.action}
                         className="group w-full min-h-[48px] rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 text-left transition hover:bg-white/[0.08] active:scale-[0.98] cursor-pointer [-webkit-tap-highlight-color:transparent]"
                       >
