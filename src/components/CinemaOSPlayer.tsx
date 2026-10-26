@@ -38,6 +38,7 @@ const ANIME_SERVERS: ServerOption[] = [
     name: 'Vidy (Universal)',
     badge: 'Server 1 · Universal (Default)',
     description: 'Official Vidy universal player with AniList episode mapping and multi-audio',
+    referrerPolicy: 'origin',
     getUrl: (id, _isTV, _season, episode) =>
       `https://vidy.st/anime/${encodeURIComponent(id)}/${encodeURIComponent(episode)}?color=DC2626&nextEpisode=true&episodeSelector=true&autoplayNextEpisode=true`
   },
@@ -148,6 +149,7 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
     name: 'Vidy',
     badge: 'Server 1 · Universal (Default)',
     description: 'Vidy official universal embed player with instant buffer and adaptive quality',
+    referrerPolicy: 'origin',
     getUrl: (tmdbId, isTV, season, episode) => {
       const cleanId = encodeURIComponent(tmdbId);
       if (!isTV) {
