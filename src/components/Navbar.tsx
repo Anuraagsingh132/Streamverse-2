@@ -303,8 +303,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               onNavigate('home');
             }}
             whileTap={{ scale: 0.92 }}
-            aria-label="StreamVerse Home"
-            title="StreamVerse Home"
+            aria-label="Discord Community"
+            title="Discord Community"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 hover:text-white hover:bg-white/10 transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
           >
             <svg 

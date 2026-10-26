@@ -606,6 +606,17 @@ body {
   }
 }
 
+/* Featurebase floating launcher: strictly desktop-only so it never collides with mobile dock */
+@media (max-width: 1023px) {
+  #featurebase-feedback-button,
+  .featurebase-feedback-button,
+  [data-featurebase-feedback-button],
+  iframe[id*="featurebase-feedback-button"] {
+    display: none !important;
+    pointer-events: none !important;
+  }
+}
+
 /* Performance & Hardware Acceleration System */
 .cv-auto {
   content-visibility: auto;

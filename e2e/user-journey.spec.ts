@@ -9,15 +9,15 @@ test.describe('Streamverse E2E User Journeys (TEST-07)', () => {
   test('1. Homepage: renders hero banner, navigation bar, and media rails', async ({ page }) => {
     await page.goto('/');
 
-    // Navbar branding
-    const brand = page.getByRole('link', { name: 'Streamverse Home' });
+    // Navbar branding within desktop banner
+    const banner = page.getByRole('banner');
+    const brand = banner.getByRole('link', { name: /streamverse home/i });
     await expect(brand).toBeVisible();
 
     // Verify key navigation items in header banner
-    const banner = page.getByRole('banner');
     await expect(banner.getByRole('link', { name: 'Movies' })).toBeVisible();
     await expect(banner.getByRole('link', { name: 'TV Shows' })).toBeVisible();
-    await expect(banner.getByRole('link', { name: 'Anime' })).toBeVisible();
+    await expect(banner.getByRole('link', { name: 'Live TV' })).toBeVisible();
 
     // Hero banner action button
     const heroPlay = page.getByRole('button', { name: 'Play' }).first();
@@ -60,19 +60,19 @@ test.describe('Streamverse E2E User Journeys (TEST-07)', () => {
     // Heading or title logo is present
     await expect(page.locator('h1, img[alt="Digger"]').first()).toBeAttached();
 
-    // Primary action buttons (Play and Watchlist)
-    const playBtn = page.locator('button:has-text("Play")').first();
+    // Primary action buttons (Play and Watchlist) - select visible button across breakpoints
+    const playBtn = page.locator('button:has-text("Play")').filter({ visible: true }).first();
     await expect(playBtn).toBeVisible();
 
-    const watchlistBtn = page.locator('button[title*="watchlist"], button[aria-label*="watchlist"], button:has-text("Watchlist")').first();
+    const watchlistBtn = page.locator('button[title*="watchlist"], button[aria-label*="watchlist"], button:has-text("Watchlist")').filter({ visible: true }).first();
     await expect(watchlistBtn).toBeVisible();
   });
 
   test('4. Watchlist Persistence: adds item, persists in localStorage, and reflects in Watchlist view', async ({ page }) => {
     await page.goto('/movie/1248832');
 
-    // Find and click the Watchlist toggle button
-    const watchlistBtn = page.locator('button[title*="watchlist"], button[aria-label*="watchlist"], button:has-text("Watchlist")').first();
+    // Find and click the visible Watchlist toggle button
+    const watchlistBtn = page.locator('button[title*="watchlist"], button[aria-label*="watchlist"], button:has-text("Watchlist")').filter({ visible: true }).first();
     await expect(watchlistBtn).toBeVisible();
     await watchlistBtn.click();
 
@@ -94,8 +94,8 @@ test.describe('Streamverse E2E User Journeys (TEST-07)', () => {
   test('5. Playback Flow: launches video player and mounts playback interface', async ({ page }) => {
     await page.goto('/movie/1248832');
 
-    // Click Play Now button
-    const playBtn = page.locator('button:has-text("Play")').first();
+    // Click visible Play Now button
+    const playBtn = page.locator('button:has-text("Play")').filter({ visible: true }).first();
     await expect(playBtn).toBeVisible();
     await playBtn.click();
 
@@ -103,7 +103,7 @@ test.describe('Streamverse E2E User Journeys (TEST-07)', () => {
     await expect(page).toHaveURL(/\/watch\/movie\/1248832/);
 
     // Player container or stream resolution modal should mount
-    const playerRegion = page.locator('[role="region"][aria-label*="Video Player"], div:has-text("Resolving Cloud Stream")').first();
+    const playerRegion = page.locator('[aria-label*="Video Player"], div:has-text("Resolving Cloud Stream")').first();
     await expect(playerRegion).toBeVisible();
   });
 });

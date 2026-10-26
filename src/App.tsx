@@ -1,4 +1,4 @@
-import { FeaturebaseProvider } from 'featurebase-js/react';
+import { FeaturebaseProvider, useFeedbackWidget } from 'featurebase-js/react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   BrowserRouter,
@@ -924,7 +924,7 @@ const AppContent: React.FC = () => {
                 <Route path="/livesports" element={<SportsRedirect />} />
                 <Route path="/music" element={<ComingSoonPage feature="music" onNavigate={handleNavigate} />} />
                 <Route path="/providers" element={<ComingSoonPage feature="providers" onNavigate={handleNavigate} />} />
-                <Route path="/watchlist" element={<ComingSoonPage feature="watchlist" onNavigate={handleNavigate} />} />
+                <Route path="/watchlist" element={<WatchlistPage watchlist={watchlist} onPlay={handlePlay} onOpenDetails={handleOpenDetails} onToggleWatchlist={handleToggleWatchlist} onClearWatchlist={handleClearWatchlist} onNavigate={handleNavigate} />} />
                 <Route path="/continue-watching" element={<ComingSoonPage feature="continue-watching" onNavigate={handleNavigate} />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/ai" element={<ComingSoonPage feature="ai" onNavigate={handleNavigate} />} />
@@ -1068,10 +1068,42 @@ const AppContent: React.FC = () => {
 
 
 
+function FeedbackWidget() {
+  useFeedbackWidget({
+    theme: 'dark',
+    placement: 'bottom-right',
+  });
+  return null;
+}
+
+function FeedbackHost() {
+  const location = useLocation();
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 1024;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const updateMatch = (matches: boolean) => setIsDesktop(matches);
+    const handler = (e: MediaQueryListEvent) => updateMatch(e.matches);
+    updateMatch(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const isWatchRoute = location.pathname.startsWith('/watch/');
+  if (isWatchRoute || !isDesktop) return null;
+
+  return <FeedbackWidget />;
+}
+
 export const App: React.FC = () => {
   return (
-    <FeaturebaseProvider appId="6adf20bc304b0f90ad701488" hideDefaultLauncher={true}>
+    <FeaturebaseProvider appId="6adf20bc304b0f90ad701488">
       <BrowserRouter>
+        <FeedbackHost />
         <PostHogPageViewTracker />
         <AppContent />
       </BrowserRouter>
