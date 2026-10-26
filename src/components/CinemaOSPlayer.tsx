@@ -72,6 +72,20 @@ const ANIME_SERVERS: ServerOption[] = [
     }
   },
   {
+    id: 'atlantic',
+    name: 'Atlantic',
+    badge: 'Server 4 · Fast HD',
+    description: 'Atlantic high-performance streaming embed with TMDB sync',
+    referrerPolicy: 'origin',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://atlantic.st/embed/movie/${cleanId}`;
+      }
+      return `https://atlantic.st/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
+    }
+  },
+  {
     id: 'cinemaos',
     name: 'CinemaOS',
     badge: 'Server 4 · Official Mirror',
@@ -156,6 +170,20 @@ const MOVIE_TV_SERVERS: ServerOption[] = [
         return `https://vidy.st/movie/${cleanId}?color=DC2626`;
       }
       return `https://vidy.st/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?color=DC2626&nextEpisode=true&episodeSelector=true&autoplayNextEpisode=true`;
+    }
+  },
+  {
+    id: 'atlantic',
+    name: 'Atlantic',
+    badge: 'Server 2 · Fast HD',
+    description: 'Atlantic high-performance embed player with direct TMDB routing',
+    referrerPolicy: 'origin',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://atlantic.st/embed/movie/${cleanId}`;
+      }
+      return `https://atlantic.st/embed/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}`;
     }
   },
   {

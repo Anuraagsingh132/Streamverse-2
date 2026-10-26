@@ -3,6 +3,7 @@ import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../util
 
 export type VideoServerId =
   | 'vidy'
+  | 'atlantic'
   | 'cinezo'
   | 'framextv'
   | 'cinemaos'
@@ -67,6 +68,7 @@ export function getStoredUserSettings(): UserSettings {
 
     const validServers: VideoServerId[] = [
       'vidy',
+      'atlantic',
       'cinezo',
       'framextv',
       'cinemaos',

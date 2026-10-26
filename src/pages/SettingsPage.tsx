@@ -46,6 +46,15 @@ const SERVER_OPTIONS: ServerOption[] = [
     desc: 'Vidy official universal embed player for Movies, Series, and Anime with instant buffer start and AniList sync.'
   },
   {
+    id: 'atlantic',
+    name: 'Atlantic Player',
+    badge: 'Fast HD',
+    category: 'mirror',
+    protocol: 'Direct TMDB Embed',
+    ping: '~23ms ping',
+    desc: 'Atlantic high-performance embed player with direct TMDB routing and zero configuration.'
+  },
+  {
     id: 'cinezo',
     name: 'Cinezo Universal',
     badge: 'Fast HD',
