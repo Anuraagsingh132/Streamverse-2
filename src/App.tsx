@@ -1,3 +1,4 @@
+import { FeaturebaseProvider, useFeedbackWidget } from 'featurebase-js/react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   BrowserRouter,
@@ -1021,12 +1022,30 @@ const AppContent: React.FC = () => {
   );
 };
 
+function FeedbackWidget() {
+  useFeedbackWidget({
+    theme: 'dark',
+    placement: 'bottom-right',
+  });
+  return null;
+}
+
+function FeedbackHost() {
+  const location = useLocation();
+  const isWatchRoute = location.pathname.startsWith('/watch/');
+  if (isWatchRoute) return null;
+  return <FeedbackWidget />;
+}
+
 export const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <PostHogPageViewTracker />
-      <AppContent />
-    </BrowserRouter>
+    <FeaturebaseProvider appId="6adf20bc304b0f90ad701488">
+      <BrowserRouter>
+        <FeedbackHost />
+        <PostHogPageViewTracker />
+        <AppContent />
+      </BrowserRouter>
+    </FeaturebaseProvider>
   );
 };
 
