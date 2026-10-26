@@ -9,9 +9,9 @@ export interface DocumentMetadataOptions {
   jsonLd?: Record<string, any>;
 }
 
-const DEFAULT_TITLE = 'StreamVerse - Watch Movies, Anime, TV Shows & Live Sports';
-const DEFAULT_DESCRIPTION = 'StreamVerse is a cinematic streaming platform where you can discover movies, anime, tv series and live sports in high-definition.';
-const DEFAULT_IMAGE = 'https://streamverse.anuraag.studio/apple-touch-icon.png';
+const DEFAULT_TITLE = 'StreamVerse — Movies, Anime, TV Shows & Live Sports';
+const DEFAULT_DESCRIPTION = 'Discover movies, explore TV shows and anime, and find live sports on StreamVerse—all in one place.';
+const DEFAULT_IMAGE = 'https://streamverse.anuraag.studio/og/streamverse-home.jpg';
 
 function setMetaTag(nameOrProperty: string, content: string, isProperty: boolean = false) {
   const selector = isProperty ? `meta[property="${nameOrProperty}"]` : `meta[name="${nameOrProperty}"]`;
@@ -52,16 +52,20 @@ export function useDocumentMetadata(options: DocumentMetadataOptions) {
     setMetaTag('og:type', type, true);
     const ogImage = image || DEFAULT_IMAGE;
     setMetaTag('og:image', ogImage, true);
+    setMetaTag('og:image:alt', fullTitle, true);
+    setMetaTag('og:image:width', ogImage.includes('streamverse-home') ? '1200' : '1280', true);
+    setMetaTag('og:image:height', ogImage.includes('streamverse-home') ? '630' : '720', true);
     const currentUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
     if (currentUrl) {
       setMetaTag('og:url', currentUrl, true);
     }
 
     // 4. Twitter Card Tags
-    setMetaTag('twitter:card', image ? 'summary_large_image' : 'summary');
+    setMetaTag('twitter:card', 'summary_large_image');
     setMetaTag('twitter:site', '@StreamVerse');
     setMetaTag('twitter:title', fullTitle);
     setMetaTag('twitter:image', ogImage);
+    setMetaTag('twitter:image:alt', fullTitle);
     setMetaTag('twitter:description', metaDesc);
 
     // 5. Schema.org JSON-LD Structured Data

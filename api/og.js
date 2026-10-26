@@ -4,9 +4,9 @@ export const config = {
 
 const TMDB_API_KEY = '1cf50e6248dc270629e802686245c2c8';
 const DEFAULT_SITE_NAME = 'StreamVerse';
-const DEFAULT_TITLE = 'StreamVerse - Watch Movies, Anime, TV Shows & Live Sports';
-const DEFAULT_DESCRIPTION = 'StreamVerse is a next-generation cinema and streaming entertainment portal. Watch movies, television series, anime catalogs, and 24/7 live sports in high-definition.';
-const DEFAULT_IMAGE = 'https://streamverse.anuraag.studio/apple-touch-icon.png';
+const DEFAULT_TITLE = 'StreamVerse — Movies, Anime, TV Shows & Live Sports';
+const DEFAULT_DESCRIPTION = 'Discover movies, explore TV shows and anime, and find live sports on StreamVerse—all in one place.';
+const DEFAULT_IMAGE = 'https://streamverse.anuraag.studio/og/streamverse-home.jpg';
 const DEFAULT_BASE_URL = 'https://streamverse.anuraag.studio';
 
 function escapeHtml(str) {
@@ -157,6 +157,9 @@ export default async function handler(req) {
   const safeImage = escapeHtml(image);
   const safeUrl = escapeHtml(canonicalUrl);
 
+  const imgWidth = id ? '1280' : '1200';
+  const imgHeight = id ? '720' : '630';
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -171,8 +174,9 @@ export default async function handler(req) {
   <meta property="og:title" content="${safeTitle}" />
   <meta property="og:description" content="${safeDesc}" />
   <meta property="og:image" content="${safeImage}" />
-  <meta property="og:image:width" content="1280" />
-  <meta property="og:image:height" content="720" />
+  <meta property="og:image:secure_url" content="${safeImage}" />
+  <meta property="og:image:width" content="${imgWidth}" />
+  <meta property="og:image:height" content="${imgHeight}" />
   <meta property="og:image:alt" content="${safeTitle}" />
   <meta property="og:url" content="${safeUrl}" />
 
@@ -182,6 +186,7 @@ export default async function handler(req) {
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDesc}" />
   <meta name="twitter:image" content="${safeImage}" />
+  <meta name="twitter:image:alt" content="${safeTitle}" />
 
   <!-- Instant browser redirect for non-crawler visitors -->
   <meta http-equiv="refresh" content="0;url=${safeUrl}" />

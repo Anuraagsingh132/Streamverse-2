@@ -138,8 +138,10 @@ export const HomePage: React.FC<HomePageProps> = ({
   return (
     <div className="relative min-h-screen">
       <SEOHead
-        title="StreamVerse - Watch Movies, Anime, TV Shows & Live Sports"
-        description="Discover and stream popular movies, trending anime, binge-worthy TV series and live sports with high-definition playback on StreamVerse."
+        title="StreamVerse — Movies, Anime, TV Shows & Live Sports"
+        description="Discover movies, explore TV shows and anime, and find live sports on StreamVerse—all in one place."
+        image="https://streamverse.anuraag.studio/og/streamverse-home.jpg"
+        url="https://streamverse.anuraag.studio/"
       />
       {/* Hero Showcase with Ambient Glow & Up Next Rail (10 slides) */}
       <HeroBanner
