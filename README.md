@@ -2,6 +2,9 @@
 
 A next-generation cinema and streaming entertainment portal built with **React 19**, **TypeScript**, **Vite**, and **Tailwind CSS**. Experience seamless media discovery, anime catalogs, live sports, AI-powered search, smooth inertia scrolling with Lenis, and fluid Motion micro-interactions.
 
+[![CI Pipeline](https://github.com/Anuraagsingh132/Streamverse-2/actions/workflows/ci.yml/badge.svg)](https://github.com/Anuraagsingh132/Streamverse-2/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAnuraagsingh132%2FStreamverse-2)
 
 ---
@@ -123,6 +126,17 @@ To customize on Vercel:
 
 ---
 
+## 🤝 Contributing
+
+We welcome and appreciate all contributions! Whether you want to fix a bug, improve documentation, suggest UI enhancements, or add new streaming sources, you are invited to get involved:
+
+1. **Check out our [Contributing Guide](CONTRIBUTING.md)** for local setup, development conventions, and testing instructions.
+2. **Review our [Code of Conduct](CODE_OF_CONDUCT.md)** to understand our community standards.
+3. **Submit a [Pull Request](https://github.com/Anuraagsingh132/Streamverse-2/pulls)** or **Report an Issue** on the [Issues page](https://github.com/Anuraagsingh132/Streamverse-2/issues).
+4. Share quick feedback anytime using the floating **Feedback** widget inside the app!
+
+---
+
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is open source and available under the [MIT License](LICENSE).

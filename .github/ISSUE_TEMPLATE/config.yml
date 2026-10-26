@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Featurebase In-App Feedback
+    url: https://streamverse2.vercel.app
+    about: Want to submit quick feedback or vote on community requests directly inside the app? Use our in-app feedback widget.
+  - name: 💡 GitHub Discussions & Questions
+    url: https://github.com/Anuraagsingh132/Streamverse-2/discussions
+    about: Ask questions, share ideas, and chat with fellow Streamverse enthusiasts.
