@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getPixelDrainRoute, setPixelDrainRoute, PixelDrainRoute } from '../utils/pixeldrain';
 
 export type VideoServerId =
+  | 'vidy'
   | 'cinezo'
   | 'framextv'
   | 'cinemaos'
@@ -39,7 +40,7 @@ const STORAGE_KEYS = {
 } as const;
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
-  defaultServer: 'cinezo',
+  defaultServer: 'vidy',
   autoplayNext: true,
   defaultQuality: '1080p',
   pixelDrainRoute: 'normal',
@@ -65,6 +66,7 @@ export function getStoredUserSettings(): UserSettings {
     const rawServer = localStorage.getItem(STORAGE_KEYS.defaultServer);
 
     const validServers: VideoServerId[] = [
+      'vidy',
       'cinezo',
       'framextv',
       'cinemaos',

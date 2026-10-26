@@ -37,9 +37,18 @@ interface ServerOption {
 
 const SERVER_OPTIONS: ServerOption[] = [
   {
+    id: 'vidy',
+    name: 'Vidy Universal',
+    badge: 'Universal · Default',
+    category: 'mirror',
+    protocol: 'Universal Embed API',
+    ping: '~20ms ping',
+    desc: 'Vidy official universal embed player for Movies, Series, and Anime with instant buffer start and AniList sync.'
+  },
+  {
     id: 'cinezo',
     name: 'Cinezo Universal',
-    badge: 'Universal · Default',
+    badge: 'Fast HD',
     category: 'mirror',
     protocol: 'Universal Embed',
     ping: '~26ms ping',
@@ -422,7 +431,7 @@ export const SettingsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredServers.map((srv) => {
                 const isSelected = settings.defaultServer === srv.id;
-                const isDefaultFastest = srv.id === 'cinezo';
+                const isDefaultFastest = srv.id === 'vidy';
                 return (
                   <div
                     key={srv.id}

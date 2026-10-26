@@ -31,12 +31,20 @@ interface ServerOption {
   getUrl: (id: string | number, isTV: boolean, season: number, episode: number) => string;
 }
 
-// Anime-specific streaming servers (Cinezo, FramexTV, CinemaOS, FlaxMovies, HDHub, Pengu, VidSrc, MegaPlay)
+// Anime-specific streaming servers (Vidy, Cinezo, FramexTV, CinemaOS, FlaxMovies, HDHub, Pengu, VidSrc, MegaPlay)
 const ANIME_SERVERS: ServerOption[] = [
+  {
+    id: 'vidy',
+    name: 'Vidy (Universal)',
+    badge: 'Server 1 · Universal (Default)',
+    description: 'Official Vidy universal player with AniList episode mapping and multi-audio',
+    getUrl: (id, _isTV, _season, episode) =>
+      `https://vidy.st/anime/${encodeURIComponent(id)}/${encodeURIComponent(episode)}?color=DC2626&nextEpisode=true&episodeSelector=true&autoplayNextEpisode=true`
+  },
   {
     id: 'cinezo-sub',
     name: 'Cinezo (Sub)',
-    badge: 'Server 1 · Anime Subbed (Default)',
+    badge: 'Server 2 · Anime Subbed',
     description: 'Cinezo universal player with English subtitles',
     getUrl: (id, _isTV, _season, episode) =>
       `https://player.cinezo.live/embed/anime/${encodeURIComponent(id)}/${encodeURIComponent(episode)}?dub=false`
@@ -44,7 +52,7 @@ const ANIME_SERVERS: ServerOption[] = [
   {
     id: 'cinezo-dub',
     name: 'Cinezo (Dub)',
-    badge: 'Server 2 · English Dub',
+    badge: 'Server 3 · English Dub',
     description: 'Cinezo universal player with English audio dub',
     getUrl: (id, _isTV, _season, episode) =>
       `https://player.cinezo.live/embed/anime/${encodeURIComponent(id)}/${encodeURIComponent(episode)}?dub=true`
@@ -133,12 +141,25 @@ const ANIME_SERVERS: ServerOption[] = [
   }
 ];
 
-// Configurable video streaming servers list for Movies and TV Shows (Cinezo -> FramexTV -> CinemaOS -> FlaxMovies -> HDHub -> Pengu -> VidSrc -> rest)
+// Configurable video streaming servers list for Movies and TV Shows (Vidy -> Cinezo -> FramexTV -> CinemaOS -> FlaxMovies -> HDHub -> Pengu -> VidSrc -> rest)
 const MOVIE_TV_SERVERS: ServerOption[] = [
+  {
+    id: 'vidy',
+    name: 'Vidy',
+    badge: 'Server 1 · Universal (Default)',
+    description: 'Vidy official universal embed player with instant buffer and adaptive quality',
+    getUrl: (tmdbId, isTV, season, episode) => {
+      const cleanId = encodeURIComponent(tmdbId);
+      if (!isTV) {
+        return `https://vidy.st/movie/${cleanId}?color=DC2626`;
+      }
+      return `https://vidy.st/tv/${cleanId}/${encodeURIComponent(season)}/${encodeURIComponent(episode)}?color=DC2626&nextEpisode=true&episodeSelector=true&autoplayNextEpisode=true`;
+    }
+  },
   {
     id: 'cinezo',
     name: 'Cinezo',
-    badge: 'Server 1 · Universal (Default)',
+    badge: 'Server 2 · Fast HD',
     description: 'Universal high-speed streaming player for movies and series',
     getUrl: (tmdbId, isTV, season, episode) => {
       const cleanId = encodeURIComponent(tmdbId);
@@ -342,7 +363,7 @@ class HDHubErrorBoundary extends React.Component<
             }}
             className="mt-4 px-4 py-2 rounded-full bg-primary text-black font-semibold text-xs hover:brightness-110 active:scale-95 transition"
           >
-            Switch to Cinezo Server
+            Switch to Vidy Server
           </button>
         </div>
       );
@@ -376,20 +397,20 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
   const [episode, setEpisode] = useState<number>(initialEpisode || 1);
   const [selectedServerId, setSelectedServerId] = useState<string>(() => {
     if (item?.media_type === 'anime') {
-      return 'cinezo-sub';
+      return 'vidy';
     }
     const current = settings.defaultServer;
-    return (!current) ? 'cinezo' : current;
+    return (!current) ? 'vidy' : current;
   });
 
   const [prevItemIdForServer, setPrevItemIdForServer] = useState(item?.id);
   if (item?.id !== prevItemIdForServer) {
     setPrevItemIdForServer(item?.id);
     if (item?.media_type === 'anime') {
-      setSelectedServerId((prev) => (prev === 'cinezo-dub' || prev === 'megaplay-dub' ? 'cinezo-dub' : 'cinezo-sub'));
+      setSelectedServerId((prev) => (prev === 'cinezo-dub' || prev === 'megaplay-dub' ? 'cinezo-dub' : prev === 'cinezo-sub' ? 'cinezo-sub' : 'vidy'));
     } else {
       const current = settings.defaultServer;
-      setSelectedServerId((!current) ? 'cinezo' : current);
+      setSelectedServerId((!current) ? 'vidy' : current);
     }
   }
 
@@ -572,6 +593,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
       return ANIME_SERVERS;
     }
     return ANIME_SERVERS.filter((s) =>
+      s.id === 'vidy' ||
       s.id === 'cinezo-sub' ||
       s.id === 'cinezo-dub' ||
       s.id === 'megaplay-sub' ||
@@ -688,6 +710,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
     if (!item || isDirectPlayer) return '';
     // AniList-based servers for anime take item.id (AniList ID) directly
     if (isAnime && (
+      effectiveServerId === 'vidy' ||
       effectiveServerId === 'cinezo-sub' ||
       effectiveServerId === 'cinezo-dub' ||
       effectiveServerId === 'megaplay-sub' ||
@@ -754,7 +777,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
       {/* 100% Full-bleed Embed / Direct Player without anything pushing or cutting it */}
       <div className="absolute inset-0 w-full h-full bg-black">
         {isDirectPlayer ? (
-          <HDHubErrorBoundary onFallback={() => setSelectedServerId('cinezo')}>
+          <HDHubErrorBoundary onFallback={() => setSelectedServerId('vidy')}>
             <HDHubPlayer
               item={isAnime && resolvedAnimeTmdbId ? { ...item, tmdbId: resolvedAnimeTmdbId } : item}
               season={season}
@@ -780,7 +803,7 @@ export const CinemaOSPlayer: React.FC<CinemaOSPlayerProps> = ({
             allowFullScreen
             scrolling="no"
             referrerPolicy={currentServer.referrerPolicy || (selectedServerId === 'vixsrc' ? 'origin' : 'no-referrer')}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+            allow="accelerometer; autoplay *; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen *"
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center text-center p-6 text-white/60">
