@@ -225,9 +225,9 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
             <Bookmark className="h-8 w-8" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-white">
               {allSavedItems.length === 0 ? 'Your watchlist is empty' : `No ${activeFilter} titles saved`}
-            </h3>
+            </h2>
             <p className="text-xs text-zinc-400 max-w-sm">
               {allSavedItems.length === 0
                 ? 'Explore trending titles and click the "+" icon on any poster to save it here for later.'
@@ -253,7 +253,9 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 sm:gap-4">
+        <section aria-labelledby="saved-media-heading">
+          <h2 id="saved-media-heading" className="sr-only">Saved Media Items</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 sm:gap-4">
           <AnimatePresence mode="popLayout">
             {filteredItems.map((item) => (
               <motion.div
@@ -275,7 +277,8 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
             ))}
           </AnimatePresence>
         </div>
-      )}
+      </section>
+    )}
 
       {/* Confirmation Modal */}
       <AnimatePresence>
@@ -301,7 +304,7 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({
                   <AlertTriangle className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Clear entire watchlist?</h3>
+                  <h2 className="text-base font-bold text-white">Clear entire watchlist?</h2>
                   <p className="text-xs text-zinc-400">This action cannot be undone.</p>
                 </div>
               </div>

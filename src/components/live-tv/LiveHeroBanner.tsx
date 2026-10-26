@@ -433,7 +433,8 @@ const LiveHeroBannerComponent: React.FC<LiveHeroBannerProps> = ({
                         <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-lg">
                           <img
                             src={item.poster ? getHighResPoster(item.poster) : getSportHeroBackdrop(item.category_name, item.name)}
-                            alt={cleanStreamTitle(item.name)}
+                            alt=""
+                            aria-hidden="true"
                             loading="lazy"
                             onError={(e) => {
                               e.currentTarget.src = getSportHeroBackdrop(item.category_name, item.name);

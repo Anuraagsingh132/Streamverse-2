@@ -152,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="hidden lg:block h-5 w-[1px] bg-white/10 mx-1 shrink-0" aria-hidden="true" />
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-1">
           {navLinks.map((item) => {
             const Icon = item.icon;
             const isActive = currentRoute === item.route || (item.route === 'livesports' && (currentRoute === 'sports' || currentRoute === 'livesports'));

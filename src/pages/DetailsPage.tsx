@@ -821,11 +821,11 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     Starring Cast
                   </p>
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70">
                   {item.cast.length} actors
                 </span>
               </div>
-              <div className="scrollbar-hide -mx-2 flex items-start gap-4 overflow-x-auto px-2 pb-1 pt-1 sm:gap-6">
+              <div role="region" aria-label="Cast and crew" tabIndex={0} className="scrollbar-hide -mx-2 flex items-start gap-4 overflow-x-auto px-2 pb-1 pt-1 sm:gap-6 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded-lg">
                 {item.cast.slice(0, 10).map((actor) => (
                   <div key={actor.id} className="flex w-16 shrink-0 flex-col items-center text-center sm:w-20">
                     <div className="relative h-14 w-14 overflow-hidden rounded-full border border-white/15 bg-white/10 shadow-md ring-2 ring-black/40">
@@ -839,7 +839,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                     <span className="mt-2 line-clamp-1 w-full text-xs font-semibold text-white">
                       {actor.name}
                     </span>
-                    <span className="line-clamp-1 w-full text-[10px] text-white/50" title={actor.character}>
+                    <span className="line-clamp-1 w-full text-[10px] text-white/70" title={actor.character}>
                       {actor.character}
                     </span>
                   </div>
@@ -1168,7 +1168,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
                 Trailers &amp; teasers
               </h2>
             </div>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
               {item.videos.length} videos
             </span>
           </div>
@@ -1176,6 +1176,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           <div className="group/rail relative">
             <button
               type="button"
+              aria-label="Scroll trailers left"
               onClick={() => scrollRail(trailerRailRef, 'left')}
               className="absolute left-2 top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition hover:scale-110 sm:flex opacity-0 group-hover/rail:opacity-100"
             >
@@ -1183,6 +1184,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
             </button>
             <button
               type="button"
+              aria-label="Scroll trailers right"
               onClick={() => scrollRail(trailerRailRef, 'right')}
               className="absolute right-2 top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition hover:scale-110 sm:flex opacity-0 group-hover/rail:opacity-100"
             >
@@ -1191,7 +1193,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
             <div
               ref={trailerRailRef}
-              className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-4 pb-4 pt-2"
+              role="region"
+              aria-label="Trailers and teasers"
+              tabIndex={0}
+              className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-4 pb-4 pt-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded-lg"
               style={{
                 
 
@@ -1385,6 +1390,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         <div className="group/rail relative">
           <button
             type="button"
+            aria-label="Scroll similar titles left"
             onClick={() => scrollRail(moreLikeRailRef, 'left')}
             className="absolute left-2 top-[40%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition hover:scale-110 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
@@ -1392,6 +1398,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           </button>
           <button
             type="button"
+            aria-label="Scroll similar titles right"
             onClick={() => scrollRail(moreLikeRailRef, 'right')}
             className="absolute right-2 top-[40%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition hover:scale-110 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
@@ -1400,7 +1407,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
           <div
             ref={moreLikeRailRef}
-            className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5"
+            role="region"
+            aria-label="Similar titles"
+            tabIndex={0}
+            className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded-xl"
             style={{
               
 
@@ -1438,6 +1448,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
         <div className="group/rail relative">
           <button
             type="button"
+            aria-label="Scroll recommended titles left"
             onClick={() => scrollRail(recommendedRailRef, 'left')}
             className="absolute left-2 top-[40%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition hover:scale-110 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
@@ -1445,6 +1456,7 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
           </button>
           <button
             type="button"
+            aria-label="Scroll recommended titles right"
             onClick={() => scrollRail(recommendedRailRef, 'right')}
             className="absolute right-2 top-[40%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-2xl backdrop-blur-md transition hover:scale-110 sm:flex opacity-0 group-hover/rail:opacity-100"
           >
@@ -1453,7 +1465,10 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
 
           <div
             ref={recommendedRailRef}
-            className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5"
+            role="region"
+            aria-label="Recommended titles"
+            tabIndex={0}
+            className="scrollbar-hide overflow-x-auto scroll-smooth isolate flex items-start gap-4 pb-10 pt-4 lg:gap-5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded-xl"
             style={{
               
 
@@ -1492,6 +1507,8 @@ export const DetailsPage: React.FC<DetailsPageProps> = ({
               className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-white/20 bg-black shadow-2xl"
             >
               <button
+                type="button"
+                aria-label="Close trailer"
                 onClick={() => setTrailerModalOpen(false)}
                 className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/40 transition cursor-pointer"
               >

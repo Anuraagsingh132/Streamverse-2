@@ -66,17 +66,15 @@ const LiveStreamCardComponent: React.FC<LiveStreamCardProps> = ({
   );
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`Watch ${displayTitle}`}
-      onClick={() => onPlay(stream)}
-      onKeyDown={handleKeyDown}
-      className="group block cursor-pointer select-none transition-transform duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-2xl w-full"
+    <article
+      className="group relative block select-none transition-transform duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] rounded-2xl w-full"
     >
-      {/* 16:9 Aspect Ratio (or 16:10 for compact channels), 16px radius, unified dark slate #12151E */}
-      <div
-        className={`relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#12151E] transition-colors duration-300 group-hover:border-white/30 ${
+      {/* 16:9 Aspect Ratio Thumbnail Button */}
+      <button
+        type="button"
+        aria-label={displayTitle}
+        onClick={() => onPlay(stream)}
+        className={`relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#12151E] transition-colors duration-300 group-hover:border-white/30 block text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 cursor-pointer p-0 ${
           compactChannel ? 'aspect-[16/10]' : 'aspect-[16/9]'
         }`}
       >
@@ -85,7 +83,8 @@ const LiveStreamCardComponent: React.FC<LiveStreamCardProps> = ({
           {stream.poster && !imgError ? (
             <img
               src={stream.poster}
-              alt={displayTitle}
+              alt=""
+              aria-hidden="true"
               loading="lazy"
               decoding="async"
               onError={() => {
@@ -173,47 +172,53 @@ const LiveStreamCardComponent: React.FC<LiveStreamCardProps> = ({
         {/* Smooth Vignette Overlay */}
         <div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
-        {/* Top-Left: Prominent Pill on Thumbnail (LIVE / Time / ENDED / 24/7) */}
-        {isLive && !is247 ? (
-          <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-rose-600 px-3 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              LIVE
-            </span>
-          </div>
-        ) : is247 ? (
-          <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-black/85 border border-white/20 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
-              24/7
-            </span>
-          </div>
-        ) : status === 'ended' ? (
-          <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
-            <span className="inline-flex h-6 items-center rounded-full bg-zinc-850/95 border border-zinc-700 px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 shadow-md">
-              ENDED
-            </span>
-          </div>
-        ) : formattedTime ? (
-          <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
-            <span className="inline-flex h-6 items-center rounded-full bg-black/85 border border-white/20 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
-              {shortTime}
-            </span>
-          </div>
-        ) : null}
-
         {/* Hover: Circular 48px Play Button fading in */}
         <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 pointer-events-none">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-md transition-transform duration-200 group-hover:scale-105">
             <Play className="h-5 w-5 fill-black text-black ml-0.5" />
           </div>
         </div>
-      </div>
+      </button>
+
+      {/* Top-Left: Prominent Pill on Thumbnail (LIVE / Time / ENDED / 24/7) */}
+      {isLive && !is247 ? (
+        <div aria-hidden="true" className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
+          <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-rose-600 px-3 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+            LIVE
+          </span>
+        </div>
+      ) : is247 ? (
+        <div aria-hidden="true" className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
+          <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-black/85 border border-white/20 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+            24/7
+          </span>
+        </div>
+      ) : status === 'ended' ? (
+        <div aria-hidden="true" className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
+          <span className="inline-flex h-6 items-center rounded-full bg-zinc-850/95 border border-zinc-700 px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 shadow-md">
+            ENDED
+          </span>
+        </div>
+      ) : formattedTime ? (
+        <div aria-hidden="true" className="absolute top-2.5 left-2.5 z-30 pointer-events-none">
+          <span className="inline-flex h-6 items-center rounded-full bg-black/85 border border-white/20 px-2.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+            {shortTime}
+          </span>
+        </div>
+      ) : null}
 
       {/* 2-Line High-Contrast Metadata Container Below Card Thumbnail */}
       <div className="mt-2.5 px-0.5 space-y-1">
-        <p className="text-[14px] sm:text-[15px] font-bold text-white line-clamp-2 leading-snug group-hover:text-rose-400 transition-colors drop-shadow-sm min-h-[2.5rem]">
-          {displayTitle}
-        </p>
+        <button
+          type="button"
+          onClick={() => onPlay(stream)}
+          className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded cursor-pointer p-0 bg-transparent border-0 block"
+        >
+          <h3 className="text-[14px] sm:text-[15px] font-bold text-white line-clamp-2 leading-snug group-hover:text-rose-400 transition-colors drop-shadow-sm min-h-[2.5rem]">
+            {displayTitle}
+          </h3>
+        </button>
         <p className="text-xs sm:text-[13px] text-zinc-300 font-medium truncate flex items-center gap-1.5">
           <span>{leagueName}</span>
           <span className="text-zinc-500">•</span>
@@ -222,7 +227,7 @@ const LiveStreamCardComponent: React.FC<LiveStreamCardProps> = ({
           </span>
         </p>
       </div>
-    </div>
+    </article>
   );
 };
 

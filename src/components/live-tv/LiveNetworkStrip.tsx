@@ -49,7 +49,8 @@ const NetworkTile = memo(({
         {!imgFailed && channel.poster ? (
           <img
             src={channel.poster}
-            alt={cleanName}
+            alt=""
+            aria-hidden="true"
             loading="lazy"
             decoding="async"
             onError={() => setImgFailed(true)}

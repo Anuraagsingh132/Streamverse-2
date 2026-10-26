@@ -267,7 +267,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
           
           {/* Sticky Genre Pills Filter Bar */}
           <div className="sticky top-14 z-20 w-full bg-black/60 backdrop-blur-md border-b border-white/5 py-1.5">
-            <div className="scrollbar-hide flex gap-2 overflow-x-auto px-5 py-1.5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+            <div role="region" aria-label="Anime categories" tabIndex={0} className="scrollbar-hide flex gap-2 overflow-x-auto px-5 py-1.5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded-lg">
               {GENRES.map((genre) => {
                 const isSelected = selectedGenre === genre;
                 return (
@@ -331,7 +331,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({
 
               {/* Genre Rail Container with No Scrollbar */}
               <div className="group/rail relative">
-                <div className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14" style={{ }}>
+                <div role="region" aria-label="Anime genre collection" tabIndex={0} className="scrollbar-hide overflow-x-auto scroll-smooth overscroll-x-contain will-change-scroll flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded-lg" style={{ }}>
                   {isLoadingGenre ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <div key={i} className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]">
@@ -447,7 +447,7 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
         {/* Left Arrow Button */}
         <button
           type="button"
-          aria-label="Scroll left"
+          aria-label={`Scroll ${rail.title} left`}
           onClick={() => handleScroll('left')}
           className={`absolute top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/85 text-white shadow-2xl transition duration-300 hover:scale-110 hover:bg-black sm:flex left-2 lg:left-4 ${
             canScrollLeft ? 'opacity-0 focus-visible:opacity-100 group-hover/rail:opacity-100 cursor-pointer' : 'pointer-events-none opacity-0'
@@ -459,7 +459,7 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
         {/* Right Arrow Button */}
         <button
           type="button"
-          aria-label="Scroll right"
+          aria-label={`Scroll ${rail.title} right`}
           onClick={() => handleScroll('right')}
           className={`absolute top-[38%] z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/85 text-white shadow-2xl transition duration-300 hover:scale-110 hover:bg-black sm:flex right-2 lg:right-4 ${
             canScrollRight ? 'opacity-0 focus-visible:opacity-100 group-hover/rail:opacity-100 cursor-pointer' : 'pointer-events-none opacity-0'
@@ -471,7 +471,7 @@ const AnimeRailSection = React.memo(function AnimeRailSection({
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14"
+          role="region" aria-label={rail.title || "Anime collection"} tabIndex={0} className="scrollbar-hide overflow-x-auto scroll-smooth flex gap-4 px-5 pb-8 pt-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded-lg"
           style={{
             
 
