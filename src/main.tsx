@@ -3,29 +3,33 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
-import { initSentry } from './utils/sentry.ts'
 import { initSecurityDefense } from './utils/securityDefense.ts'
 import { registerPwaServiceWorker } from './utils/registerServiceWorker.ts'
-import { initPostHog } from './services/analytics.ts'
 
-// Initialize production security & anti-inspection defense (Vercel only)
+// Initialize production security policies & console hygiene
 initSecurityDefense()
 
 // Initialize high-quality PWA service worker after window load
 registerPwaServiceWorker()
 
+import { initPostHog } from './services/analytics.ts';
+
 // Defer analytics and error monitoring to idle to maximize initial main thread responsiveness & 0ms TBT
 if (typeof window !== 'undefined') {
+  const initIdleServices = async () => {
+    try {
+      const { initSentry } = await import('./utils/sentry.ts');
+      initSentry();
+      initPostHog();
+    } catch {
+      // Telemetry non-blocking failure
+    }
+  };
+
   if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(() => {
-      initSentry();
-      initPostHog();
-    }, { timeout: 3000 });
+    window.requestIdleCallback(initIdleServices, { timeout: 3000 });
   } else {
-    setTimeout(() => {
-      initSentry();
-      initPostHog();
-    }, 1500);
+    setTimeout(initIdleServices, 1500);
   }
 }
 

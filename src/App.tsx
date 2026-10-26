@@ -19,6 +19,7 @@ import { MediaItem } from './types/media';
 import { getMediaDetails } from './services/tmdb';
 import { useWatchlistStore } from './store/useWatchlistStore';
 import { getRouteHref } from './utils/routeUtils';
+import { allMedia } from './data/mediaData';
 import { pageMotionVariants } from './utils/motion';
 import { ArrowLeft, Home, Compass } from 'lucide-react';
 import { PostHogPageViewTracker, trackMediaDetailsOpen, trackMediaPlay } from './services/analytics';
@@ -75,13 +76,8 @@ async function resolveRouteMedia(id: string, type: 'movie' | 'tv' | 'anime'): Pr
     const { lanternsCuratedDetails } = await import('./data/cinemaosLiveMatch');
     return lanternsCuratedDetails;
   }
-  try {
-    const { allMedia } = await import('./data/mediaData');
-    const match = allMedia.find((m) => m.id === id);
-    if (match) return match;
-  } catch {
-    // Fall through to TMDB or fallback
-  }
+  const match = allMedia.find((m) => m.id === id);
+  if (match) return match;
   if (type === 'anime') {
     try {
       const { extractedAnime } = await import('./data/animeData');

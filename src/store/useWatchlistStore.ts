@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MediaItem } from '../types/media';
 import { allMedia } from '../data/mediaData';
 import { safeSetStorageItem, safeGetStorageItem } from '../utils/storageManager';
+import { trackWatchlistAction } from '../services/analytics';
 
 export const WATCHLIST_CHANGE_EVENT = 'streamverse_watchlist_change';
 
@@ -139,9 +140,7 @@ export function useWatchlistStore() {
       globalWatchlistItems = [normalizedItem, ...globalWatchlistItems];
       emitWatchlistChange();
       try {
-        import('../services/analytics').then(({ trackWatchlistAction }) => {
-          trackWatchlistAction(normalizedItem, 'added');
-        });
+        trackWatchlistAction(normalizedItem, 'added');
       } catch {}
     }
   }, []);
@@ -156,9 +155,7 @@ export function useWatchlistStore() {
     );
     emitWatchlistChange();
     try {
-      import('../services/analytics').then(({ trackWatchlistAction }) => {
-        trackWatchlistAction(existing || { id: strId }, 'removed');
-      });
+      trackWatchlistAction(existing || { id: strId }, 'removed');
     } catch {}
   }, []);
 

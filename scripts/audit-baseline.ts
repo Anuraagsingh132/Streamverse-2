@@ -135,6 +135,13 @@ async function runAudit() {
   // Accessibility Audit via AxeBuilder
   console.log('Running Axe Accessibility Scan...');
   const axeResults = await new AxeBuilder({ page }).analyze();
+  for (const v of axeResults.violations) {
+    console.log('AXE VIOLATION:', v.id, 'Nodes:', v.nodes.length);
+    if (v.nodes[0]) {
+      console.log('  Target:', v.nodes[0].target);
+      console.log('  HTML:', v.nodes[0].html.slice(0, 150));
+    }
+  }
   const violationsByImpact: Record<string, number> = {
     critical: 0,
     serious: 0,
