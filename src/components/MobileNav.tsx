@@ -89,19 +89,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     }
   };
 
-  // 6 Primary Mobile Tabs with Labels
-  const primaryTabs: Array<{
-    label: string;
-    route?: string;
-    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>;
-    isAction?: boolean;
-    isFeedback?: boolean;
-  }> = [
+  // 5 Capped Primary Mobile Tabs with Labels
+  const primaryTabs = [
     { label: 'Home', route: 'home', icon: House },
     { label: 'Movies', route: 'movie', icon: Film },
     { label: 'TV', route: 'tv', icon: Tv },
     { label: 'Live TV', route: 'livesports', icon: Radio },
-    { label: 'Feedback', isFeedback: true, icon: MessageSquarePlus },
     { label: 'More', isAction: true, icon: LayoutGrid },
   ];
 
@@ -139,13 +132,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       description: 'Playback, audio & preferences', 
       icon: Settings, 
       route: 'settings'
-    },
-    { 
-      label: 'Feedback & Requests', 
-      description: 'Report a bug or suggest new features', 
-      icon: MessageSquarePlus, 
-      isFeedback: true,
-      action: handleOpenFeedback
     },
   ];
 
@@ -201,7 +187,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
           {primaryTabs.map((item) => {
             const Icon = item.icon;
-            const isTabActive = !item.isAction && !item.isFeedback && (
+            const isTabActive = !item.isAction && (
               currentRoute === item.route ||
               (item.route === 'movie' && currentRoute === 'movies') ||
               (item.route === 'livesports' && (currentRoute === 'sports' || currentRoute === 'livesports'))
@@ -242,36 +228,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 )}
               </div>
             );
-
-            if (item.isFeedback) {
-              return (
-                <button
-                  type="button"
-                  key={item.label}
-                  data-featurebase-feedback
-                  aria-label="Feedback and feature requests"
-                  onClick={handleOpenFeedback}
-                  className="relative flex flex-col items-center justify-center h-full w-full select-none cursor-pointer [-webkit-tap-highlight-color:transparent] active:scale-[0.96] transition-transform duration-100"
-                >
-                  <div className="relative flex flex-col items-center justify-center w-full h-full pt-1 pb-1 z-10">
-                    <span className="relative flex items-center justify-center">
-                      <Icon 
-                        className="transition-colors duration-200 text-white/70 hover:text-rose-400"
-                        style={{ width: '21px', height: '21px' }}
-                        strokeWidth={1.85}
-                      />
-                      <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-60"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.9)]"></span>
-                      </span>
-                    </span>
-                    <span className="relative mt-1 text-[10.5px] leading-tight tracking-tight transition-colors duration-200 text-white/70 hover:text-white font-medium truncate max-w-full px-0.5">
-                      {item.label}
-                    </span>
-                  </div>
-                </button>
-              );
-            }
 
             if (item.isAction) {
               return (
@@ -413,8 +369,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                       <button
                         type="button"
                         key={item.label}
-                        data-featurebase-feedback={item.isFeedback ? '' : undefined}
-                        onClick={item.action}
+                                                onClick={item.action}
                         className="group w-full min-h-[48px] rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 text-left transition hover:bg-white/[0.08] active:scale-[0.98] cursor-pointer [-webkit-tap-highlight-color:transparent]"
                       >
                         {rowContent}
