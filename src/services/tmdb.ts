@@ -492,7 +492,7 @@ export async function getHeroTrending(
     const valid = trending.filter((item) => Boolean(item.backdrop_path && item.backdrop_path.trim() !== '')).slice(0, count);
     if (valid.length === 0) return [];
 
-    // Fast path: Only enrich the active #1 hero slide for LCP, avoiding 10 concurrent blocking detail requests
+    // Fast path: Enrich active #1 hero slide immediately for LCP
     if (valid[0]) {
       try {
         const details = await getMediaDetails(valid[0].id, valid[0].media_type);
@@ -509,6 +509,29 @@ export async function getHeroTrending(
         // fallback
       }
     }
+
+    // Enrich remaining hero slides (1..N) concurrently so all carousel posters preserve logos
+    if (valid.length > 1) {
+      await Promise.allSettled(
+        valid.slice(1).map(async (item, idx) => {
+          try {
+            const details = await getMediaDetails(item.id, item.media_type);
+            if (details) {
+              valid[idx + 1] = {
+                ...valid[idx + 1],
+                logo_path: details.logo_path || valid[idx + 1].logo_path,
+                title_logo: details.title_logo || valid[idx + 1].title_logo,
+                tagline: details.tagline || valid[idx + 1].tagline,
+                content_rating: details.content_rating || valid[idx + 1].content_rating
+              };
+            }
+          } catch {
+            // non-fatal
+          }
+        })
+      );
+    }
+
     return valid;
   } catch (err) {
     console.warn(`TMDB getHeroTrending failed (${type}):`, err);

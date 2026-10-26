@@ -19,9 +19,26 @@ export function mergeValidMediaWithFallback(
   const valid = items.filter((i) => Boolean(i.backdrop_path && i.backdrop_path.trim() !== ''));
   if (valid.length === 0) return fallback.slice(0, maxItems);
 
+  // Preserve curated logo_path/title_logo for items where TMDB list response lacks logos
+  const enrichedValid = valid.map((item) => {
+    if (!item.logo_path && !item.title_logo) {
+      const match = fallback.find(
+        (f) => String(f.id) === String(item.id) || f.title.toLowerCase() === item.title.toLowerCase()
+      );
+      if (match && (match.logo_path || match.title_logo)) {
+        return {
+          ...item,
+          logo_path: match.logo_path || item.logo_path,
+          title_logo: match.title_logo || item.title_logo
+        };
+      }
+    }
+    return item;
+  });
+
   // Fresh live updated items take full priority in their actual ranking order
   const merged = [
-    ...valid,
+    ...enrichedValid,
     ...fallback.filter((f) => !valid.some((v) => String(v.id) === String(f.id)))
   ];
   return merged.slice(0, maxItems);

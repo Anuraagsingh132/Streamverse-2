@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { MediaItem } from '../types/media';
 import { optimizeTmdbImage } from '../utils/imageUtils';
+import { getMediaDetails } from '../services/tmdb';
 
 interface HeroBannerProps {
   items: MediaItem[];
@@ -47,16 +48,33 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
     };
   }, [items.length, isPaused]);
 
-  const currentId = items && items.length > 0 ? (items[currentIndex]?.id || items[0]?.id) : undefined;
+  const current = items && items.length > 0 ? (items[currentIndex] || items[0]) : null;
+  const currentId = current?.id;
   const [prevSlideId, setPrevSlideId] = useState(currentId);
   if (currentId !== prevSlideId) {
     setPrevSlideId(currentId);
     setLogoError(false);
   }
 
-  if (!items || items.length === 0) return null;
+  const [dynamicLogo, setDynamicLogo] = useState<string | null>(null);
 
-  const current = items[currentIndex] || items[0];
+  useEffect(() => {
+    setDynamicLogo(null);
+    if (!current || current.logo_path || current.title_logo || !current.id) return;
+    let isCancelled = false;
+    getMediaDetails(current.id, current.media_type)
+      .then((details) => {
+        if (!isCancelled && details && (details.logo_path || details.title_logo)) {
+          setDynamicLogo(details.logo_path || details.title_logo || null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isCancelled = true;
+    };
+  }, [current?.id, current?.media_type, current?.logo_path, current?.title_logo]);
+
+  if (!items || items.length === 0 || !current) return null;
   const isSaved = watchlist.includes(current.id);
 
   const goToSlide = (idx: number) => {
@@ -266,14 +284,14 @@ export const HeroBanner: React.FC<HeroBannerProps> = React.memo(({
               </div>
 
               {/* Title or Title Logo */}
-              {(current.logo_path || current.title_logo) && !logoError ? (
+              {(current.logo_path || current.title_logo || dynamicLogo) && !logoError ? (
                 <div 
                   className="h-16 sm:h-24 w-full max-w-[240px] sm:max-w-sm duration-700 animate-in fade-in slide-in-from-bottom-3 fill-mode-both lg:h-32 lg:max-w-lg" 
                   style={{ animationDelay: '90ms' }}
                 >
                   <img decoding="async" 
                     key={`logo-${current.id}`}
-                    src={current.logo_path || current.title_logo} 
+                    src={current.logo_path || current.title_logo || dynamicLogo!} 
                     alt={current.title} 
                     loading="eager" 
                     className="object-contain transition-opacity duration-300 h-full w-full object-left-bottom" 

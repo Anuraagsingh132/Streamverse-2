@@ -24,8 +24,12 @@ import { PostHogPageViewTracker, trackMediaDetailsOpen, trackMediaPlay } from '.
 
 // Lazy-loaded route views
 const HomePage = React.lazy(() => import('./pages/HomePage'));
-const MoviesPage = React.lazy(() => import('./pages/MoviesPage'));
-const TVShowsPage = React.lazy(() => import('./pages/TVShowsPage'));
+// Eagerly prefetch core route chunks so navigation between Home, Movies, and TV is instant
+const moviesPagePromise = import('./pages/MoviesPage');
+const tvShowsPagePromise = import('./pages/TVShowsPage');
+
+const MoviesPage = React.lazy(() => moviesPagePromise);
+const TVShowsPage = React.lazy(() => tvShowsPagePromise);
 const AnimePage = React.lazy(() => import('./pages/AnimePage'));
 const AISearchPage = React.lazy(() => import('./pages/AISearchPage'));
 const LiveSportsPage = React.lazy(() => import('./pages/LiveSportsPage').then(m => ({ default: m.LiveSportsPage })));
@@ -787,7 +791,7 @@ const AppContent: React.FC = () => {
       <main className="flex-1">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={location.pathname}
+            key={currentRouteKey}
             variants={pageMotionVariants}
             initial="initial"
             animate="animate"
@@ -820,7 +824,18 @@ const AppContent: React.FC = () => {
                     />
                   }
                 />
-                <Route path="/movie" element={<Navigate to="/movies" replace />} />
+                <Route
+                  path="/movie"
+                  element={
+                    <MoviesPage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onNavigate={handleNavigate}
+                    />
+                  }
+                />
                 <Route
                   path="/tv"
                   element={
@@ -833,7 +848,18 @@ const AppContent: React.FC = () => {
                     />
                   }
                 />
-                <Route path="/tv-shows" element={<Navigate to="/tv" replace />} />
+                <Route
+                  path="/tv-shows"
+                  element={
+                    <TVShowsPage
+                      onPlay={handlePlay}
+                      onOpenDetails={handleOpenDetails}
+                      watchlist={watchlist}
+                      onToggleWatchlist={handleToggleWatchlist}
+                      onNavigate={handleNavigate}
+                    />
+                  }
+                />
                 <Route
                   path="/anime"
                   element={

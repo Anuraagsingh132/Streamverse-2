@@ -28,15 +28,16 @@ export const liveHeroItems: MediaItem[] = [
     genres: ['Drama', 'Romance']
   },
   {
-    id: '260481',
+    id: '284558',
     title: 'Kill Jackie',
     media_type: 'tv',
     year: 2026,
-    vote_average: 8.3,
+    vote_average: 7.1,
     badge: '#3 TRENDING · SERIES · 2026',
-    backdrop_path: 'https://image.tmdb.org/t/p/w780/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
-    poster_path: 'https://image.tmdb.org/t/p/w780/bbX3UIghhjJG6BW7WOGqxn4iySh.jpg',
-    overview: 'A determined operative executes an international revenge contract that spirals out of control.',
+    logo_path: 'https://image.tmdb.org/t/p/w500/mcxfMCC7V4xq1fEVyHV4wGe2quY.png',
+    backdrop_path: 'https://image.tmdb.org/t/p/w780/twc2YYBXTjdv52TShVumB1voT3Q.jpg',
+    poster_path: 'https://image.tmdb.org/t/p/w780/3tjZspkqquE24iK1rc0nvnJwdEZ.jpg',
+    overview: 'Jackie Price has been living a wealthy, luxurious life for the past 20 years after escaping a dangerous past as an international cocaine dealer. But just as life begins to feel a little boring, she discovers that The Seven Demons, a group of the world’s most terrifying hitmen, have been hired to kill her.',
     genres: ['Action', 'Thriller']
   },
   {
@@ -53,12 +54,13 @@ export const liveHeroItems: MediaItem[] = [
     genres: ['Comedy', 'Drama']
   },
   {
-    id: '221855',
+    id: '220542',
     title: 'The Apothecary Diaries',
     media_type: 'tv',
     year: 2023,
     vote_average: 8.6,
     badge: '#5 TRENDING · SERIES · 2026',
+    logo_path: 'https://image.tmdb.org/t/p/w500/6JpmIe9cJcbG6hecyN6ml8AG6RC.png',
     backdrop_path: 'https://image.tmdb.org/t/p/w780/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
     poster_path: 'https://image.tmdb.org/t/p/w780/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg',
     overview: 'Maomao, a pharmacist in the imperial court, unravels bizarre medical conspiracies and court intrigues.',
