@@ -282,17 +282,8 @@ const GenreRailComponent: React.FC<GenreRailProps> = ({
                   key={`${item.id}-${idx}`}
                   className="w-[74vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]"
                 >
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`View details for ${item.title}`}
+                  <article
                     onClick={() => onOpenDetails(item)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onOpenDetails(item);
-                      }
-                    }}
                     onMouseEnter={() => {
                       if (item.media_type === 'anime') {
                         import('../pages/AnimeDetailsPage');
@@ -300,7 +291,7 @@ const GenreRailComponent: React.FC<GenreRailProps> = ({
                         import('../pages/DetailsPage');
                       }
                     }}
-                    className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    className="group block cursor-pointer rounded-xl focus-within:ring-2 focus-within:ring-rose-500 focus-within:ring-offset-2 focus-within:ring-offset-black"
                   >
                     <div className="relative rounded-xl">
                       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
@@ -370,7 +361,16 @@ const GenreRailComponent: React.FC<GenreRailProps> = ({
 
                     <div className="mt-2 px-0.5">
                       <h3 className="truncate text-[13px] font-semibold leading-tight text-white">
-                        {item.title}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenDetails(item);
+                          }}
+                          className="text-left font-semibold text-white hover:text-primary transition-colors focus-visible:outline-none focus-visible:underline cursor-pointer"
+                        >
+                          {item.title}
+                        </button>
                       </h3>
                       <div className="mt-1 flex items-center gap-1.5">
                         <span className="rounded bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/90">
@@ -383,7 +383,7 @@ const GenreRailComponent: React.FC<GenreRailProps> = ({
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 </div>
               );
             })}

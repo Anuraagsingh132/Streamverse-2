@@ -177,17 +177,8 @@ const TopTenRowComponent: React.FC<TopTenRowProps> = ({
 
                 {/* Card Container */}
                 <div className="relative z-10 w-[74vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]">
-                  <div 
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`View details for #${rank} ${item.title}`}
+                  <article 
                     onClick={() => onOpenDetails(item)} 
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onOpenDetails(item);
-                      }
-                    }}
                     onMouseEnter={() => {
                       if (item.media_type === 'anime') {
                         import('../pages/AnimeDetailsPage');
@@ -195,7 +186,7 @@ const TopTenRowComponent: React.FC<TopTenRowProps> = ({
                         import('../pages/DetailsPage');
                       }
                     }}
-                    className="group block cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+                    className="group block cursor-pointer rounded-2xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-zinc-950"
                   >
                     {/* Landscape 16:9 Image */}
                     <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-xl transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:border-white/25">
@@ -254,7 +245,16 @@ const TopTenRowComponent: React.FC<TopTenRowProps> = ({
                     {/* Card Metadata Below Card (1:1 with Reference Image) */}
                     <div className="mt-2.5 px-0.5">
                       <h3 className="truncate text-sm sm:text-base font-bold leading-tight text-white group-hover:text-primary transition-colors">
-                        {item.title}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenDetails(item);
+                          }}
+                          className="text-left font-bold text-white group-hover:text-primary transition-colors focus-visible:outline-none focus-visible:underline cursor-pointer"
+                        >
+                          {item.title}
+                        </button>
                       </h3>
                       <div className="mt-1.5 flex items-center gap-2">
                         {/* Tag Pill */}
@@ -274,7 +274,7 @@ const TopTenRowComponent: React.FC<TopTenRowProps> = ({
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 </div>
               </div>
             );

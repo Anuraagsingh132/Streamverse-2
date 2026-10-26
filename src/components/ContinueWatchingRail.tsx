@@ -144,16 +144,8 @@ const ContinueWatchingRailComponent: React.FC<ContinueWatchingRailProps> = ({
                 <div key={`${record.id}_${record.season || 0}_${record.episode || 0}`} className="group relative flex-none w-[74vw] sm:w-[300px] lg:w-[330px] 2xl:w-[360px] transition-transform duration-300">
                   {/* 16:9 Landscape Card with Info on the Image */}
                   <div
-                    role="button"
-                    tabIndex={0}
                     onClick={() => handlePlayRecord(record)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handlePlayRecord(record);
-                      }
-                    }}
-                    className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-xl cursor-pointer transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                    className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-xl cursor-pointer transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-white/25 focus-within:ring-2 focus-within:ring-rose-500"
                   >
                     {/* Always a Backdrop Still */}
                     <img

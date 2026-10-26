@@ -24,20 +24,9 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
 
   const optimizedPosterSrc = optimizeTmdbImage(item.poster_path || item.backdrop_path, 'poster');
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onOpenDetails(item);
-    }
-  };
-
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`View details for ${item.title}`}
+    <article
       onClick={() => onOpenDetails(item)}
-      onKeyDown={handleKeyDown}
       onMouseEnter={() => {
         if (item.media_type === 'anime') {
           import('../pages/AnimeDetailsPage');
@@ -45,7 +34,7 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
           import('../pages/DetailsPage');
         }
       }}
-      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.97] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      className="group/card block w-[140px] flex-none origin-center cursor-pointer sm:w-[160px] lg:w-[180px] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.97] rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-zinc-950"
     >
       <div className="relative rounded-xl">
         <div className="relative isolate aspect-[2/3] overflow-hidden rounded-xl bg-white/5 shadow-xl shadow-black/40">
@@ -96,7 +85,16 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
               <Play className="h-5 w-5 fill-current" />
             </motion.button>
             <h3 className="line-clamp-2 text-center text-sm font-bold leading-tight text-white drop-shadow-md">
-              {item.title}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDetails(item);
+                }}
+                className="text-white hover:text-primary transition-colors focus-visible:outline-none focus-visible:underline cursor-pointer"
+              >
+                {item.title}
+              </button>
             </h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-white/70">
               <span>{year}</span>
@@ -108,19 +106,27 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
             </p>
           </div>
         </div>
-        
       </div>
 
       {/* Underneath Metadata */}
       <div className="mt-2.5 px-0.5">
         <p className="truncate text-sm font-semibold text-white/95">
-          {item.title}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDetails(item);
+            }}
+            className="text-left font-semibold text-white/95 hover:text-primary transition-colors focus-visible:outline-none focus-visible:underline cursor-pointer"
+          >
+            {item.title}
+          </button>
         </p>
         <p className="mt-0.5 text-xs font-medium uppercase tracking-[0.12em] text-white/65">
           {year} · {typeLabel}
         </p>
       </div>
-    </div>
+    </article>
   );
 };
 

@@ -110,17 +110,8 @@ const MediaRailComponent: React.FC<MediaRailProps> = ({
                     : 'w-[78vw] shrink-0 sm:w-[300px] lg:w-[330px] 2xl:w-[360px]'
                 }
               >
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`View details for ${item.title}`}
+                <article
                   onClick={() => onOpenDetails(item)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onOpenDetails(item);
-                    }
-                  }}
                   onMouseEnter={() => {
                     if (item.media_type === 'anime') {
                       import('../pages/AnimeDetailsPage');
@@ -128,7 +119,7 @@ const MediaRailComponent: React.FC<MediaRailProps> = ({
                       import('../pages/DetailsPage');
                     }
                   }}
-                  className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+                  className="group block cursor-pointer rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-zinc-950"
                 >
                   <div className="card-3d relative rounded-xl">
                     <div
@@ -206,7 +197,16 @@ const MediaRailComponent: React.FC<MediaRailProps> = ({
                   {/* Metadata */}
                   <div className="mt-2 px-0.5">
                     <h3 className="truncate text-[13px] font-semibold leading-tight text-foreground">
-                      {item.title}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenDetails(item);
+                        }}
+                        className="text-left font-semibold text-white hover:text-primary transition-colors focus-visible:outline-none focus-visible:underline cursor-pointer"
+                      >
+                        {item.title}
+                      </button>
                     </h3>
                     <div className="mt-1 flex items-center gap-1.5">
                       <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary">
@@ -221,11 +221,11 @@ const MediaRailComponent: React.FC<MediaRailProps> = ({
                       )}
                     </div>
                   </div>
+                </article>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
       </div>
     </section>
   );

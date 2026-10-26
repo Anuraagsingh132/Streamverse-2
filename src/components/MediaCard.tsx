@@ -22,20 +22,9 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
 }) => {
   const imageSrc = optimizeTmdbImage(item.backdrop_path || item.poster_path, 'card');
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onOpenDetails(item);
-    }
-  };
-
   return (
-    <div 
-      role="button"
-      tabIndex={0}
-      aria-label={`View details for ${item.title}`}
+    <article 
       onClick={() => onOpenDetails(item)}
-      onKeyDown={handleKeyDown}
       onMouseEnter={() => {
         if (item.media_type === 'anime') {
           import('../pages/AnimeDetailsPage');
@@ -43,7 +32,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
           import('../pages/DetailsPage');
         }
       }}
-      className="group block cursor-pointer transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 active:scale-[0.98] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      className="group block cursor-pointer transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 active:scale-[0.98] rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-zinc-950"
     >
       <div className="card-3d relative rounded-2xl">
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-xl">
@@ -110,7 +99,16 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
       {/* Card Metadata (Raised 1-2px, High Contrast) */}
       <div className="mt-2.5 px-0.5">
         <h3 className="truncate text-sm sm:text-base font-bold leading-tight text-white group-hover:text-primary transition-colors">
-          {item.title}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDetails(item);
+            }}
+            className="text-left font-bold text-white group-hover:text-primary transition-colors focus-visible:outline-none focus-visible:underline cursor-pointer"
+          >
+            {item.title}
+          </button>
         </h3>
         <div className="mt-1.5 flex items-center gap-2">
           <span className="rounded bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/90">
@@ -125,7 +123,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({
           </span>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
