@@ -1,0 +1,98 @@
+{
+  "timestamp": "2026-10-26T18:34:04.012Z",
+  "url": "http://localhost:4173/",
+  "performance": {
+    "ttfbMs": 4,
+    "fcpMs": 216,
+    "lcpMs": 0,
+    "cls": 0,
+    "tbtMs": 0,
+    "loadTimeMs": 107,
+    "domInteractiveMs": 28,
+    "totalRequests": 84,
+    "totalBytes": 638458,
+    "jsBytes": 1659,
+    "cssBytes": 0,
+    "imgBytes": 614479,
+    "resourceBreakdown": {
+      "document": {
+        "count": 1,
+        "bytes": 0
+      },
+      "script": {
+        "count": 20,
+        "bytes": 1659
+      },
+      "font": {
+        "count": 1,
+        "bytes": 22320
+      },
+      "stylesheet": {
+        "count": 2,
+        "bytes": 0
+      },
+      "image": {
+        "count": 23,
+        "bytes": 614479
+      },
+      "fetch": {
+        "count": 16,
+        "bytes": 0
+      }
+    }
+  },
+  "accessibility": {
+    "violationsCount": 2,
+    "passesCount": 42,
+    "incompleteCount": 1,
+    "violationsByImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0
+    },
+    "violations": [
+      {
+        "id": "label-content-name-mismatch",
+        "impact": "serious",
+        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
+        "nodesCount": 45
+      },
+      {
+        "id": "nested-interactive",
+        "impact": "serious",
+        "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+        "nodesCount": 45
+      }
+    ]
+  },
+  "seo": {
+    "title": "StreamVerse — Movies, Anime, TV Shows & Live Sports",
+    "description": "Discover movies, explore TV shows and anime, and find live sports on StreamVerse—all in one place.",
+    "canonical": "https://streamverse.anuraag.studio/",
+    "ogTitle": "StreamVerse — Movies, Anime, TV Shows & Live Sports",
+    "ogImage": "https://streamverse.anuraag.studio/og/streamverse-home.jpg",
+    "h1Count": 0,
+    "hasRobotsTxt": true,
+    "sitemapUrlCount": 63
+  },
+  "security": {
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "text/html",
+      "date": "Mon, 26 Oct 2026 18:33:54 GMT",
+      "etag": "W/\"12ec-XcqLnJNLul9fmKqr0psev6VCDUE\"",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "vary": "Origin"
+    },
+    "warnings": [
+      "Missing Strict-Transport-Security header (Note: local preview server)",
+      "Missing Content-Security-Policy header on preview server",
+      "Missing X-Frame-Options header on preview server",
+      "Missing X-Content-Type-Options header on preview server"
+    ]
+  }
+}
